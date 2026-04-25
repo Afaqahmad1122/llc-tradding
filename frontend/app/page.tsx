@@ -18,6 +18,7 @@ import {
   TrustFeatures,
   VehicleGrid,
 } from "@/components/landing/home-sections";
+import { SiteNavbar } from "@/components/landing/site-navbar";
 
 export default function Home() {
   return (
@@ -25,9 +26,11 @@ export default function Home() {
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#452E5A]/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 top-44 h-80 w-80 rounded-full bg-[#FF653F]/20 blur-3xl" />
       <NoticeBar text={noticeText} />
+      <SiteNavbar />
       <main className="relative z-10 pb-6">
         <HeroSection filters={heroFilters} stats={stats} />
         <SectionBlock
+          id="featured"
           title="Featured Collection"
           description="A curated selection based on demand, quality checks, and export readiness."
         >
@@ -47,12 +50,14 @@ export default function Home() {
           <VehicleGrid vehicles={latestVehicles} />
         </SectionBlock>
         <SectionBlock
+          id="about"
           title="Why Buyers Work With Us"
           description="Same business purpose as the reference platform, but intentionally redesigned with reusable blocks."
         >
           <TrustFeatures />
         </SectionBlock>
         <SectionBlock
+          id="reviews"
           title="Customer Reviews"
           description="Feedback from importers who received vehicles in line with listing and expectation."
         >
