@@ -21,6 +21,7 @@ import {
   NoticeBar,
   SectionBlock,
   TestimonialGrid,
+  TopCarsStrip,
   TrustFeatures,
   VehicleGrid,
 } from "@/components/landing/home-sections";
@@ -43,6 +44,7 @@ export default function Home() {
           bodyTypes={bodyTypeSidebarItems}
         >
           <HeroSection filters={heroFilters} stats={stats} />
+          <TopCarsStrip />
           <SectionBlock
             id="featured"
             title="Featured Collection"
