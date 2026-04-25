@@ -1,16 +1,40 @@
+import Image from "next/image";
+
 import { VehicleItem } from "@/components/landing/home-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
+const staticVehicleImages = [
+  "/download.jpeg",
+  "/download (1).jpeg",
+  "/download (2).jpeg",
+  "/download (3).jpeg",
+  "/download (4).jpeg",
+];
+
 export function VehicleGrid({ vehicles }: { vehicles: VehicleItem[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {vehicles.map((vehicle) => (
+      {vehicles.map((vehicle, index) => {
+        const imageSrc = encodeURI(
+          staticVehicleImages[index % staticVehicleImages.length],
+        );
+
+        return (
         <Card
           key={vehicle.reference}
           className="group overflow-hidden border-[#452E5A]/15 bg-white shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF653F]/45"
         >
+          <div className="relative h-44 w-full overflow-hidden border-b border-[#452E5A]/10">
+            <Image
+              src={imageSrc}
+              alt={`${vehicle.make} ${vehicle.model}`}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            />
+          </div>
           <div className="h-1.5 w-full brand-gradient-warm" />
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">
@@ -49,7 +73,8 @@ export function VehicleGrid({ vehicles }: { vehicles: VehicleItem[] }) {
             </Button>
           </CardFooter>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }
