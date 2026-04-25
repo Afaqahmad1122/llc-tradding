@@ -50,24 +50,24 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #f8f5ff;
+  --foreground: #1e104e;
+  --card: #ffffff;
+  --card-foreground: #1e104e;
+  --popover: #ffffff;
+  --popover-foreground: #1e104e;
+  --primary: #1e104e;
+  --primary-foreground: #ffffff;
+  --secondary: #452e5a;
+  --secondary-foreground: #ffffff;
+  --muted: #efe7ff;
+  --muted-foreground: #4f4073;
+  --accent: #ff653f;
+  --accent-foreground: #ffffff;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #dccfff;
+  --input: #ddd2ff;
+  --ring: #ff653f;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -135,5 +135,31 @@
   h5,
   h6 {
     @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .brand-gradient-main {
+    background-image: linear-gradient(135deg, #1e104e 0%, #452e5a 100%);
+  }
+
+  .brand-gradient-warm {
+    background-image: linear-gradient(135deg, #ff653f 0%, #ffc85c 100%);
+  }
+
+  .brand-text-gradient {
+    background-image: linear-gradient(135deg, #ff653f 0%, #ffc85c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .brand-glass {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.75),
+      rgba(255, 255, 255, 0.42)
+    );
+    backdrop-filter: blur(16px);
   }
 }

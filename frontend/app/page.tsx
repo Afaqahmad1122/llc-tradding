@@ -21,9 +21,11 @@ import {
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col bg-linear-to-b from-background to-muted/30">
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef]">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#452E5A]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 top-44 h-80 w-80 rounded-full bg-[#FF653F]/20 blur-3xl" />
       <NoticeBar text={noticeText} />
-      <main className="pb-4">
+      <main className="relative z-10 pb-6">
         <HeroSection filters={heroFilters} stats={stats} />
         <SectionBlock
           title="Featured Collection"
