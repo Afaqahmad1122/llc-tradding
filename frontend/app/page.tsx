@@ -35,7 +35,6 @@ export default function Home() {
       <NoticeBar text={noticeText} />
       <SiteNavbar />
       <main className="relative z-10 pb-6">
-        <HeroSection filters={heroFilters} stats={stats} />
         <MarketplaceWithSidebars
           makes={makeSidebarItems}
           priceRanges={priceSidebarItems}
@@ -43,6 +42,7 @@ export default function Home() {
           filters={rightSidebarFilters}
           bodyTypes={bodyTypeSidebarItems}
         >
+          <HeroSection filters={heroFilters} stats={stats} />
           <SectionBlock
             id="featured"
             title="Featured Collection"
