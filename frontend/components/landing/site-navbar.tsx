@@ -129,11 +129,11 @@ export function SiteNavbar() {
               <nav className="flex flex-col">
                 {navItems.map((item) =>
                   item.children ? (
-                    <div key={item.label} className="rounded-md px-3 py-2">
-                      <p className="flex items-center gap-1 text-sm font-semibold text-[#452E5A] dark:text-white">
+                    <details key={item.label} className="group rounded-md px-3 py-2">
+                      <summary className="flex list-none items-center gap-1 text-sm font-semibold text-[#452E5A] cursor-pointer dark:text-white [&::-webkit-details-marker]:hidden">
                         {item.label}
-                        <ChevronDown className="size-3.5" />
-                      </p>
+                        <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+                      </summary>
                       <div className="mt-1 space-y-1 pl-3">
                         {item.children.map((child) => (
                           <Link
@@ -145,7 +145,7 @@ export function SiteNavbar() {
                           </Link>
                         ))}
                       </div>
-                    </div>
+                    </details>
                   ) : (
                     <Link
                       key={item.label}
