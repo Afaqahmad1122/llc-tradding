@@ -16,7 +16,7 @@ function LeftSidebar({
     <aside className="hidden xl:block">
       <div className="sticky top-24 space-y-4">
         <div className="overflow-hidden rounded-sm border border-[#D0D0D0] bg-[#F3F3F3]">
-          <div className="bg-[#F21B2D] px-3 py-2 text-sm font-bold text-white">
+          <div className="bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-3 py-2 text-sm font-bold text-[#1E104E]">
             Shop By Make
           </div>
           <div className="max-h-[420px] space-y-0.5 overflow-auto p-2">
@@ -33,7 +33,7 @@ function LeftSidebar({
         </div>
 
         <div className="overflow-hidden rounded-sm border border-[#D0D0D0] bg-[#F3F3F3]">
-          <div className="bg-[#F21B2D] px-3 py-2 text-sm font-bold text-white">
+          <div className="bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-3 py-2 text-sm font-bold text-[#1E104E]">
             Shop by Price
           </div>
           <div className="max-h-[360px] space-y-0.5 overflow-auto p-2">
@@ -52,7 +52,7 @@ function LeftSidebar({
         </div>
 
         <div className="overflow-hidden rounded-sm border border-[#D0D0D0] bg-[#F3F3F3]">
-          <div className="bg-[#F21B2D] px-3 py-2 text-sm font-bold text-white">
+          <div className="bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-3 py-2 text-sm font-bold text-[#1E104E]">
             Shop By Body Type
           </div>
           <div className="space-y-0.5 p-2">

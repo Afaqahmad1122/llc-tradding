@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
 export function SiteNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-[#452E5A]/15 bg-white/85 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-304 items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
         <Link href="/" className="group flex min-w-0 items-center gap-2">
           <div className="flex size-9 items-center justify-center rounded-lg border border-[#452E5A]/20 bg-white shadow-sm">
             <span className="bg-linear-to-r from-[#1E104E] via-[#452E5A] to-[#FF653F] bg-clip-text text-lg font-extrabold text-transparent">
@@ -65,7 +65,7 @@ export function SiteNavbar() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-1.5 lg:flex">
           {navItems.map((item) =>
             item.children ? (
               <div key={item.label} className="group relative">
