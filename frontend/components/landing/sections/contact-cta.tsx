@@ -27,7 +27,7 @@ export function ContactCta() {
               asChild
               className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
             >
-              <Link href="https://wa.me/818011724000">
+              <Link href="https://wa.me/817064362003">
                 <MessageCircle className="size-4" />
                 WhatsApp
               </Link>

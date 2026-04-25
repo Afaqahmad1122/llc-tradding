@@ -34,7 +34,7 @@ export default function Home() {
       <div className="pointer-events-none absolute -right-24 top-44 h-80 w-80 rounded-full bg-[#FF653F]/20 blur-3xl" />
       <NoticeBar text={noticeText} />
       <SiteNavbar />
-      <main className="relative z-10 pb-6">
+      <main className="relative z-10 pb-6 pt-2 sm:pt-3">
         <MarketplaceWithSidebars
           makes={makeSidebarItems}
           priceRanges={priceSidebarItems}

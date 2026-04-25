@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  ArrowUpRight,
   Clock3,
   Globe2,
   Mail,
@@ -35,9 +36,9 @@ export function SiteFooter() {
               <div className="mt-2 flex items-start gap-2 text-white/80">
                 <Clock3 className="mt-0.5 size-4 shrink-0" />
                 <p>
-                  Mon - Fri: 9:00 AM - 6:00 PM JST
+                  Mon - Fri: 9:00 AM - 6:00 PM PKT
                   <br />
-                  Sat: 9:00 AM - 4:00 PM JST
+                  Sat: 9:00 AM - 4:00 PM PKT
                 </p>
               </div>
             </div>
@@ -47,18 +48,18 @@ export function SiteFooter() {
             <p className="mb-3 text-lg font-semibold">Contact Us</p>
             <div className="space-y-2 text-sm">
               <Link
-                href="https://wa.me/817044570584"
+                href="https://wa.me/817064362003"
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <MessageCircle className="size-4 text-[#FFC85C]" />
-                +81 7044570584
+                +81 70-6436-2003
               </Link>
               <Link
-                href="tel:+818051730786"
+                href="tel:+817064362003"
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <Phone className="size-4 text-[#FFC85C]" />
-                +81 8051730786
+                +81 70-6436-2003
               </Link>
               <Link
                 href="mailto:sales@afriditrading.com"
@@ -72,14 +73,15 @@ export function SiteFooter() {
 
           <div>
             <p className="mb-3 text-lg font-semibold">Quick Links</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               {quickLinks.map((item) => (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/85 transition-colors hover:bg-white/10"
+                  className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/85 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  <ArrowUpRight className="size-4 text-white/45 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#FFC85C]" />
                 </Link>
               ))}
             </div>
