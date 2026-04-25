@@ -1,5 +1,5 @@
+import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle } from "lucide-react";
 
 import {
   Carousel,
@@ -18,6 +18,20 @@ const staticTopCars = [
   { id: "59", make: "BMW", model: "X1", image: "/download (4).jpeg" },
   { id: "86", make: "Toyota", model: "Aqua", image: "/download.jpeg" },
 ];
+const WHATSAPP_URL = "https://wa.me/817064362003";
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      fill="currentColor"
+    >
+      <path d="M20.52 3.48A11.87 11.87 0 0 0 12.07 0C5.49 0 .16 5.34.16 11.92c0 2.1.55 4.15 1.59 5.95L0 24l6.32-1.66a11.86 11.86 0 0 0 5.75 1.48h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.17-3.48-8.42Zm-8.45 18.33h-.01a9.84 9.84 0 0 1-5.01-1.37l-.36-.21-3.75.99 1-3.65-.24-.38a9.85 9.85 0 0 1-1.5-5.27c0-5.45 4.43-9.88 9.88-9.88a9.8 9.8 0 0 1 6.99 2.9 9.8 9.8 0 0 1 2.9 6.98c0 5.45-4.43 9.89-9.88 9.89Zm5.42-7.43c-.3-.15-1.79-.88-2.07-.98-.28-.1-.48-.15-.69.15-.2.3-.79.98-.96 1.18-.18.2-.35.23-.65.08-.3-.15-1.24-.46-2.37-1.48-.88-.78-1.48-1.75-1.66-2.05-.18-.3-.02-.47.13-.62.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.69-1.67-.95-2.29-.25-.6-.5-.52-.69-.53h-.58c-.2 0-.53.08-.8.38-.28.3-1.06 1.03-1.06 2.5 0 1.48 1.08 2.9 1.22 3.1.15.2 2.11 3.23 5.11 4.53.71.31 1.27.49 1.7.63.72.23 1.37.2 1.89.12.58-.09 1.79-.73 2.04-1.44.25-.71.25-1.32.18-1.45-.08-.13-.28-.2-.58-.35Z" />
+    </svg>
+  );
+}
 
 export function TopCarsStrip() {
   return (
@@ -60,19 +74,29 @@ export function TopCarsStrip() {
                     <p className="text-[11px] font-medium tracking-wide text-[#5C4A76] uppercase">
                       Best Price
                     </p>
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        className="text-sm font-semibold text-[#D83B35] transition-colors hover:text-[#B82C27]"
-                      >
-                        Contact
-                      </button>
+                    <div className="flex items-center gap-2">
                       <Button
+                        asChild
                         size="sm"
-                        className="h-8 border-0 bg-[#2AD36A] px-3 text-xs text-white hover:bg-[#23BE5F]"
+                        className="h-9 flex-1 border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
                       >
-                        <MessageCircle className="size-3.5" />
-                        Quote
+                        <Link href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+                          Inquire Now
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        size="icon-sm"
+                        className="size-9 shrink-0 border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
+                      >
+                        <Link
+                          href={WHATSAPP_URL}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open WhatsApp chat for ${car.make} ${car.model}`}
+                        >
+                          <WhatsAppIcon className="size-4" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
