@@ -9,7 +9,7 @@ export function ContactCta() {
       id="contact"
       className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8"
     >
-      <div className="relative overflow-hidden rounded-3xl border border-white/20 brand-gradient-main p-6 text-primary-foreground shadow-2xl sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-white/20 brand-gradient-main p-6 text-white shadow-2xl sm:p-8 dark:border-white/15">
         <div className="pointer-events-none absolute -left-10 -top-10 h-36 w-36 rounded-full bg-[#FF653F]/45 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-10 right-8 h-36 w-36 rounded-full bg-[#FFC85C]/40 blur-2xl" />
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -17,7 +17,7 @@ export function ContactCta() {
             <h3 className="text-2xl font-semibold tracking-tight">
               Ready to import your next vehicle?
             </h3>
-            <p className="max-w-2xl text-sm text-primary-foreground/85 sm:text-base">
+            <p className="max-w-2xl text-sm text-white/85 sm:text-base">
               Share your budget and preferred model. Our team will send options,
               pricing, and shipment guidance tailored to your destination.
             </p>
@@ -35,7 +35,7 @@ export function ContactCta() {
             <Button
               asChild
               variant="outline"
-              className="border-white/45 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              className="border-white/45 bg-white/10 text-white hover:bg-white/20 hover:text-white dark:border-white/35 dark:bg-white/8"
             >
               <Link href="mailto:sales@afriditrading.com">
                 <Mail className="size-4" />

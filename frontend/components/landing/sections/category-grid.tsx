@@ -7,19 +7,19 @@ export function CategoryGrid({ items }: { items: CategoryItem[] }) {
       {items.map((item) => (
         <Card
           key={item.name}
-          className="overflow-hidden border-[#452E5A]/15 bg-white shadow-[0_14px_35px_-22px_rgba(30,16,78,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#FF653F]/45"
+          className="overflow-hidden border-[#452E5A]/15 bg-white shadow-[0_14px_35px_-22px_rgba(30,16,78,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#FF653F]/45 dark:border-white/10 dark:bg-[#150e2e]"
         >
           <div className="h-1 w-full brand-gradient-warm" />
           <CardHeader>
-            <CardTitle className="text-base text-[#1E104E]">
+            <CardTitle className="text-base text-[#1E104E] dark:text-white">
               {item.name}
             </CardTitle>
-            <CardDescription className="text-[#452E5A]/75">
+            <CardDescription className="text-[#452E5A]/75 dark:text-white/60">
               Available listings
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="inline-flex rounded-full border border-[#FF653F]/30 bg-[#FFF4EF] px-3 py-1 text-2xl font-semibold text-[#1E104E]">
+            <div className="inline-flex rounded-full border border-[#FF653F]/30 bg-[#FFF4EF] px-3 py-1 text-2xl font-semibold text-[#1E104E] dark:border-[#FF653F]/40 dark:bg-[#FF653F]/10 dark:text-white">
               {item.count}
             </div>
           </CardContent>

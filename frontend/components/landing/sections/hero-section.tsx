@@ -67,13 +67,13 @@ export function HeroSection({
         {stats.map((stat) => (
           <Card
             key={stat.label}
-            className="brand-glass overflow-hidden border-white/50 shadow-xl"
+            className="brand-glass overflow-hidden border-white/50 shadow-xl dark:border-white/10"
           >
             <CardHeader>
-              <CardDescription className="text-[#452E5A]/90">
+              <CardDescription className="text-[#452E5A]/90 dark:text-white/70">
                 {stat.label}
               </CardDescription>
-              <CardTitle className="text-2xl text-[#1E104E] sm:text-3xl">
+              <CardTitle className="text-2xl text-[#1E104E] sm:text-3xl dark:text-white">
                 {stat.value}
               </CardTitle>
             </CardHeader>

@@ -24,9 +24,9 @@ export function VehicleGrid({ vehicles }: { vehicles: VehicleItem[] }) {
         return (
         <Card
           key={vehicle.reference}
-          className="group overflow-hidden border-[#452E5A]/15 bg-white shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF653F]/45"
+          className="group overflow-hidden border-[#452E5A]/15 bg-white shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)] transition-all duration-300 hover:-translate-y-1 hover:border-[#FF653F]/45 dark:border-white/10 dark:bg-[#150e2e]"
         >
-          <div className="relative h-44 w-full overflow-hidden border-b border-[#452E5A]/10">
+          <div className="relative h-44 w-full overflow-hidden border-b border-[#452E5A]/10 dark:border-white/10">
             <Image
               src={imageSrc}
               alt={`${vehicle.make} ${vehicle.model}`}
@@ -38,30 +38,32 @@ export function VehicleGrid({ vehicles }: { vehicles: VehicleItem[] }) {
           <div className="h-1.5 w-full brand-gradient-warm" />
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="text-base text-[#1E104E]">
+              <CardTitle className="text-base text-[#1E104E] dark:text-white">
                 {vehicle.make} {vehicle.model}
               </CardTitle>
               {vehicle.highlight ? (
-                <Badge className="border-0 bg-[#452E5A]/10 text-[#452E5A]">
+                <Badge className="border-0 bg-[#452E5A]/10 text-[#452E5A] dark:bg-white/10 dark:text-white/85">
                   {vehicle.highlight}
                 </Badge>
               ) : null}
             </div>
-            <CardDescription className="text-[#452E5A]/75">
+            <CardDescription className="text-[#452E5A]/75 dark:text-white/60">
               {vehicle.year} • {vehicle.engine}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
-            <p className="text-3xl font-semibold tracking-tight text-[#1E104E]">
+            <p className="text-3xl font-semibold tracking-tight text-[#1E104E] dark:text-white">
               {vehicle.price}
             </p>
-            <p className="text-sm text-[#452E5A]/70">Ref #{vehicle.reference}</p>
+            <p className="text-sm text-[#452E5A]/70 dark:text-white/55">
+              Ref #{vehicle.reference}
+            </p>
           </CardContent>
-          <CardFooter className="grid grid-cols-2 gap-2 border-t border-[#452E5A]/10 bg-[#F8F5FF]/70">
+          <CardFooter className="grid grid-cols-2 gap-2 border-t border-[#452E5A]/10 bg-[#F8F5FF]/70 dark:border-white/10 dark:bg-white/5">
             <Button
               variant="outline"
               size="sm"
-              className="w-full border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8"
+              className="w-full border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white/85 dark:hover:bg-white/10"
             >
               View Details
             </Button>

@@ -30,9 +30,9 @@ import { SiteNavbar } from "@/components/landing/site-navbar";
 
 export default function Home() {
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef]">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#452E5A]/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-44 h-80 w-80 rounded-full bg-[#FF653F]/20 blur-3xl" />
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef] dark:from-[#0c0720] dark:via-[#120932] dark:to-[#1a0e3d]">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#452E5A]/20 blur-3xl dark:bg-[#FF653F]/15" />
+      <div className="pointer-events-none absolute -right-24 top-44 h-80 w-80 rounded-full bg-[#FF653F]/20 blur-3xl dark:bg-[#FFC85C]/10" />
       <NoticeBar text={noticeText} />
       <SiteNavbar />
       <main className="relative z-10 pb-6 pt-2 sm:pt-3">
