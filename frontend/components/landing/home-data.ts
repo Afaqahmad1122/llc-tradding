@@ -7,6 +7,16 @@ export type CategoryItem = {
   count: number;
 };
 
+export type SidebarItem = {
+  name: string;
+  count: number;
+};
+
+export type CurrencyItem = {
+  code: string;
+  active?: boolean;
+};
+
 export type VehicleItem = {
   make: string;
   model: string;
@@ -157,4 +167,61 @@ export const testimonials: TestimonialItem[] = [
     quote:
       "The purchase process was transparent and hassle free. Communication stayed clear at every step, and the vehicle matched the listing details.",
   },
+];
+
+export const makeSidebarItems: SidebarItem[] = [
+  { name: "Toyota", count: 18025 },
+  { name: "Nissan", count: 6217 },
+  { name: "Honda", count: 3891 },
+  { name: "Mazda", count: 2625 },
+  { name: "Mitsubishi", count: 816 },
+  { name: "Subaru", count: 862 },
+  { name: "Suzuki", count: 3006 },
+  { name: "Daihatsu", count: 1253 },
+  { name: "Lexus", count: 879 },
+  { name: "Isuzu", count: 284 },
+  { name: "Audi", count: 345 },
+  { name: "BMW", count: 737 },
+];
+
+export const priceSidebarItems: SidebarItem[] = [
+  { name: "$500 - $1,500", count: 2420 },
+  { name: "$1,500 - $2,000", count: 8831 },
+  { name: "$2,000 - $2,500", count: 6241 },
+  { name: "$2,500 - $3,000", count: 5501 },
+  { name: "$3,000 - $3,500", count: 4898 },
+  { name: "$3,500 - $4,000", count: 4310 },
+  { name: "$4,000 - $4,500", count: 3772 },
+  { name: "$4,500 - $5,000", count: 3319 },
+  { name: "$5,000 - $6,000", count: 6028 },
+  { name: "$6,000 - $7,000", count: 4912 },
+  { name: "$7,000 - $8,000", count: 4264 },
+  { name: "$8,000 - $9,000", count: 3522 },
+  { name: "$9,000 - $10,000", count: 2417 },
+];
+
+export const bodyTypeSidebarItems = [
+  "Sedan",
+  "Hatchback",
+  "Station Wagon",
+  "SUV",
+  "Wagon",
+  "Truck",
+  "Van",
+];
+
+export const currencyItems: CurrencyItem[] = [
+  { code: "USD" },
+  { code: "JPY" },
+  { code: "EUR", active: true },
+  { code: "GBP" },
+];
+
+export const rightSidebarFilters = [
+  "Make",
+  "Model",
+  "Model Code",
+  "Steering",
+  "Year From",
+  "Year To",
 ];

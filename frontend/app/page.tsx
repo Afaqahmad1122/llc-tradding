@@ -1,10 +1,15 @@
 "use client";
 import {
+  bodyTypeSidebarItems,
   categories,
+  currencyItems,
   featuredVehicles,
   heroFilters,
   latestVehicles,
+  makeSidebarItems,
   noticeText,
+  priceSidebarItems,
+  rightSidebarFilters,
   stats,
   testimonials,
 } from "@/components/landing/home-data";
@@ -12,12 +17,14 @@ import {
   CategoryGrid,
   ContactCta,
   HeroSection,
+  MarketplaceWithSidebars,
   NoticeBar,
   SectionBlock,
   TestimonialGrid,
   TrustFeatures,
   VehicleGrid,
 } from "@/components/landing/home-sections";
+import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteNavbar } from "@/components/landing/site-navbar";
 
 export default function Home() {
@@ -29,42 +36,51 @@ export default function Home() {
       <SiteNavbar />
       <main className="relative z-10 pb-6">
         <HeroSection filters={heroFilters} stats={stats} />
-        <SectionBlock
-          id="featured"
-          title="Featured Collection"
-          description="A curated selection based on demand, quality checks, and export readiness."
+        <MarketplaceWithSidebars
+          makes={makeSidebarItems}
+          priceRanges={priceSidebarItems}
+          currencies={currencyItems}
+          filters={rightSidebarFilters}
+          bodyTypes={bodyTypeSidebarItems}
         >
-          <VehicleGrid vehicles={featuredVehicles} />
-        </SectionBlock>
-        <SectionBlock
-          title="Inventory Categories"
-          description="Browse stock by inventory stream to quickly identify what matches your market."
-        >
-          <CategoryGrid items={categories} />
-        </SectionBlock>
-        <SectionBlock
-          id="inventory"
-          title="Latest Arrivals"
-          description="Freshly listed vehicles with reference IDs and target pricing for quick decisions."
-        >
-          <VehicleGrid vehicles={latestVehicles} />
-        </SectionBlock>
-        <SectionBlock
-          id="about"
-          title="Why Buyers Work With Us"
-          description="Same business purpose as the reference platform, but intentionally redesigned with reusable blocks."
-        >
-          <TrustFeatures />
-        </SectionBlock>
-        <SectionBlock
-          id="reviews"
-          title="Customer Reviews"
-          description="Feedback from importers who received vehicles in line with listing and expectation."
-        >
-          <TestimonialGrid items={testimonials} />
-        </SectionBlock>
-        <ContactCta />
+          <SectionBlock
+            id="featured"
+            title="Featured Collection"
+            description="A curated selection based on demand, quality checks, and export readiness."
+          >
+            <VehicleGrid vehicles={featuredVehicles} />
+          </SectionBlock>
+          <SectionBlock
+            title="Inventory Categories"
+            description="Browse stock by inventory stream to quickly identify what matches your market."
+          >
+            <CategoryGrid items={categories} />
+          </SectionBlock>
+          <SectionBlock
+            id="inventory"
+            title="Latest Arrivals"
+            description="Freshly listed vehicles with reference IDs and target pricing for quick decisions."
+          >
+            <VehicleGrid vehicles={latestVehicles} />
+          </SectionBlock>
+          <SectionBlock
+            id="about"
+            title="Why Buyers Work With Us"
+            description="Same business purpose as the reference platform, but intentionally redesigned with reusable blocks."
+          >
+            <TrustFeatures />
+          </SectionBlock>
+          <SectionBlock
+            id="reviews"
+            title="Customer Reviews"
+            description="Feedback from importers who received vehicles in line with listing and expectation."
+          >
+            <TestimonialGrid items={testimonials} />
+          </SectionBlock>
+          <ContactCta />
+        </MarketplaceWithSidebars>
       </main>
+      <SiteFooter />
     </div>
   );
 }
