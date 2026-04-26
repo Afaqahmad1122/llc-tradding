@@ -18,6 +18,15 @@ const envSchema = z.object({
   COOKIE_SECRET: z.string().min(64),
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL: z.string().default("7d"),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z
+    .string()
+    .default("false")
+    .transform((value) => value.toLowerCase() === "true"),
+  SMTP_USER: z.string().email(),
+  SMTP_PASS: z.string().min(1),
+  MAIL_FROM: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

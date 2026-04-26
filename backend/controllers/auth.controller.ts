@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
 import { refreshCookieOptions } from "../config/security.js";
+import { generateOtpCode, sendVerificationOtpEmail } from "../utils/email.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import {
   getTokenExpiryDate,
@@ -96,7 +97,23 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
   const auth = getAuthResponse(user);
   setRefreshCookie(res, auth.refreshToken);
-  res.status(201).json({ accessToken: auth.accessToken, user: auth.user });
+
+  try {
+    const otpCode = generateOtpCode();
+    await sendVerificationOtpEmail(user.email, user.name, otpCode);
+  } catch (error) {
+    console.error("Verification OTP email send failed", error);
+    res.status(500).json({ message: "account created but failed to send verification code email" });
+    return;
+  }
+
+  res.status(201).json({
+    accessToken: auth.accessToken,
+    user: auth.user,
+    verification: {
+      otpSent: true,
+    },
+  });
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
