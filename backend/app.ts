@@ -8,6 +8,7 @@ import hpp from "hpp";
 import morgan from "morgan";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
+import { authRouter } from "./routes/auth.route.js";
 import { healthRouter } from "./routes/health.route.js";
 
 export const app = express();
@@ -39,6 +40,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/health", healthRouter);
+app.use("/auth", authRouter);
 
 app.use((req: Request, res: Response) => {
   notFoundHandler(req, res);
