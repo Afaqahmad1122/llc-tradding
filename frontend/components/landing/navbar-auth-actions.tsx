@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CircleUserRound, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useLogoutMutation } from "@/hooks/use-logout-mutation";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -13,7 +22,7 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation.mutateAsync();
+      await logoutMutation.mutateAsync(undefined);
       router.push("/");
       router.refresh();
     } catch {
@@ -68,46 +77,86 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="flex-1 border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
-        >
-          {user.name}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleLogout}
-          disabled={logoutMutation.isPending}
-          className="flex-1 border-0 bg-linear-to-r from-[#1E104E] to-[#452E5A] text-white hover:opacity-90"
-        >
-          {logoutMutation.isPending ? "..." : "Logout"}
-        </Button>
+        <div className="flex w-full items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="h-11 w-11 border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
+                aria-label="Open user menu"
+              >
+                <CircleUserRound className="size-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <User className="size-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="size-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+                variant="destructive"
+              >
+                <LogOut className="size-4" />
+                {logoutMutation.isPending ? "Logging out..." : "Logout"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
-      >
-        {user.name}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        onClick={handleLogout}
-        disabled={logoutMutation.isPending}
-        className="border-0 bg-linear-to-r from-[#1E104E] to-[#452E5A] text-white hover:opacity-90"
-      >
-        {logoutMutation.isPending ? "..." : "Logout"}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="h-11 w-11 border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
+            aria-label="Open user menu"
+          >
+            <CircleUserRound className="size-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/profile">
+              <User className="size-4" />
+              Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Settings className="size-4" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+            variant="destructive"
+          >
+            <LogOut className="size-4" />
+            {logoutMutation.isPending ? "Logging out..." : "Logout"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 }

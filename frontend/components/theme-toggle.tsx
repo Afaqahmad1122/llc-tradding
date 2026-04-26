@@ -22,11 +22,11 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label="Toggle theme"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className={
-        "size-9 border-[#452E5A]/25 bg-white text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 " +
+        "h-11 w-11 border-[#452E5A]/25 bg-white text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 " +
         (className ?? "")
       }
     >
-      {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+      {isDark ? <Moon className="size-5" /> : <Sun className="size-5" />}
     </Button>
   );
 }

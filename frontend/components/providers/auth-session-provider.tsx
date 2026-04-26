@@ -12,6 +12,7 @@ type AuthSessionProviderProps = {
 export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   const setAuthUser = useAuthStore((state) => state.setAuthUser);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setBootstrapped = useAuthStore((state) => state.setBootstrapped);
 
   useEffect(() => {
     let isMounted = true;
@@ -28,6 +29,11 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
           return;
         }
         clearAuth();
+      } finally {
+        if (!isMounted) {
+          return;
+        }
+        setBootstrapped(true);
       }
     };
 
@@ -36,7 +42,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     return () => {
       isMounted = false;
     };
-  }, [clearAuth, setAuthUser]);
+  }, [clearAuth, setAuthUser, setBootstrapped]);
 
   return <>{children}</>;
 }
