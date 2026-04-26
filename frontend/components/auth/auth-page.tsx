@@ -39,32 +39,35 @@ export function AuthPage({
   return (
     <div className="relative flex min-h-screen flex-col bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef] dark:from-[#0c0720] dark:via-[#120932] dark:to-[#1a0e3d]">
       <SiteNavbar />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-        <Card className="w-full max-w-md border-[#452E5A]/15 bg-white/90 shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)] dark:bg-[#150e2e]/85">
-          <CardHeader>
-            <CardTitle className="text-2xl">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-4 py-14 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-lg border-[#452E5A]/15 bg-white/90 shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)] dark:bg-[#150e2e]/85">
+          <CardHeader className="space-y-2 px-8 pt-8">
+            <CardTitle className="text-3xl">{title}</CardTitle>
+            <CardDescription className="text-base">{description}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form className="space-y-4" noValidate>
+          <CardContent className="px-8 pb-8">
+            <form className="space-y-5" noValidate>
               {fields.map((field) => (
-                <div className="space-y-2" key={field.id}>
-                  <Label htmlFor={field.id}>{field.label}</Label>
+                <div className="space-y-2.5" key={field.id}>
+                  <Label htmlFor={field.id} className="text-base">
+                    {field.label}
+                  </Label>
                   <Input
                     id={field.id}
                     name={field.id}
                     type={field.type}
                     autoComplete={field.autoComplete}
                     placeholder={field.placeholder}
+                    className="h-12 text-base"
                     required
                   />
                 </div>
               ))}
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="h-12 w-full text-base">
                 {submitLabel}
               </Button>
             </form>
-            <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
+            <div className="mt-6 space-y-2 text-center text-base text-muted-foreground">
               <p>
                 {footerText}{" "}
                 <Link href={footerLinkHref} className="font-medium text-primary hover:underline">
