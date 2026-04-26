@@ -51,16 +51,16 @@ export function SiteNavbar() {
     <header className="sticky top-0 z-40 border-b border-[#452E5A]/15 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#0c0720]/80">
       <div className="mx-auto flex w-full max-w-304 items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
         <Link href="/" className="group flex min-w-0 items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-lg border border-[#452E5A]/20 bg-white shadow-sm dark:border-white/15 dark:bg-white/5">
-            <span className="bg-linear-to-r from-[#1E104E] via-[#452E5A] to-[#FF653F] bg-clip-text text-lg font-extrabold text-transparent">
-              L
+          <div className="flex size-9 items-center justify-center rounded-lg border border-[#452E5A]/20 bg-white shadow-sm dark:border-white/30 dark:bg-white/10">
+            <span className="bg-linear-to-r from-[#1E104E] via-[#452E5A] to-[#FF653F] bg-clip-text text-lg font-extrabold text-transparent dark:from-white dark:via-white dark:to-[#FFC85C]">
+              I
             </span>
           </div>
           <div className="min-w-0">
-            <p className="truncate font-heading text-lg leading-none font-bold tracking-tight bg-linear-to-r from-[#1E104E] via-[#452E5A] to-[#FF653F] bg-clip-text text-transparent sm:text-xl">
-              LLC Trading
+            <p className="truncate font-heading text-lg leading-none font-bold tracking-tight bg-linear-to-r from-[#1E104E] via-[#452E5A] to-[#FF653F] bg-clip-text text-transparent sm:text-xl dark:from-white dark:via-white dark:to-[#FFC85C]">
+              Icc Trading Co Ltd
             </p>
-            <p className="hidden truncate text-[11px] text-[#452E5A]/80 sm:block dark:text-white/60">
+            <p className="hidden truncate text-[11px] text-[#452E5A]/80 sm:block dark:text-white/85">
               Premium Japanese Vehicle Export
             </p>
           </div>

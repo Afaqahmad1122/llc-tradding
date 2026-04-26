@@ -16,7 +16,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "LLC Trading | Used Cars Japan",
+  title: "Icc Trading | Used Cars Japan",
   description:
     "Discover export-ready Japanese used cars with clear pricing, category browsing, and direct quote support.",
 };

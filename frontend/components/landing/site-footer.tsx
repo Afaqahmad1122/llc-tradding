@@ -26,7 +26,7 @@ export function SiteFooter() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
           <div className="space-y-4">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
-              <p className="text-xl font-bold tracking-tight">LLC Trading Japan</p>
+              <p className="text-xl font-bold tracking-tight">Icc Trading Japan</p>
               <p className="mt-1 text-sm text-white/75">
                 Trusted Japanese vehicle exporter with transparent process.
               </p>
@@ -108,7 +108,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/10 bg-[#120A2F]/60">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-4 text-xs text-white/70 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <p>© 2026 LLC Trading. All rights reserved.</p>
+          <p>© 2026 Icc Trading. All rights reserved.</p>
           <div className="flex flex-wrap gap-4">
             <Link href="#" className="hover:text-white">
               Terms and Conditions
