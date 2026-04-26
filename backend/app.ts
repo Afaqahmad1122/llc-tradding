@@ -1,6 +1,10 @@
+/// <reference types="cookie-parser" />
+/// <reference types="hpp" />
+
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import express from "express";
+import type { NextFunction, Request, Response, RequestHandler } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import hpp from "hpp";
@@ -28,8 +32,8 @@ app.use(
 );
 app.use(morgan("combined"));
 app.use(apiLimiter);
-app.use(hpp());
-app.use(cookieParser(env.COOKIE_SECRET));
+app.use(hpp() as unknown as RequestHandler);
+app.use(cookieParser(env.COOKIE_SECRET) as unknown as RequestHandler);
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
@@ -39,5 +43,9 @@ app.get("/", (_req, res) => {
 
 app.use("/health", healthRouter);
 
-app.use(notFoundHandler);
-app.use(errorHandler);
+app.use((req: Request, res: Response) => {
+  notFoundHandler(req, res);
+});
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  errorHandler(err, req, res, next);
+});

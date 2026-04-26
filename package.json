@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/hpp": "^0.2.7"
+  }
+}
