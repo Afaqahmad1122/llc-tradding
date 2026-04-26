@@ -12,7 +12,7 @@ export const errorHandler = (
   error: unknown,
   _req: Request,
   res: Response<ErrorResponse>,
-  _next: NextFunction
+  _next: NextFunction,
 ): void => {
   const statusCode = 500;
   const message = error instanceof Error ? error.message : "Internal server error";

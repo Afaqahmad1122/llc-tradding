@@ -24,7 +24,7 @@ app.use(
   cors({
     origin: env.CORS_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 app.use(morgan("combined"));
 app.use(apiLimiter);

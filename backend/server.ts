@@ -2,7 +2,6 @@ import { app } from "./app.js";
 import { env } from "./config/env.js";
 
 const server = app.listen(env.PORT, () => {
-  // Minimal startup log for local/dev observability.
   console.log(`Backend running on port ${env.PORT}`);
 });
 
