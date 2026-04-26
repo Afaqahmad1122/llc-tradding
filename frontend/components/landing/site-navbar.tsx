@@ -49,7 +49,7 @@ const navItems: NavItem[] = [
 export function SiteNavbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-[#452E5A]/15 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#0c0720]/80">
-      <div className="mx-auto flex w-full max-w-304 items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
+      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
         <Link href="/" className="group flex min-w-0 items-center gap-2">
           <div className="flex size-9 items-center justify-center rounded-lg border border-[#452E5A]/20 bg-white shadow-sm dark:border-white/30 dark:bg-white/10">
             <span className="bg-linear-to-r from-[#1E104E] via-[#452E5A] to-[#FF653F] bg-clip-text text-lg font-extrabold text-transparent dark:from-white dark:via-white dark:to-[#FFC85C]">
@@ -72,7 +72,7 @@ export function SiteNavbar() {
               <div key={item.label} className="group relative">
                 <button
                   type="button"
-                  className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                  className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
                 >
                   {item.label}
                   <ChevronDown className="size-3.5" />
@@ -93,7 +93,7 @@ export function SiteNavbar() {
               <Link
                 key={item.label}
                 href={item.href ?? "#"}
-                className="rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 {item.label}
               </Link>

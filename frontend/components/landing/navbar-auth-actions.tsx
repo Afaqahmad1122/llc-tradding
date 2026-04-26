@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CircleUserRound, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,15 +15,12 @@ import { useLogoutMutation } from "@/hooks/use-logout-mutation";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
-  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const logoutMutation = useLogoutMutation();
 
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync(undefined);
-      router.push("/");
-      router.refresh();
     } catch {
       return;
     }
