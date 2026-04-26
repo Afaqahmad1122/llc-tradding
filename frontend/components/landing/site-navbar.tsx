@@ -104,17 +104,19 @@ export function SiteNavbar() {
         <div className="hidden items-center gap-2 lg:flex">
           <ThemeToggle />
           <Button
+            asChild
             variant="outline"
             size="sm"
             className="border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
           >
-            Login
+            <Link href="/login">Login</Link>
           </Button>
           <Button
+            asChild
             size="sm"
             className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
           >
-            Register
+            <Link href="/signup">Register</Link>
           </Button>
         </div>
 
@@ -159,17 +161,19 @@ export function SiteNavbar() {
               </nav>
               <div className="mt-2 flex gap-2 border-t border-[#452E5A]/10 pt-2 dark:border-white/10">
                 <Button
+                  asChild
                   variant="outline"
                   size="sm"
                   className="flex-1 border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
                 >
-                  Login
+                  <Link href="/login">Login</Link>
                 </Button>
                 <Button
+                  asChild
                   size="sm"
                   className="flex-1 border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
                 >
-                  Register
+                  <Link href="/signup">Register</Link>
                 </Button>
               </div>
             </div>
