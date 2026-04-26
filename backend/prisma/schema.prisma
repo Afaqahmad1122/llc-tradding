@@ -17,6 +17,11 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  phone        String?
+  country      String?
+  city         String?
+  address      String?
+  postalCode   String?
   role         UserRole @default(USER)
   isActive     Boolean  @default(true)
   emailVerifiedAt DateTime?

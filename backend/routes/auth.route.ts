@@ -7,8 +7,10 @@ import {
   refresh,
   register,
   resetPassword,
+  updateProfile,
   verifyOtp,
 } from "../controllers/auth.controller.js";
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 export const authRouter = Router();
 
@@ -20,3 +22,4 @@ authRouter.post("/login", login);
 authRouter.post("/admin/login", adminLogin);
 authRouter.post("/refresh", refresh);
 authRouter.post("/logout", logout);
+authRouter.patch("/profile", requireAuth, updateProfile);

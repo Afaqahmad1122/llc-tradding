@@ -31,7 +31,35 @@ type AuthBody = {
   otp?: string;
   newPassword?: string;
   confirmNewPassword?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  postalCode?: string;
 };
+
+type PublicUser = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  postalCode: string | null;
+  role: string;
+};
+
+const PROFILE_FIELD_KEYS = ["phone", "country", "city", "address", "postalCode"] as const;
+const PROFILE_MAX_LENGTHS = {
+  phone: 32,
+  country: 100,
+  city: 100,
+  address: 255,
+  postalCode: 20,
+} as const;
+const POSTAL_CODE_PATTERN = /^[a-z0-9\s-]+$/i;
+const PHONE_PATTERN = /^\+?[0-9()\-\s]{7,20}$/;
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 const normalizeOtp = (otp: string): string => otp.trim();
@@ -46,7 +74,7 @@ const setRefreshCookie = (res: Response, token: string): void => {
   });
 };
 
-const getAuthResponse = (user: { id: string; name: string; email: string; role: string }) => {
+const getAuthResponse = (user: PublicUser) => {
   const payload = { sub: user.id, role: user.role };
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
@@ -58,15 +86,25 @@ const getAuthResponse = (user: { id: string; name: string; email: string; role: 
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
+      country: user.country,
+      city: user.city,
+      address: user.address,
+      postalCode: user.postalCode,
       role: user.role,
     },
   };
 };
 
-const getPublicUser = (user: { id: string; name: string; email: string; role: string }) => ({
+const getPublicUser = (user: PublicUser) => ({
   id: user.id,
   name: user.name,
   email: user.email,
+  phone: user.phone,
+  country: user.country,
+  city: user.city,
+  address: user.address,
+  postalCode: user.postalCode,
   role: user.role,
 });
 
@@ -90,12 +128,54 @@ const findUserForLogin = async (email: string) => {
       id: true,
       name: true,
       email: true,
+      phone: true,
+      country: true,
+      city: true,
+      address: true,
+      postalCode: true,
       role: true,
       passwordHash: true,
       emailVerifiedAt: true,
       isActive: true,
     },
   });
+};
+
+const parseProfileData = (
+  body: AuthBody,
+  mode: "register" | "update",
+): { data: Partial<Record<(typeof PROFILE_FIELD_KEYS)[number], string | null>>; error?: string } => {
+  const data: Partial<Record<(typeof PROFILE_FIELD_KEYS)[number], string | null>> = {};
+  for (const key of PROFILE_FIELD_KEYS) {
+    const rawValue = body[key];
+    if (rawValue === undefined) {
+      continue;
+    }
+
+    const value = rawValue.trim();
+    if (!value) {
+      if (mode === "update") {
+        data[key] = null;
+      }
+      continue;
+    }
+
+    if (value.length > PROFILE_MAX_LENGTHS[key]) {
+      return { data: {}, error: `${key} exceeds allowed length` };
+    }
+
+    if (key === "phone" && !PHONE_PATTERN.test(value)) {
+      return { data: {}, error: "invalid phone format" };
+    }
+
+    if (key === "postalCode" && !POSTAL_CODE_PATTERN.test(value)) {
+      return { data: {}, error: "invalid postalCode format" };
+    }
+
+    data[key] = value;
+  }
+
+  return { data };
 };
 
 const verifyLoginEligibility = async (
@@ -133,6 +213,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 
   const normalizedEmail = normalizeEmail(email);
+  const parsedProfile = parseProfileData(body, "register");
+  if (parsedProfile.error) {
+    res.status(400).json({ message: parsedProfile.error });
+    return;
+  }
   const otpCode = generateOtpCode();
   const otpCodeHash = hashOtpCode(normalizedEmail, otpCode);
   const otpCodeExpiresAt = getOtpExpiryDate();
@@ -157,11 +242,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       otpCodeHash,
       otpCodeExpiresAt,
       otpCodeSentAt,
+      ...parsedProfile.data,
     },
     select: {
       id: true,
       name: true,
       email: true,
+      phone: true,
+      country: true,
+      city: true,
+      address: true,
+      postalCode: true,
       role: true,
     },
   });
@@ -204,6 +295,11 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
       id: true,
       name: true,
       email: true,
+      phone: true,
+      country: true,
+      city: true,
+      address: true,
+      postalCode: true,
       role: true,
       isActive: true,
       emailVerifiedAt: true,
@@ -262,6 +358,11 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
       id: true,
       name: true,
       email: true,
+      phone: true,
+      country: true,
+      city: true,
+      address: true,
+      postalCode: true,
       role: true,
     },
   });
@@ -470,7 +571,18 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     const payload = verifyRefreshToken(refreshToken);
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, name: true, email: true, role: true, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        country: true,
+        city: true,
+        address: true,
+        postalCode: true,
+        role: true,
+        isActive: true,
+      },
     });
 
     if (!user || !user.isActive) {
@@ -486,6 +598,44 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
     res.status(401).json({ message: "invalid refresh token" });
   }
+};
+
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+  const userId = res.locals.authUserId as string | undefined;
+  if (!userId) {
+    res.status(401).json({ message: "unauthorized" });
+    return;
+  }
+
+  const body = req.body as AuthBody;
+  const parsedProfile = parseProfileData(body, "update");
+  if (parsedProfile.error) {
+    res.status(400).json({ message: parsedProfile.error });
+    return;
+  }
+
+  if (Object.keys(parsedProfile.data).length === 0) {
+    res.status(400).json({ message: "at least one profile field is required" });
+    return;
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: parsedProfile.data,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      country: true,
+      city: true,
+      address: true,
+      postalCode: true,
+      role: true,
+    },
+  });
+
+  res.status(200).json({ user: getPublicUser(updatedUser) });
 };
 
 export const logout = (_req: Request, res: Response): void => {
