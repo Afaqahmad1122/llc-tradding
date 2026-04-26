@@ -24,6 +24,10 @@ model User {
   otpCodeExpiresAt DateTime?
   otpCodeAttempts Int      @default(0)
   otpCodeSentAt   DateTime?
+  passwordResetOtpHash String?
+  passwordResetOtpExpiresAt DateTime?
+  passwordResetOtpAttempts Int @default(0)
+  passwordResetOtpSentAt DateTime?
   createdCars  Car[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

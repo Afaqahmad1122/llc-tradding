@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "User"
+ADD COLUMN "passwordResetOtpHash" TEXT,
+ADD COLUMN "passwordResetOtpExpiresAt" TIMESTAMP(3),
+ADD COLUMN "passwordResetOtpAttempts" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "passwordResetOtpSentAt" TIMESTAMP(3);

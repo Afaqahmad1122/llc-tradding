@@ -11,11 +11,11 @@ const mailTransporter = nodemailer.createTransport({
   },
 });
 
-const otpTemplate = (name: string, code: string): string => `
+const otpTemplate = (name: string, code: string, title: string, purposeText: string): string => `
 <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #111827;">
-  <h2 style="margin-bottom: 12px;">Email verification code</h2>
+  <h2 style="margin-bottom: 12px;">${title}</h2>
   <p>Hi ${name},</p>
-  <p>Your OTP for LLC Trading account verification is:</p>
+  <p>${purposeText}</p>
   <p style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 12px 0;">
     ${code}
   </p>
@@ -23,16 +23,49 @@ const otpTemplate = (name: string, code: string): string => `
 </div>
 `;
 
+const sendOtpEmail = async (
+  email: string,
+  name: string,
+  code: string,
+  subject: string,
+  title: string,
+  purposeText: string,
+): Promise<void> => {
+  await mailTransporter.sendMail({
+    from: env.MAIL_FROM,
+    to: email,
+    subject,
+    html: otpTemplate(name, code, title, purposeText),
+    text: `Hi ${name}, ${purposeText} ${code}. This code expires in 10 minutes.`,
+  });
+};
+
 export const sendVerificationOtpEmail = async (
   email: string,
   name: string,
   code: string,
 ): Promise<void> => {
-  await mailTransporter.sendMail({
-    from: env.MAIL_FROM,
-    to: email,
-    subject: "Your LLC Trading verification code",
-    html: otpTemplate(name, code),
-    text: `Hi ${name}, your LLC Trading verification code is ${code}. This code expires in 10 minutes.`,
-  });
+  await sendOtpEmail(
+    email,
+    name,
+    code,
+    "Your LLC Trading verification code",
+    "Email verification code",
+    "Your OTP for LLC Trading account verification is:",
+  );
+};
+
+export const sendPasswordResetOtpEmail = async (
+  email: string,
+  name: string,
+  code: string,
+): Promise<void> => {
+  await sendOtpEmail(
+    email,
+    name,
+    code,
+    "Your LLC Trading password reset code",
+    "Password reset code",
+    "Your OTP to reset your LLC Trading password is:",
+  );
 };

@@ -34,3 +34,7 @@ export const getOtpExpiryDate = (): Date => {
 export const isOtpExpired = (expiresAt: Date): boolean => expiresAt.getTime() <= Date.now();
 
 export const getOtpMaxAttempts = (): number => OTP_MAX_ATTEMPTS;
+
+export const isOtpFormatValid = (otp: string): boolean => {
+  return new RegExp(`^\\d{${OTP_LENGTH}}$`).test(otp.trim());
+};
