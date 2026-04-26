@@ -6,6 +6,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
+  BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(8).max(15).default(12),
   DATABASE_URL: z.string().min(1),
   CORS_ORIGIN: z.string().url(),
   AWS_REGION: z.string().default(""),
