@@ -14,11 +14,12 @@ type AuthField = {
 };
 
 type AuthPageProps = {
-  mode: "login" | "signup";
+  mode: "login" | "signup" | "verify";
   title: string;
   description: string;
   submitLabel: string;
   fields: AuthField[];
+  initialValues?: Partial<Record<string, string>>;
   footerText: string;
   footerLinkLabel: string;
   footerLinkHref: string;
@@ -31,6 +32,7 @@ export function AuthPage({
   description,
   submitLabel,
   fields,
+  initialValues,
   footerText,
   footerLinkLabel,
   footerLinkHref,
@@ -46,7 +48,12 @@ export function AuthPage({
             <CardDescription className="text-base">{description}</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
-            <AuthForm mode={mode} fields={fields} submitLabel={submitLabel} />
+            <AuthForm
+              mode={mode}
+              fields={fields}
+              submitLabel={submitLabel}
+              initialValues={initialValues}
+            />
             <div className="mt-6 space-y-2 text-center text-base text-muted-foreground">
               <p>
                 {footerText}{" "}

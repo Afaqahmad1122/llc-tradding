@@ -321,7 +321,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   }
 
   if (user.emailVerifiedAt) {
-    sendAuthSuccess(res, user);
+    res.status(200).json({ message: "email already verified, please login" });
     return;
   }
 
@@ -350,7 +350,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const verifiedUser = await prisma.user.update({
+  await prisma.user.update({
     where: { id: user.id },
     data: {
       emailVerifiedAt: new Date(),
@@ -358,20 +358,9 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
       otpCodeExpiresAt: null,
       otpCodeAttempts: 0,
     },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      country: true,
-      city: true,
-      address: true,
-      postalCode: true,
-      role: true,
-    },
   });
 
-  sendAuthSuccess(res, verifiedUser);
+  res.status(200).json({ message: "email verified successfully, please login" });
 };
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
