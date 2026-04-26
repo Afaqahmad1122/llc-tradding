@@ -37,7 +37,7 @@ export function ContactCta() {
               variant="outline"
               className="border-white/45 bg-white/10 text-white hover:bg-white/20 hover:text-white dark:border-white/35 dark:bg-white/8"
             >
-              <Link href="mailto:sales@afriditrading.com">
+              <Link href="mailto:icctradingjp@gmail.com">
                 <Mail className="size-4" />
                 Email Us
               </Link>

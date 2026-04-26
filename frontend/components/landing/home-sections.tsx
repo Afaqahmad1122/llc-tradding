@@ -1,5 +1,6 @@
 export { NoticeBar } from "@/components/landing/sections/notice-bar";
 export { HeroSection } from "@/components/landing/sections/hero-section";
+export { PromoBannerStrip } from "@/components/landing/sections/promo-banner-strip";
 export { MarketplaceWithSidebars } from "@/components/landing/sections/marketplace-with-sidebars";
 export { SectionBlock } from "@/components/landing/sections/section-block";
 export { CategoryGrid } from "@/components/landing/sections/category-grid";

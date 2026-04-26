@@ -1,0 +1,7 @@
+<svg width="640" height="160" viewBox="0 0 640 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="640" height="160" rx="16" fill="#1B1B1B"/>
+<rect x="28" y="28" width="104" height="104" rx="14" fill="#2E2E2E"/>
+<path d="M50 96L108 44" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+<text x="158" y="74" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="40" font-weight="800">JAPANESE</text>
+<text x="158" y="116" fill="#DADADA" font-family="Arial, sans-serif" font-size="34" font-weight="700">USED CAR AUCTION</text>
+</svg>

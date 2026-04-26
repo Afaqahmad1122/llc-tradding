@@ -9,6 +9,7 @@ import {
   makeSidebarItems,
   noticeText,
   priceSidebarItems,
+  promoBanners,
   rightSidebarFilters,
   stats,
   testimonials,
@@ -19,6 +20,7 @@ import {
   HeroSection,
   MarketplaceWithSidebars,
   NoticeBar,
+  PromoBannerStrip,
   SectionBlock,
   TestimonialGrid,
   TopCarsStrip,
@@ -44,6 +46,7 @@ export default function Home() {
           bodyTypes={bodyTypeSidebarItems}
         >
           <HeroSection filters={heroFilters} stats={stats} />
+          <PromoBannerStrip items={promoBanners} />
           <TopCarsStrip />
           <SectionBlock
             id="featured"

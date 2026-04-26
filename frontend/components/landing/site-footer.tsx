@@ -62,11 +62,11 @@ export function SiteFooter() {
                 +81 70-6436-2003
               </Link>
               <Link
-                href="mailto:sales@afriditrading.com"
+                href="mailto:icctradingjp@gmail.com"
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <Mail className="size-4 text-[#FFC85C]" />
-                sales@afriditrading.com
+                icctradingjp@gmail.com
               </Link>
             </div>
           </div>

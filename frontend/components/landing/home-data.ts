@@ -34,6 +34,12 @@ export type TestimonialItem = {
   rating: string;
 };
 
+export type PromoBannerItem = {
+  title: string;
+  image: string;
+  href: string;
+};
+
 export const noticeText =
   "Payment policy: we only accept official company payments to our Japan account. Contact support immediately for suspicious requests.";
 
@@ -224,4 +230,22 @@ export const rightSidebarFilters = [
   "Steering",
   "Year From",
   "Year To",
+];
+
+export const promoBanners: PromoBannerItem[] = [
+  {
+    title: "Honda",
+    image: "/bernardsie-honda-1596081_1920.png",
+    href: "/cars?make=honda",
+  },
+  {
+    title: "Toyota",
+    image: "/bernardsie-toyota-1596082_1920.png",
+    href: "/cars?make=toyota",
+  },
+  {
+    title: "WordPress",
+    image: "/doki7-wordpress-581849_1920.jpg",
+    href: "/help/faqs",
+  },
 ];
