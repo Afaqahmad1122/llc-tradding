@@ -8,16 +8,12 @@ type BrandBodyTypeGridProps = {
   bodyTypes: LogoNavItem[];
 };
 
-function NavGrid({
-  title,
-  items,
-}: {
-  title: string;
-  items: LogoNavItem[];
-}) {
+function NavGrid({ title, items }: { title: string; items: LogoNavItem[] }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-xl font-semibold text-[#1E104E] dark:text-white">{title}</h3>
+      <h3 className="text-xl font-semibold text-[#1E104E] dark:text-white">
+        {title}
+      </h3>
       <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
           <Link
@@ -50,7 +46,10 @@ function NavGrid({
   );
 }
 
-export function BrandBodyTypeGrid({ brands, bodyTypes }: BrandBodyTypeGridProps) {
+export function BrandBodyTypeGrid({
+  brands,
+  bodyTypes,
+}: BrandBodyTypeGridProps) {
   return (
     <div className="space-y-8">
       <NavGrid title="Browse by car brand" items={brands} />

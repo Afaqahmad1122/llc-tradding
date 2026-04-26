@@ -9,10 +9,18 @@ healthRouter.get("/", async (_req, res, next) => {
 
     res.status(200).json({
       status: "ok",
+      database: "up",
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    next(error);
+    // Health should stay informative even if database is down.
+    res.status(503).json({
+      status: "degraded",
+      database: "down",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      message: error instanceof Error ? error.message : "Database check failed",
+    });
   }
 });

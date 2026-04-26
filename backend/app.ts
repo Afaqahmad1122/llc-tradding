@@ -33,6 +33,10 @@ app.use(cookieParser(env.COOKIE_SECRET));
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
+app.get("/", (_req, res) => {
+  res.status(200).json({ message: "LLC Trading API is running" });
+});
+
 app.use("/health", healthRouter);
 
 app.use(notFoundHandler);
