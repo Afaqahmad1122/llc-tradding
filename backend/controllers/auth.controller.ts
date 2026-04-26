@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { UserRole } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { refreshCookieOptions } from "../config/security.js";
 import { sendPasswordResetOtpEmail, sendVerificationOtpEmail } from "../utils/email.js";
@@ -78,6 +79,37 @@ const validatePasswordInput = (
   }
   if (confirmPassword !== undefined && password !== confirmPassword) {
     return "passwords do not match";
+  }
+  return null;
+};
+
+const findUserForLogin = async (email: string) => {
+  return prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      passwordHash: true,
+      emailVerifiedAt: true,
+      isActive: true,
+    },
+  });
+};
+
+const verifyLoginEligibility = async (
+  user: Awaited<ReturnType<typeof findUserForLogin>>,
+  password: string,
+): Promise<string | null> => {
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+    return "invalid email or password";
+  }
+  if (!user.isActive) {
+    return "account is inactive";
+  }
+  if (!user.emailVerifiedAt) {
+    return "email not verified";
   }
   return null;
 };
@@ -382,35 +414,46 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 
   const normalizedEmail = normalizeEmail(email);
-  const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      passwordHash: true,
-      emailVerifiedAt: true,
-      isActive: true,
-    },
-  });
-
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
-    res.status(401).json({ message: "invalid email or password" });
+  const user = await findUserForLogin(normalizedEmail);
+  const eligibilityError = await verifyLoginEligibility(user, password);
+  if (eligibilityError) {
+    const statusCode = eligibilityError === "invalid email or password" ? 401 : 403;
+    res.status(statusCode).json({ message: eligibilityError });
     return;
   }
 
-  if (!user.isActive) {
-    res.status(403).json({ message: "account is inactive" });
+  const authenticatedUser = user as NonNullable<typeof user>;
+  const auth = getAuthResponse(authenticatedUser);
+  setRefreshCookie(res, auth.refreshToken);
+  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+};
+
+export const adminLogin = async (req: Request, res: Response): Promise<void> => {
+  const body = req.body as AuthBody;
+  const email = body.email?.trim();
+  const password = body.password;
+
+  if (!email || !password) {
+    res.status(400).json({ message: "email and password are required" });
     return;
   }
 
-  if (!user.emailVerifiedAt) {
-    res.status(403).json({ message: "email not verified" });
+  const normalizedEmail = normalizeEmail(email);
+  const user = await findUserForLogin(normalizedEmail);
+  const eligibilityError = await verifyLoginEligibility(user, password);
+  if (eligibilityError) {
+    const statusCode = eligibilityError === "invalid email or password" ? 401 : 403;
+    res.status(statusCode).json({ message: eligibilityError });
     return;
   }
 
-  const auth = getAuthResponse(user);
+  const authenticatedUser = user as NonNullable<typeof user>;
+  if (authenticatedUser.role !== UserRole.ADMIN) {
+    res.status(403).json({ message: "admin access required" });
+    return;
+  }
+
+  const auth = getAuthResponse(authenticatedUser);
   setRefreshCookie(res, auth.refreshToken);
   res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
 };

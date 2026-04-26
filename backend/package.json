@@ -13,7 +13,8 @@
     "lint": "eslint \"**/*.ts\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "bootstrap:admin": "node --import tsx scripts/bootstrap-admin.ts"
   },
   "keywords": [],
   "author": "",
