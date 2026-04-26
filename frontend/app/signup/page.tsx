@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 export default function SignupPage() {
   return (
     <AuthPage
+      mode="signup"
       title="Create your account"
       description="Join Icc Trading to request quotes and track your vehicle inquiries."
       submitLabel="Create account"

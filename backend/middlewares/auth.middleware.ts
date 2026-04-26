@@ -6,8 +6,8 @@ const getBearerToken = (authorizationHeader: string | undefined): string | null 
     return null;
   }
 
-  const [scheme, token] = authorizationHeader.split(" ");
-  if (scheme !== "Bearer" || !token) {
+  const [scheme, token] = authorizationHeader.trim().split(/\s+/);
+  if (!scheme || scheme.toLowerCase() !== "bearer" || !token) {
     return null;
   }
 

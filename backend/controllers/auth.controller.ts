@@ -3,7 +3,7 @@ import { UserRole } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { refreshCookieOptions } from "../config/security.js";
 import { sendPasswordResetOtpEmail, sendVerificationOtpEmail } from "../utils/email.js";
-import { hashPassword, verifyPassword } from "../utils/password.js";
+import { hashPassword, validatePasswordStrength, verifyPassword } from "../utils/password.js";
 import {
   generateOtpCode,
   getOtpExpiryDate,
@@ -21,7 +21,6 @@ import {
 } from "../utils/jwt.js";
 
 const REFRESH_COOKIE_NAME = "refreshToken";
-const PASSWORD_MIN_LENGTH = 8;
 
 type AuthBody = {
   name?: string;
@@ -74,6 +73,12 @@ const setRefreshCookie = (res: Response, token: string): void => {
   });
 };
 
+const sendAuthSuccess = (res: Response, user: PublicUser): void => {
+  const auth = getAuthResponse(user);
+  setRefreshCookie(res, auth.refreshToken);
+  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+};
+
 const getAuthResponse = (user: PublicUser) => {
   const payload = { sub: user.id, role: user.role };
   const accessToken = signAccessToken(payload);
@@ -112,8 +117,9 @@ const validatePasswordInput = (
   password: string,
   confirmPassword: string | undefined,
 ): string | null => {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return "password must be at least 8 characters";
+  const strengthError = validatePasswordStrength(password);
+  if (strengthError) {
+    return strengthError;
   }
   if (confirmPassword !== undefined && password !== confirmPassword) {
     return "passwords do not match";
@@ -315,9 +321,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   }
 
   if (user.emailVerifiedAt) {
-    const auth = getAuthResponse(user);
-    setRefreshCookie(res, auth.refreshToken);
-    res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+    sendAuthSuccess(res, user);
     return;
   }
 
@@ -367,9 +371,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
     },
   });
 
-  const auth = getAuthResponse(verifiedUser);
-  setRefreshCookie(res, auth.refreshToken);
-  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+  sendAuthSuccess(res, verifiedUser);
 };
 
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
@@ -524,9 +526,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 
   const authenticatedUser = user as NonNullable<typeof user>;
-  const auth = getAuthResponse(authenticatedUser);
-  setRefreshCookie(res, auth.refreshToken);
-  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+  sendAuthSuccess(res, authenticatedUser);
 };
 
 export const adminLogin = async (req: Request, res: Response): Promise<void> => {
@@ -554,9 +554,7 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  const auth = getAuthResponse(authenticatedUser);
-  setRefreshCookie(res, auth.refreshToken);
-  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+  sendAuthSuccess(res, authenticatedUser);
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
@@ -591,9 +589,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const auth = getAuthResponse(user);
-    setRefreshCookie(res, auth.refreshToken);
-    res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+    sendAuthSuccess(res, user);
   } catch {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
     res.status(401).json({ message: "invalid refresh token" });

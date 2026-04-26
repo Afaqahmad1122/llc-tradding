@@ -1,11 +1,5 @@
 import { create } from "zustand";
-
-export type AuthUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-};
+import type { AuthUser } from "@/lib/api";
 
 type AuthState = {
   user: AuthUser | null;

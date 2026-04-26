@@ -2,10 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteNavbar } from "@/components/landing/site-navbar";
-import { Button } from "@/components/ui/button";
+import { AuthForm } from "@/components/auth/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type AuthField = {
   id: string;
@@ -16,6 +14,7 @@ type AuthField = {
 };
 
 type AuthPageProps = {
+  mode: "login" | "signup";
   title: string;
   description: string;
   submitLabel: string;
@@ -27,6 +26,7 @@ type AuthPageProps = {
 };
 
 export function AuthPage({
+  mode,
   title,
   description,
   submitLabel,
@@ -46,27 +46,7 @@ export function AuthPage({
             <CardDescription className="text-base">{description}</CardDescription>
           </CardHeader>
           <CardContent className="px-8 pb-8">
-            <form className="space-y-5" noValidate>
-              {fields.map((field) => (
-                <div className="space-y-2.5" key={field.id}>
-                  <Label htmlFor={field.id} className="text-base">
-                    {field.label}
-                  </Label>
-                  <Input
-                    id={field.id}
-                    name={field.id}
-                    type={field.type}
-                    autoComplete={field.autoComplete}
-                    placeholder={field.placeholder}
-                    className="h-12 text-base"
-                    required
-                  />
-                </div>
-              ))}
-              <Button type="submit" className="h-12 w-full text-base">
-                {submitLabel}
-              </Button>
-            </form>
+            <AuthForm mode={mode} fields={fields} submitLabel={submitLabel} />
             <div className="mt-6 space-y-2 text-center text-base text-muted-foreground">
               <p>
                 {footerText}{" "}

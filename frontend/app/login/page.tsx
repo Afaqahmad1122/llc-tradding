@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <AuthPage
+      mode="login"
       title="Welcome back"
       description="Sign in to manage quotes, orders, and account activity."
       submitLabel="Sign in"

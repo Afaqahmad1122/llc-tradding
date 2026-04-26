@@ -3,7 +3,7 @@ import { prisma } from "../config/prisma.js";
 
 export const healthRouter = Router();
 
-healthRouter.get("/", async (_req, res, next) => {
+healthRouter.get("/", async (_req, res, _next) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
 
