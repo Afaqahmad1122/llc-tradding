@@ -23,9 +23,6 @@ const otpTemplate = (name: string, code: string): string => `
 </div>
 `;
 
-export const generateOtpCode = (): string =>
-  Math.floor(100000 + Math.random() * 900000).toString();
-
 export const sendVerificationOtpEmail = async (
   email: string,
   name: string,

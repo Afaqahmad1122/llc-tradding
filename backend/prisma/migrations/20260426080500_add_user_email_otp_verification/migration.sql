@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "User"
+ADD COLUMN "emailVerifiedAt" TIMESTAMP(3),
+ADD COLUMN "otpCodeHash" TEXT,
+ADD COLUMN "otpCodeExpiresAt" TIMESTAMP(3),
+ADD COLUMN "otpCodeAttempts" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "otpCodeSentAt" TIMESTAMP(3);

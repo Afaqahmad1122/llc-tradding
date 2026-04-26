@@ -1,8 +1,16 @@
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
 import { refreshCookieOptions } from "../config/security.js";
-import { generateOtpCode, sendVerificationOtpEmail } from "../utils/email.js";
+import { sendVerificationOtpEmail } from "../utils/email.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
+import {
+  generateOtpCode,
+  getOtpExpiryDate,
+  getOtpMaxAttempts,
+  hashOtpCode,
+  isOtpCodeMatch,
+  isOtpExpired,
+} from "../utils/otp.js";
 import {
   getTokenExpiryDate,
   signAccessToken,
@@ -18,9 +26,11 @@ type AuthBody = {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  otp?: string;
 };
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+const normalizeOtp = (otp: string): string => otp.trim();
 
 const setRefreshCookie = (res: Response, token: string): void => {
   res.cookie(REFRESH_COOKIE_NAME, token, {
@@ -46,6 +56,13 @@ const getAuthResponse = (user: { id: string; name: string; email: string; role: 
   };
 };
 
+const getPublicUser = (user: { id: string; name: string; email: string; role: string }) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+});
+
 export const register = async (req: Request, res: Response): Promise<void> => {
   const body = req.body as AuthBody;
   const name = body.name?.trim();
@@ -69,6 +86,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 
   const normalizedEmail = normalizeEmail(email);
+  const otpCode = generateOtpCode();
+  const otpCodeHash = hashOtpCode(normalizedEmail, otpCode);
+  const otpCodeExpiresAt = getOtpExpiryDate();
+  const otpCodeSentAt = new Date();
 
   const existingUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
@@ -86,6 +107,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       name,
       email: normalizedEmail,
       passwordHash,
+      otpCodeHash,
+      otpCodeExpiresAt,
+      otpCodeSentAt,
     },
     select: {
       id: true,
@@ -95,11 +119,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     },
   });
 
-  const auth = getAuthResponse(user);
-  setRefreshCookie(res, auth.refreshToken);
-
   try {
-    const otpCode = generateOtpCode();
     await sendVerificationOtpEmail(user.email, user.name, otpCode);
   } catch (error) {
     console.error("Verification OTP email send failed", error);
@@ -108,12 +128,100 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 
   res.status(201).json({
-    accessToken: auth.accessToken,
-    user: auth.user,
+    user: getPublicUser(user),
     verification: {
       otpSent: true,
     },
   });
+};
+
+export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
+  const body = req.body as AuthBody;
+  const email = body.email?.trim();
+  const otp = body.otp?.trim();
+
+  if (!email || !otp) {
+    res.status(400).json({ message: "email and otp are required" });
+    return;
+  }
+
+  if (!/^\d{6}$/.test(normalizeOtp(otp))) {
+    res.status(400).json({ message: "invalid otp format" });
+    return;
+  }
+
+  const normalizedEmail = normalizeEmail(email);
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isActive: true,
+      emailVerifiedAt: true,
+      otpCodeHash: true,
+      otpCodeExpiresAt: true,
+      otpCodeAttempts: true,
+    },
+  });
+
+  if (!user || !user.isActive) {
+    res.status(401).json({ message: "invalid otp" });
+    return;
+  }
+
+  if (user.emailVerifiedAt) {
+    const auth = getAuthResponse(user);
+    setRefreshCookie(res, auth.refreshToken);
+    res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+    return;
+  }
+
+  if (!user.otpCodeHash || !user.otpCodeExpiresAt) {
+    res.status(400).json({ message: "otp not available, request a new one" });
+    return;
+  }
+
+  if (user.otpCodeAttempts >= getOtpMaxAttempts()) {
+    res.status(429).json({ message: "too many invalid otp attempts" });
+    return;
+  }
+
+  if (isOtpExpired(user.otpCodeExpiresAt)) {
+    res.status(400).json({ message: "otp expired" });
+    return;
+  }
+
+  const validOtp = isOtpCodeMatch(normalizedEmail, normalizeOtp(otp), user.otpCodeHash);
+  if (!validOtp) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpCodeAttempts: { increment: 1 } },
+    });
+    res.status(400).json({ message: "invalid otp" });
+    return;
+  }
+
+  const verifiedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      emailVerifiedAt: new Date(),
+      otpCodeHash: null,
+      otpCodeExpiresAt: null,
+      otpCodeAttempts: 0,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  const auth = getAuthResponse(verifiedUser);
+  setRefreshCookie(res, auth.refreshToken);
+  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -135,11 +243,23 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       email: true,
       role: true,
       passwordHash: true,
+      emailVerifiedAt: true,
+      isActive: true,
     },
   });
 
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     res.status(401).json({ message: "invalid email or password" });
+    return;
+  }
+
+  if (!user.isActive) {
+    res.status(403).json({ message: "account is inactive" });
+    return;
+  }
+
+  if (!user.emailVerifiedAt) {
+    res.status(403).json({ message: "email not verified" });
     return;
   }
 
