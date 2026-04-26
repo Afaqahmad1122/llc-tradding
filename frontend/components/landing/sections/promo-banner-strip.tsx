@@ -37,12 +37,12 @@ export function PromoBannerStrip({ items }: PromoBannerStripProps) {
                   aria-label={`Open ${item.title}`}
                   className="group block overflow-hidden rounded-2xl border border-[#452E5A]/12 bg-white shadow-[0_10px_26px_-16px_rgba(30,16,78,0.58)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-18px_rgba(30,16,78,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF653F]/70 dark:border-white/12 dark:bg-[#1c1438]"
                 >
-                  <div className="relative h-[92px] w-full sm:h-[102px]">
+                  <div className="relative aspect-3/2 w-full bg-[#f4f4f6] dark:bg-[#120d27]">
                     <Image
                       src={item.image}
                       alt={item.title}
                       fill
-                      className="object-cover"
+                      className="object-contain p-1.5"
                       sizes="(max-width: 1024px) 80vw, 30vw"
                     />
                   </div>

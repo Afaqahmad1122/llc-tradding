@@ -1,6 +1,8 @@
 "use client";
 import {
+  bodyTypeLogoNavItems,
   bodyTypeSidebarItems,
+  brandLogoNavItems,
   categories,
   currencyItems,
   featuredVehicles,
@@ -15,6 +17,7 @@ import {
   testimonials,
 } from "@/components/landing/home-data";
 import {
+  BrandBodyTypeGrid,
   CategoryGrid,
   ContactCta,
   HeroSection,
@@ -54,6 +57,15 @@ export default function Home() {
             description="A curated selection based on demand, quality checks, and export readiness."
           >
             <VehicleGrid vehicles={featuredVehicles} />
+          </SectionBlock>
+          <SectionBlock
+            title="Browse Inventory"
+            description="Navigate quickly by car brand and body type using clickable logo cards."
+          >
+            <BrandBodyTypeGrid
+              brands={brandLogoNavItems}
+              bodyTypes={bodyTypeLogoNavItems}
+            />
           </SectionBlock>
           <SectionBlock
             title="Inventory Categories"
