@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Star,
 } from "lucide-react";
+import { InstagramIcon } from "@/components/icons/instagram-icon";
 
 const quickLinks = [
   { label: "Cars", href: "#inventory" },
@@ -26,7 +27,9 @@ export function SiteFooter() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
           <div className="space-y-4">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
-              <p className="text-xl font-bold tracking-tight">Icc Trading Japan</p>
+              <p className="text-xl font-bold tracking-tight">
+                Icc Trading Japan
+              </p>
               <p className="mt-1 text-sm text-white/75">
                 Trusted Japanese vehicle exporter with transparent process.
               </p>
@@ -67,6 +70,13 @@ export function SiteFooter() {
               >
                 <Mail className="size-4 text-[#FFC85C]" />
                 icctradingjp@gmail.com
+              </Link>
+              <Link
+                href="https://www.instagram.com/icc_trading_japan?utm_source=qr"
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
+              >
+                <InstagramIcon className="size-4 text-[#FFC85C]" />
+                @icc_trading_japan
               </Link>
             </div>
           </div>

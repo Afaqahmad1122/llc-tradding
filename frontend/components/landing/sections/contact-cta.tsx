@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { Mail, MessageCircle, Phone, Send } from "lucide-react";
 
+import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,6 +41,12 @@ const contactDetails = [
     value: "icctradingjp@gmail.com",
     href: "mailto:icctradingjp@gmail.com",
     icon: Mail,
+  },
+  {
+    label: "Instagram",
+    value: "@icc_trading_japan",
+    href: "https://www.instagram.com/icc_trading_japan?utm_source=qr",
+    icon: InstagramIcon,
   },
 ];
 
