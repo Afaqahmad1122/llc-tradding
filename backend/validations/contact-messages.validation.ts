@@ -1,8 +1,9 @@
-import { ContactMessageStatus } from "@prisma/client";
 import { z } from "zod";
 
 const trimmedString = z.string().trim();
 const optionalTrimmed = z.string().trim().optional();
+
+const contactMessageStatuses = ["NEW", "IN_REVIEW", "RESOLVED", "SPAM"] as const;
 
 export const createContactMessageSchema = z.object({
   name: trimmedString.min(2, "name must be at least 2 characters").max(120),
@@ -19,7 +20,7 @@ export const createContactMessageSchema = z.object({
 
 export const updateContactMessageSchema = z
   .object({
-    status: z.nativeEnum(ContactMessageStatus).optional(),
+    status: z.enum(contactMessageStatuses).optional(),
     adminNote: z.string().trim().max(2000).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {

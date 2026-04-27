@@ -1,9 +1,4 @@
-import {
-  ContactMessageStatus,
-  Prisma,
-  UserRole,
-  type ContactMessage,
-} from "@prisma/client";
+import { Prisma, UserRole, type ContactMessage } from "@prisma/client";
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
 
@@ -22,6 +17,7 @@ type UpdateContactMessageBody = {
   status?: ContactMessageStatus;
   adminNote?: string;
 };
+type ContactMessageStatus = "NEW" | "IN_REVIEW" | "RESOLVED" | "SPAM";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 10;
@@ -77,11 +73,18 @@ const toAdminContactMessageSelect = () =>
     },
   }) satisfies Prisma.ContactMessageSelect;
 
+const contactMessageStatuses = new Set<ContactMessageStatus>([
+  "NEW",
+  "IN_REVIEW",
+  "RESOLVED",
+  "SPAM",
+]);
+
 const parseStatusFilter = (value: unknown): ContactMessageStatus | undefined => {
   if (typeof value !== "string" || !value.trim()) {
     return undefined;
   }
-  if (Object.values(ContactMessageStatus).includes(value as ContactMessageStatus)) {
+  if (contactMessageStatuses.has(value as ContactMessageStatus)) {
     return value as ContactMessageStatus;
   }
   return undefined;
@@ -99,7 +102,7 @@ const applyReviewMetadata = (
     return {};
   }
 
-  if (nextStatus === ContactMessageStatus.NEW) {
+  if (nextStatus === "NEW") {
     return {
       reviewedAt: null,
       reviewedBy: { disconnect: true },

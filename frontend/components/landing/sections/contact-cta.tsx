@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import {
-  Mail,
-  MessageCircle,
-  Phone,
-  Send,
-} from "lucide-react";
+import { Mail, MessageCircle, Phone, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +62,8 @@ export function ContactCta() {
       country: String(formData.get("country") ?? "").trim() || undefined,
       city: String(formData.get("city") ?? "").trim() || undefined,
       company: String(formData.get("company") ?? "").trim() || undefined,
-      vehicleRequirement: String(formData.get("vehicleRequirement") ?? "").trim() || undefined,
+      vehicleRequirement:
+        String(formData.get("vehicleRequirement") ?? "").trim() || undefined,
       message: String(formData.get("message") ?? "").trim(),
     };
 
@@ -102,7 +98,9 @@ export function ContactCta() {
         setSubmitError(error.message);
         return;
       }
-      setSubmitError("Unable to send your message right now. Please try again.");
+      setSubmitError(
+        "Unable to send your message right now. Please try again.",
+      );
     }
   };
 
@@ -111,7 +109,7 @@ export function ContactCta() {
       id="contact"
       className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8"
     >
-      <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="space-y-5">
         <div className="relative overflow-hidden rounded-3xl border border-white/20 brand-gradient-main p-6 text-white shadow-2xl sm:p-8 dark:border-white/15">
           <div className="pointer-events-none absolute -left-10 -top-10 h-36 w-36 rounded-full bg-[#FF653F]/45 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-10 right-8 h-36 w-36 rounded-full bg-[#FFC85C]/40 blur-2xl" />
@@ -135,7 +133,7 @@ export function ContactCta() {
                   maxLength={120}
                   autoComplete="name"
                   placeholder="Full name*"
-                  className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <Input
                   name="email"
@@ -144,7 +142,7 @@ export function ContactCta() {
                   maxLength={254}
                   autoComplete="email"
                   placeholder="Email*"
-                  className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -155,23 +153,27 @@ export function ContactCta() {
                   maxLength={40}
                   autoComplete="tel"
                   placeholder="Phone*"
-                  className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <input
                   type="hidden"
                   name="vehicleRequirement"
                   value={vehicleRequirement}
                 />
-                <Select value={vehicleRequirement} onValueChange={setVehicleRequirement}>
-                  <SelectTrigger className="h-10 w-full border-white/25 bg-white/12 text-white data-placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10">
+                <Select
+                  value={vehicleRequirement}
+                  onValueChange={setVehicleRequirement}
+                >
+                  <SelectTrigger className="h-12 w-full px-3 border-white/25 bg-white/12 text-base text-white data-placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10">
                     <SelectValue placeholder="Vehicle requirement" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sedan">Sedan</SelectItem>
-                    <SelectItem value="suv">SUV</SelectItem>
-                    <SelectItem value="hybrid">Hybrid</SelectItem>
-                    <SelectItem value="pickup">Pickup</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="complete-car">Complete Car</SelectItem>
+                    <SelectItem value="half-cut">Half Cut</SelectItem>
+                    <SelectItem value="nose-cut">Nose Cut</SelectItem>
+                    <SelectItem value="dismantle">Dismantle</SelectItem>
+                    <SelectItem value="body-shell">Body Shell</SelectItem>
+                    <SelectItem value="machinery">Machinery</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -181,21 +183,21 @@ export function ContactCta() {
                   maxLength={120}
                   autoComplete="country-name"
                   placeholder="Country"
-                  className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <Input
                   name="city"
                   maxLength={120}
                   autoComplete="address-level2"
                   placeholder="City"
-                  className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <Input
                   name="company"
                   maxLength={120}
                   autoComplete="organization"
                   placeholder="Company"
-                  className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
               </div>
               <Textarea
@@ -204,13 +206,17 @@ export function ContactCta() {
                 minLength={MESSAGE_MIN_LENGTH}
                 maxLength={MESSAGE_MAX_LENGTH}
                 placeholder="Message*"
-                className="min-h-28 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                className="min-h-36 px-3 py-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
               />
               {submitError ? (
-                <p className="text-sm font-medium text-[#ffd6d6]">{submitError}</p>
+                <p className="text-sm font-medium text-[#ffd6d6]">
+                  {submitError}
+                </p>
               ) : null}
               {submitSuccess ? (
-                <p className="text-sm font-medium text-[#cfffd6]">{submitSuccess}</p>
+                <p className="text-sm font-medium text-[#cfffd6]">
+                  {submitSuccess}
+                </p>
               ) : null}
               <Button
                 type="submit"
