@@ -93,7 +93,12 @@ export default function Home() {
             </p>
           )}
           <div className="mt-4 flex justify-center">
-            <Button asChild variant="outline" size="lg">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-xl border-[#452E5A]/25 bg-white/85 px-6 shadow-sm transition-colors hover:bg-[#f3ecff] dark:border-white/20 dark:bg-white/10 dark:hover:bg-white/15"
+            >
               <Link href="/reviews">Show more reviews</Link>
             </Button>
           </div>

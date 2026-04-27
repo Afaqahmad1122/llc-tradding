@@ -18,7 +18,7 @@ export function LandingPageShell({
   mainClassName,
 }: LandingPageShellProps) {
   return (
-    <div className="relative flex min-h-screen flex-col bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef] dark:from-[#0c0720] dark:via-[#120932] dark:to-[#1a0e3d]">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef] dark:from-[#0c0720] dark:via-[#120932] dark:to-[#1a0e3d]">
       {showBackgroundGlows ? (
         <>
           <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#452E5A]/20 blur-3xl dark:bg-[#FF653F]/15" />
