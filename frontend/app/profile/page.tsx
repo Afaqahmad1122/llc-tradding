@@ -72,6 +72,14 @@ export default function ProfilePage() {
     [user],
   );
 
+  useEffect(() => {
+    if (isEditing) {
+      return;
+    }
+
+    setFormState(baseFormState);
+  }, [baseFormState, isEditing]);
+
   if (!hasBootstrapped || !user) {
     return null;
   }
