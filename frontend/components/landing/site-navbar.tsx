@@ -77,16 +77,18 @@ export function SiteNavbar() {
                   {item.label}
                   <ChevronDown className="size-3.5" />
                 </button>
-                <div className="pointer-events-none invisible absolute left-0 z-50 mt-2 w-56 translate-y-1 rounded-2xl border border-[#452E5A]/10 bg-white/95 p-2 opacity-0 shadow-xl backdrop-blur-md transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 dark:border-white/10 dark:bg-[#150e2e]/95">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.label}
-                      href={child.href}
-                      className="block rounded-lg px-3 py-2 text-sm font-medium text-[#2E2A36] transition-colors hover:bg-[#452E5A]/8 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
+                <div className="pointer-events-none invisible absolute left-0 top-full z-50 w-56 pt-2 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100">
+                  <div className="translate-y-1 rounded-2xl border border-[#452E5A]/10 bg-white/95 p-2 shadow-xl backdrop-blur-md transition-all duration-150 group-hover:translate-y-0 dark:border-white/10 dark:bg-[#150e2e]/95">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.label}
+                        href={child.href}
+                        className="block rounded-lg px-3 py-2 text-sm font-medium text-[#2E2A36] transition-colors hover:bg-[#452E5A]/8 dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
