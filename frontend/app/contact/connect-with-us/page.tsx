@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import {
   ContactCta,
   LandingPageShell,
 } from "@/components/landing/home-sections";
+import { buildPageMetadata } from "@/app/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Connect With Us",
+  description:
+    "Contact ICC Trading Co Ltd for Japanese vehicle requirements, pricing guidance, and export support.",
+  path: "/contact/connect-with-us",
+});
 
 export default function ConnectWithUsPage() {
   return (

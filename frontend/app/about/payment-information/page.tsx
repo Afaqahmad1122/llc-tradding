@@ -1,4 +1,13 @@
+import type { Metadata } from "next";
 import { AboutPageShell } from "@/components/landing/about-page-shell";
+import { buildPageMetadata } from "@/app/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Payment Information",
+  description:
+    "Review accepted payment methods and secure transaction workflow for international vehicle purchases.",
+  path: "/about/payment-information",
+});
 
 export default function PaymentInformationPage() {
   return (

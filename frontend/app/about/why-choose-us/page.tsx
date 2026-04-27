@@ -1,5 +1,14 @@
+import type { Metadata } from "next";
 import { AboutPageShell } from "@/components/landing/about-page-shell";
 import { BadgeCheck, Clock3, Globe2, Handshake, Shield, Users } from "lucide-react";
+import { buildPageMetadata } from "@/app/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Why Choose Us",
+  description:
+    "See why buyers choose ICC Trading Co Ltd for dependable process, transparent communication, and quality sourcing.",
+  path: "/about/why-choose-us",
+});
 
 const highlights = [
   {

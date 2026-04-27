@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AboutPageShell } from "@/components/landing/about-page-shell";
 import Image from "next/image";
 import {
@@ -9,6 +10,14 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { buildPageMetadata } from "@/app/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Company Profile",
+  description:
+    "Learn about ICC Trading Co Ltd, our history, offices, and quality-first approach to vehicle export.",
+  path: "/about/company-profile",
+});
 
 const officeAddresses = [
   {
