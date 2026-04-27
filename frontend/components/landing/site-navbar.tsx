@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Contact Us",
+    href: "/contact/connect-with-us",
     children: [
       { label: "Connect With Us", href: "/contact/connect-with-us" },
       { label: "Global Offices", href: "/contact/global-offices" },
@@ -70,13 +71,23 @@ export function SiteNavbar() {
           {navItems.map((item) =>
             item.children ? (
               <div key={item.label} className="group relative">
-                <button
-                  type="button"
-                  className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
-                >
-                  {item.label}
-                  <ChevronDown className="size-3.5" />
-                </button>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                  >
+                    {item.label}
+                    <ChevronDown className="size-3.5" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                  >
+                    {item.label}
+                    <ChevronDown className="size-3.5" />
+                  </button>
+                )}
                 <div className="pointer-events-none invisible absolute left-0 top-full z-50 w-56 pt-2 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100">
                   <div className="translate-y-1 rounded-2xl border border-[#452E5A]/10 bg-white/95 p-2 shadow-xl backdrop-blur-md transition-all duration-150 group-hover:translate-y-0 dark:border-white/10 dark:bg-[#150e2e]/95">
                     {item.children.map((child) => (
@@ -125,6 +136,14 @@ export function SiteNavbar() {
                         <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
                       </summary>
                       <div className="mt-1 space-y-1 pl-3">
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            className="block rounded-md px-2 py-1.5 text-sm font-medium text-[#452E5A]/90 hover:bg-[#452E5A]/8 dark:text-white/75 dark:hover:bg-white/10"
+                          >
+                            Open {item.label}
+                          </Link>
+                        ) : null}
                         {item.children.map((child) => (
                           <Link
                             key={child.label}
