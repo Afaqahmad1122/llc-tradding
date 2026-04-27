@@ -34,6 +34,8 @@ model User {
   passwordResetOtpAttempts Int @default(0)
   passwordResetOtpSentAt DateTime?
   createdCars  Car[]
+  reviews      Review[]
+  reviewEligibilities ReviewEligibility[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -81,6 +83,8 @@ model Car {
   isPublished    Boolean          @default(true)
   createdByAdmin Boolean          @default(true)
   images         CarImage[]
+  reviews        Review[]
+  reviewEligibilities ReviewEligibility[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -101,6 +105,46 @@ model CarImage {
   createdAt DateTime @default(now())
 
   @@index([carId, position])
+}
+
+model ReviewEligibility {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceReference String   @unique
+  carId            String?
+  car              Car?     @relation(fields: [carId], references: [id], onDelete: SetNull)
+  isUsed           Boolean  @default(false)
+  expiresAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  review           Review?
+
+  @@index([userId, isUsed])
+  @@index([carId])
+}
+
+model Review {
+  id               String             @id @default(cuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceReference String             @unique
+  eligibilityId    String?            @unique
+  eligibility      ReviewEligibility? @relation(fields: [eligibilityId], references: [id], onDelete: SetNull)
+  carId            String?
+  car              Car?               @relation(fields: [carId], references: [id], onDelete: SetNull)
+  rating           Int
+  title            String?
+  comment          String
+  country          String?
+  isPublished      Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([isPublished, createdAt])
+  @@index([rating])
+  @@index([carId])
+  @@index([userId, createdAt])
 }
 
 enum FuelType {
