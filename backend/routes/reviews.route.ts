@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getAdminReviews,
   createReview,
   createReviewEligibility,
   getMyReviews,
@@ -20,6 +21,7 @@ export const reviewsRouter = Router();
 
 reviewsRouter.get("/", getReviews);
 reviewsRouter.get("/summary", getReviewSummary);
+reviewsRouter.get("/admin", requireAuth, getAdminReviews);
 
 reviewsRouter.get("/me", requireAuth, getMyReviews);
 reviewsRouter.post(

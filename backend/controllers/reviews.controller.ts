@@ -131,6 +131,106 @@ export const getReviews = async (
   });
 };
 
+export const getAdminReviews = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) {
+    return;
+  }
+
+  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+  const requestedPageSize = parsePositiveInt(
+    req.query.pageSize,
+    DEFAULT_PAGE_SIZE,
+  );
+  const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
+  const rating = req.query.rating ? Number(req.query.rating) : undefined;
+  const userId =
+    typeof req.query.userId === "string" ? req.query.userId.trim() : undefined;
+  const carId =
+    typeof req.query.carId === "string" ? req.query.carId.trim() : undefined;
+  const invoiceReference =
+    typeof req.query.invoiceReference === "string"
+      ? normalizeInvoiceReference(req.query.invoiceReference)
+      : undefined;
+  const sort = typeof req.query.sort === "string" ? req.query.sort : "latest";
+  const isPublishedQuery = req.query.isPublished;
+
+  let isPublished: boolean | undefined;
+  if (typeof isPublishedQuery === "string") {
+    if (isPublishedQuery !== "true" && isPublishedQuery !== "false") {
+      res.status(400).json({ message: "isPublished must be true or false" });
+      return;
+    }
+    isPublished = isPublishedQuery === "true";
+  }
+
+  if (
+    rating !== undefined &&
+    (!Number.isInteger(rating) || rating < 1 || rating > 5)
+  ) {
+    res
+      .status(400)
+      .json({ message: "rating filter must be an integer between 1 and 5" });
+    return;
+  }
+
+  const where: Prisma.ReviewWhereInput = {
+    ...(rating !== undefined ? { rating } : {}),
+    ...(userId ? { userId } : {}),
+    ...(carId ? { carId } : {}),
+    ...(invoiceReference ? { invoiceReference } : {}),
+    ...(isPublished !== undefined ? { isPublished } : {}),
+  };
+
+  const orderBy: Prisma.ReviewOrderByWithRelationInput =
+    sort === "oldest"
+      ? { createdAt: "asc" }
+      : sort === "highest"
+        ? { rating: "desc" }
+        : { createdAt: "desc" };
+
+  const [total, reviews] = await Promise.all([
+    prisma.review.count({ where }),
+    prisma.review.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        rating: true,
+        title: true,
+        comment: true,
+        country: true,
+        isPublished: true,
+        createdAt: true,
+        updatedAt: true,
+        invoiceReference: true,
+        carId: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  res.status(200).json({
+    data: reviews,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  });
+};
+
 export const getReviewSummary = async (
   _req: Request,
   res: Response,
