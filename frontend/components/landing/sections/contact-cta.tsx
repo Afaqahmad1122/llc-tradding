@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import { Mail, MessageCircle, Phone, Send } from "lucide-react";
+import { Mail, Phone, Send } from "lucide-react";
 
 import { InstagramIcon } from "@/components/icons/instagram-icon";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,7 +29,7 @@ const contactDetails = [
     label: "WhatsApp",
     value: "+81 70-6436-2003",
     href: "https://wa.me/817064362003",
-    icon: MessageCircle,
+    icon: WhatsAppIcon,
   },
   {
     label: "Phone",
@@ -277,7 +278,7 @@ export function ContactCta() {
               className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
             >
               <Link href="https://wa.me/817064362003">
-                <MessageCircle className="size-4" />
+                <WhatsAppIcon className="size-4" />
                 WhatsApp
               </Link>
             </Button>

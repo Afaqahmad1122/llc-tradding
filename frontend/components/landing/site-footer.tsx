@@ -4,12 +4,12 @@ import {
   Clock3,
   Globe2,
   Mail,
-  MessageCircle,
   Phone,
   ShieldCheck,
   Star,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
 const quickLinks = [
   { label: "Cars", href: "#inventory" },
@@ -54,7 +54,7 @@ export function SiteFooter() {
                 href="https://wa.me/817064362003"
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
-                <MessageCircle className="size-4 text-[#FFC85C]" />
+                <WhatsAppIcon className="size-4 text-[#FFC85C]" />
                 +81 70-6436-2003
               </Link>
               <Link
