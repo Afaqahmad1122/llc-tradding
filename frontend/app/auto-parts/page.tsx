@@ -84,19 +84,19 @@ export default function AutoPartsPage() {
       subtitle="Quality Japanese auto parts with professional dismantling and container shipping worldwide."
     >
       <section className="space-y-8">
-        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] sm:p-8">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#edf2ff] px-4 py-1 text-xs font-semibold text-[#3b82f6]">
+        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] dark:border-white/15 dark:bg-[#121a33]/80 dark:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.95)] sm:p-8">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#edf2ff] px-4 py-1 text-xs font-semibold text-[#3b82f6] dark:bg-[#1d2a52] dark:text-[#93c5fd]">
             <BadgeCheck className="size-4" />
             Quality Assurance
           </span>
-          <h2 className="mt-4 text-3xl font-bold leading-tight text-[#111827] sm:text-5xl">
+          <h2 className="mt-4 text-3xl font-bold leading-tight text-[#111827] dark:text-slate-100 sm:text-5xl">
             Looking for quality parts for your automotive needs?
           </h2>
-          <p className="mt-4 text-xl font-semibold text-[#dc2626] sm:text-3xl">
+          <p className="mt-4 text-xl font-semibold text-[#dc2626] dark:text-[#fb7185] sm:text-3xl">
             Afridi Trading Japan Is Your One Stop for Quality Scrap Cars and
             Parts
           </p>
-          <p className="mt-5 max-w-4xl text-sm leading-7 text-[#374151] sm:text-lg">
+          <p className="mt-5 max-w-4xl text-sm leading-7 text-[#374151] dark:text-slate-300 sm:text-lg">
             We offer a large range of scrap cars from which you can purchase
             spare parts or complete engine sets. Along with dismantling, we can
             also load used parts into containers and arrange shipment so you
@@ -104,11 +104,11 @@ export default function AutoPartsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] sm:p-8">
-          <h2 className="text-center text-3xl font-bold text-[#dc2626] sm:text-5xl">
+        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] dark:border-white/15 dark:bg-[#121a33]/80 dark:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.95)] sm:p-8">
+          <h2 className="text-center text-3xl font-bold text-[#dc2626] dark:text-[#fb7185] sm:text-5xl">
             Components for Dismantling
           </h2>
-          <p className="mt-2 text-center text-sm text-[#4b5563] sm:text-lg">
+          <p className="mt-2 text-center text-sm text-[#4b5563] dark:text-slate-300 sm:text-lg">
             Professional dismantling of quality auto parts with modern equipment
             and expert handling
           </p>
@@ -117,12 +117,12 @@ export default function AutoPartsPage() {
             {components.map((item) => (
               <article
                 key={item}
-                className="rounded-2xl border border-[#e5e7eb] bg-[#f9fafb] p-5"
+                className="rounded-2xl border border-[#e5e7eb] bg-[#f9fafb] p-5 dark:border-white/10 dark:bg-[#0f162d]"
               >
-                <div className="inline-flex rounded-xl bg-[#ffecef] p-3 text-[#dc2626]">
+                <div className="inline-flex rounded-xl bg-[#ffecef] p-3 text-[#dc2626] dark:bg-[#3f1d2a] dark:text-[#fb7185]">
                   <Wrench className="size-5" />
                 </div>
-                <p className="mt-4 text-sm font-semibold text-[#111827] sm:text-base">
+                <p className="mt-4 text-sm font-semibold text-[#111827] dark:text-slate-100 sm:text-base">
                   {item}
                 </p>
               </article>
@@ -130,58 +130,58 @@ export default function AutoPartsPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] sm:p-8">
-          <h2 className="text-center text-3xl font-bold text-[#dc2626] sm:text-5xl">
+        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] dark:border-white/15 dark:bg-[#121a33]/80 dark:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.95)] sm:p-8">
+          <h2 className="text-center text-3xl font-bold text-[#dc2626] dark:text-[#fb7185] sm:text-5xl">
             Our Process
           </h2>
-          <p className="mt-2 text-center text-sm text-[#4b5563] sm:text-lg">
+          <p className="mt-2 text-center text-sm text-[#4b5563] dark:text-slate-300 sm:text-lg">
             Step-by-step professional dismantling and shipping process
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {processSteps.map((step, index) => (
               <article
                 key={step}
-                className="rounded-2xl border border-[#dbe2ff] bg-[#f5f8ff] p-4"
+                className="rounded-2xl border border-[#dbe2ff] bg-[#f5f8ff] p-4 dark:border-[#334155] dark:bg-[#0f1f3c]"
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-[#1d4ed8]">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#1d4ed8] dark:text-[#93c5fd]">
                   Step {index + 1}
                 </p>
-                <p className="mt-2 text-sm text-[#1f2937]">{step}</p>
+                <p className="mt-2 text-sm text-[#1f2937] dark:text-slate-200">{step}</p>
               </article>
             ))}
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] sm:p-8">
-          <h2 className="text-center text-3xl font-bold text-[#dc2626] sm:text-5xl">
+        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] dark:border-white/15 dark:bg-[#121a33]/80 dark:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.95)] sm:p-8">
+          <h2 className="text-center text-3xl font-bold text-[#dc2626] dark:text-[#fb7185] sm:text-5xl">
             Quotation Requirements
           </h2>
-          <p className="mt-2 text-center text-sm text-[#4b5563] sm:text-lg">
+          <p className="mt-2 text-center text-sm text-[#4b5563] dark:text-slate-300 sm:text-lg">
             Information required from customer to provide quotation
           </p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <article className="rounded-2xl border border-[#f1f5f9] bg-[#fff7f7] p-6 text-center">
-              <Container className="mx-auto size-8 text-[#dc2626]" />
-              <p className="mt-4 text-lg font-semibold text-[#111827]">
+            <article className="rounded-2xl border border-[#f1f5f9] bg-[#fff7f7] p-6 text-center dark:border-white/10 dark:bg-[#1f1a2b]">
+              <Container className="mx-auto size-8 text-[#dc2626] dark:text-[#fb7185]" />
+              <p className="mt-4 text-lg font-semibold text-[#111827] dark:text-slate-100">
                 Container type (20F/40F)
               </p>
             </article>
-            <article className="rounded-2xl border border-[#f1f5f9] bg-[#fff7f7] p-6 text-center">
-              <Ship className="mx-auto size-8 text-[#dc2626]" />
-              <p className="mt-4 text-lg font-semibold text-[#111827]">
+            <article className="rounded-2xl border border-[#f1f5f9] bg-[#fff7f7] p-6 text-center dark:border-white/10 dark:bg-[#1f1a2b]">
+              <Ship className="mx-auto size-8 text-[#dc2626] dark:text-[#fb7185]" />
+              <p className="mt-4 text-lg font-semibold text-[#111827] dark:text-slate-100">
                 Country and destination port
               </p>
             </article>
-            <article className="rounded-2xl border border-[#f1f5f9] bg-[#fff7f7] p-6 text-center">
-              <ShoppingCart className="mx-auto size-8 text-[#dc2626]" />
-              <p className="mt-4 text-lg font-semibold text-[#111827]">
+            <article className="rounded-2xl border border-[#f1f5f9] bg-[#fff7f7] p-6 text-center dark:border-white/10 dark:bg-[#1f1a2b]">
+              <ShoppingCart className="mx-auto size-8 text-[#dc2626] dark:text-[#fb7185]" />
+              <p className="mt-4 text-lg font-semibold text-[#111827] dark:text-slate-100">
                 Freight payment terms (collect or prepaid)
               </p>
             </article>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#fecaca] bg-[#fff1f2] p-6 text-[#991b1b] sm:p-8">
+        <div className="rounded-3xl border border-[#fecaca] bg-[#fff1f2] p-6 text-[#991b1b] dark:border-[#7f1d1d] dark:bg-[#2b1316] dark:text-[#fecaca] sm:p-8">
           <h3 className="text-2xl font-bold">Exclusions</h3>
           <p className="mt-2 text-sm sm:text-base">
             The parts set does not include car interior parts, catalytic
@@ -189,29 +189,29 @@ export default function AutoPartsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] sm:p-8">
-          <h2 className="text-center text-3xl font-bold text-[#dc2626] sm:text-5xl">
+        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] dark:border-white/15 dark:bg-[#121a33]/80 dark:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.95)] sm:p-8">
+          <h2 className="text-center text-3xl font-bold text-[#dc2626] dark:text-[#fb7185] sm:text-5xl">
             Cost Calculation
           </h2>
-          <p className="mt-2 text-center text-sm text-[#4b5563] sm:text-lg">
+          <p className="mt-2 text-center text-sm text-[#4b5563] dark:text-slate-300 sm:text-lg">
             C&amp;F to your destination country includes
           </p>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             {pricingColumns.map((column) => (
               <article
                 key={column.title}
-                className="overflow-hidden rounded-2xl border border-[#e5e7eb]"
+                className="overflow-hidden rounded-2xl border border-[#e5e7eb] dark:border-white/10"
               >
                 <div
                   className={`bg-linear-to-r ${column.color} px-4 py-3 text-center text-sm font-bold uppercase tracking-wide text-white`}
                 >
                   {column.title}
                 </div>
-                <div className="space-y-2 bg-white p-4">
+                <div className="space-y-2 bg-white p-4 dark:bg-[#0f162d]">
                   {column.items.map((item) => (
                     <p
                       key={item}
-                      className="rounded-lg bg-[#f8fafc] px-3 py-2 text-sm text-[#1f2937]"
+                      className="rounded-lg bg-[#f8fafc] px-3 py-2 text-sm text-[#1f2937] dark:bg-[#1f2937] dark:text-slate-200"
                     >
                       {item}
                     </p>
@@ -222,7 +222,7 @@ export default function AutoPartsPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[#fde68a] bg-[#fffbeb] p-6 text-[#78350f] sm:p-8">
+        <div className="rounded-3xl border border-[#fde68a] bg-[#fffbeb] p-6 text-[#78350f] dark:border-[#713f12] dark:bg-[#2d2112] dark:text-[#fef3c7] sm:p-8">
           <h3 className="text-2xl font-bold">Parts Packaging Fee</h3>
           <p className="mt-2 text-sm leading-7 sm:text-base">
             We do not charge labor for packaging, but material fee applies.
@@ -231,29 +231,29 @@ export default function AutoPartsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] sm:p-8">
-          <h2 className="text-center text-3xl font-bold text-[#dc2626] sm:text-5xl">
+        <div className="rounded-3xl border border-[#1e2a78]/10 bg-white/90 p-6 shadow-[0_18px_45px_-30px_rgba(37,99,235,0.55)] dark:border-white/15 dark:bg-[#121a33]/80 dark:shadow-[0_20px_45px_-30px_rgba(15,23,42,0.95)] sm:p-8">
+          <h2 className="text-center text-3xl font-bold text-[#dc2626] dark:text-[#fb7185] sm:text-5xl">
             Container Capacity
           </h2>
-          <p className="mt-2 text-center text-sm text-[#4b5563] sm:text-lg">
+          <p className="mt-2 text-center text-sm text-[#4b5563] dark:text-slate-300 sm:text-lg">
             Number of cars that can be loaded per container type
           </p>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-[#dbe2ff]">
+          <div className="mt-8 overflow-hidden rounded-2xl border border-[#dbe2ff] dark:border-[#334155]">
             <div className="grid grid-cols-3 bg-[#1e2a78] text-sm font-semibold text-white">
               <p className="p-3">Type</p>
               <p className="p-3 text-center">40F Container</p>
               <p className="p-3 text-center">20F Container</p>
             </div>
-            <div className="grid grid-cols-3 border-t border-[#e5e7eb] bg-white">
-              <p className="p-3 font-semibold text-[#dc2626]">Full Car Dismantle</p>
-              <p className="p-3 text-center font-semibold text-[#111827]">25-32 Cars</p>
-              <p className="p-3 text-center font-semibold text-[#111827]">15 Cars</p>
+            <div className="grid grid-cols-3 border-t border-[#e5e7eb] bg-white dark:border-[#334155] dark:bg-[#0f162d]">
+              <p className="p-3 font-semibold text-[#dc2626] dark:text-[#fb7185]">Full Car Dismantle</p>
+              <p className="p-3 text-center font-semibold text-[#111827] dark:text-slate-100">25-32 Cars</p>
+              <p className="p-3 text-center font-semibold text-[#111827] dark:text-slate-100">15 Cars</p>
             </div>
-            <div className="grid grid-cols-3 border-t border-[#e5e7eb] bg-white">
-              <p className="p-3 font-semibold text-[#dc2626]">Half Cut</p>
-              <p className="p-3 text-center font-semibold text-[#111827]">18 Cars</p>
-              <p className="p-3 text-center font-semibold text-[#111827]">9 Cars</p>
+            <div className="grid grid-cols-3 border-t border-[#e5e7eb] bg-white dark:border-[#334155] dark:bg-[#0f162d]">
+              <p className="p-3 font-semibold text-[#dc2626] dark:text-[#fb7185]">Half Cut</p>
+              <p className="p-3 text-center font-semibold text-[#111827] dark:text-slate-100">18 Cars</p>
+              <p className="p-3 text-center font-semibold text-[#111827] dark:text-slate-100">9 Cars</p>
             </div>
           </div>
         </div>
