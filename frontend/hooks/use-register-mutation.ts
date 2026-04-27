@@ -6,5 +6,6 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 export function useRegisterMutation() {
   return useApiMutation({
     mutationFn: (payload: RegisterRequest) => registerApi(payload),
+    successToast: "Account created. Verify your email to continue.",
   });
 }

@@ -10,5 +10,6 @@ export function useContactMessageMutation() {
   return useApiMutation({
     mutationFn: (payload: SubmitContactMessageRequest) =>
       submitContactMessageApi(payload),
+    successToast: "Your message has been sent successfully.",
   });
 }

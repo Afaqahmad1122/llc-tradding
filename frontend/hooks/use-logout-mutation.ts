@@ -10,6 +10,7 @@ export function useLogoutMutation() {
 
   return useApiMutation({
     mutationFn: () => logoutApi(),
+    successToast: "Logged out successfully.",
     onSuccess: () => {
       useAuthStore.getState().clearAuth();
       router.push("/");

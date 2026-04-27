@@ -6,5 +6,6 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 export function useVerifyOtpMutation() {
   return useApiMutation({
     mutationFn: (payload: VerifyOtpRequest) => verifyOtpApi(payload),
+    successToast: "Email verified successfully.",
   });
 }

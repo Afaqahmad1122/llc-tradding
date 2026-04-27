@@ -51,10 +51,11 @@ export function ContactCta() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
     setSubmitError(null);
     setSubmitSuccess(null);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       name: String(formData.get("name") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim(),
@@ -90,7 +91,7 @@ export function ContactCta() {
 
     try {
       await contactMutation.mutateAsync(payload);
-      event.currentTarget.reset();
+      form.reset();
       setVehicleRequirement("");
       setSubmitSuccess("Thank you. Your message has been sent successfully.");
     } catch (error) {

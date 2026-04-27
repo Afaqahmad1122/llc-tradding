@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, PencilLine, Save, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteNavbar } from "@/components/landing/site-navbar";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,7 @@ export default function ProfilePage() {
 
     if (Object.keys(payload).length === 0) {
       setSuccessMessage("No changes to update.");
+      toast.info("No changes to update.");
       return;
     }
 
@@ -137,12 +139,15 @@ export default function ProfilePage() {
       setAuthUser(response.user);
       setFormState(toFormState(response.user));
       setSuccessMessage("Profile updated successfully.");
+      toast.success("Profile updated successfully.");
       setIsEditing(false);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
+        toast.error(error.message);
       } else {
         setErrorMessage("Failed to update profile. Please try again.");
+        toast.error("Failed to update profile. Please try again.");
       }
     } finally {
       setIsSubmitting(false);

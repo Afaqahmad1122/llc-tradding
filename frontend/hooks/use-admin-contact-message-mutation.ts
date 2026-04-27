@@ -16,5 +16,6 @@ export function useAdminContactMessageMutation() {
   return useApiMutation({
     mutationFn: ({ id, ...payload }: UpdateContactMessageMutationPayload) =>
       updateAdminContactMessageApi(id, payload),
+    successToast: "Contact message updated successfully.",
   });
 }
