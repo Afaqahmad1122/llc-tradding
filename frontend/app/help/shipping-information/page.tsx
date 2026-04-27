@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { StaticContentPage } from "@/components/landing/static-content-page";
 import { buildPageMetadata } from "@/app/seo";
+import { ShippingInformationClient } from "@/app/help/shipping-information/shipping-information-client";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Shipping Information",
@@ -10,10 +10,5 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default function ShippingInformationPage() {
-  return (
-    <StaticContentPage
-      title="Shipping Information"
-      description="Shipping timelines, destination coverage, and logistics updates will be connected dynamically."
-    />
-  );
+  return <ShippingInformationClient />;
 }
