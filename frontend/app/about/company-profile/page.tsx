@@ -1,7 +1,4 @@
-import { noticeText } from "@/components/landing/home-data";
-import { NoticeBar } from "@/components/landing/sections/notice-bar";
-import { SiteFooter } from "@/components/landing/site-footer";
-import { SiteNavbar } from "@/components/landing/site-navbar";
+import { AboutPageShell } from "@/components/landing/about-page-shell";
 
 const officeAddresses = [
   {
@@ -34,41 +31,55 @@ const officeAddresses = [
 
 export default function CompanyProfilePage() {
   return (
-    <div className="relative flex min-h-screen flex-col bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef]">
-      <NoticeBar text={noticeText} />
-      <SiteNavbar />
-
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
-        <section className="rounded-3xl border border-[#452E5A]/15 bg-white/85 p-8 shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)]">
-          <h1 className="text-3xl font-bold tracking-tight text-[#1E104E] sm:text-4xl">
-            Company Profile
-          </h1>
-          <p className="mt-3 max-w-3xl text-base text-[#452E5A]/85 sm:text-lg">
-            ICC TRADING CO, LTD was established in 2002 and continues to serve
-            customers with trusted international vehicle trading support.
+    <AboutPageShell
+      badge="Trusted Since 2002"
+      title="Company Profile"
+      subtitle="ICC TRADING CO, LTD has delivered trusted international vehicle trading services since 2002 with a global customer-first approach."
+    >
+      <div className="grid gap-4 sm:grid-cols-3">
+        <article className="rounded-2xl border border-[#452E5A]/15 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm text-[#452E5A]/75 dark:text-white/65">
+            Established
           </p>
-        </section>
+          <p className="mt-1 text-3xl font-bold text-[#1E104E] dark:text-white">
+            2002
+          </p>
+        </article>
+        <article className="rounded-2xl border border-[#452E5A]/15 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm text-[#452E5A]/75 dark:text-white/65">
+            International Offices
+          </p>
+          <p className="mt-1 text-3xl font-bold text-[#1E104E] dark:text-white">
+            3
+          </p>
+        </article>
+        <article className="rounded-2xl border border-[#452E5A]/15 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+          <p className="text-sm text-[#452E5A]/75 dark:text-white/65">
+            Core Focus
+          </p>
+          <p className="mt-1 text-lg font-semibold text-[#1E104E] dark:text-white">
+            Vehicle Trading
+          </p>
+        </article>
+      </div>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-2">
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
           {officeAddresses.map((office) => (
             <article
               key={office.title}
-              className="rounded-2xl border border-[#452E5A]/15 bg-white/85 p-6"
+              className="rounded-2xl border border-[#452E5A]/15 bg-white/85 p-6 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
             >
-              <h2 className="text-xl font-semibold text-[#1E104E]">
+              <h2 className="text-xl font-semibold text-[#1E104E] dark:text-white">
                 {office.title}
               </h2>
-              <div className="mt-3 space-y-1 text-sm text-[#452E5A]/90 sm:text-base">
+              <div className="mt-3 space-y-1 text-sm text-[#452E5A]/90 sm:text-base dark:text-white/80">
                 {office.lines.map((line) => (
                   <p key={line}>{line}</p>
                 ))}
               </div>
             </article>
           ))}
-        </section>
-      </main>
-
-      <SiteFooter />
-    </div>
+      </div>
+    </AboutPageShell>
   );
 }
