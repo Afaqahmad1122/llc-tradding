@@ -34,6 +34,7 @@ const officeAddresses = [
     lines: [
       "Dean city tri building opposite to sarhad university",
       "4th floor, 402 office",
+      "Peshawar, Pakistan",
     ],
   },
 ];
