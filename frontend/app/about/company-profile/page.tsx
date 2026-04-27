@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarClock,
   Globe2,
+  Phone,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -12,11 +13,7 @@ import {
 const officeAddresses = [
   {
     title: "Australia Office",
-    lines: [
-      "28 Elderwood Ave",
-      "TRUGANINA VIC 3029, AUSTRALIA",
-      "PH: 0415 136 181",
-    ],
+    lines: ["28 Elderwood Ave", "TRUGANINA VIC 3029, AUSTRALIA"],
   },
   {
     title: "Japan Office",
@@ -36,6 +33,19 @@ const officeAddresses = [
       "4th floor, 402 office",
       "Peshawar, Pakistan",
     ],
+  },
+];
+
+const phoneNumbers = [
+  {
+    country: "Australia",
+    number: "+61 415 136 181",
+    href: "tel:+61415136181",
+  },
+  {
+    country: "Japan",
+    number: "+81 70-6436-2003",
+    href: "tel:+817064362003",
   },
 ];
 
@@ -171,6 +181,31 @@ export default function CompanyProfilePage() {
           </article>
         ))}
       </div>
+
+      <section className="mt-6 rounded-2xl border border-[#452E5A]/15 bg-white/90 p-6 shadow-[0_16px_40px_-30px_rgba(30,16,78,0.75)] backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+        <div className="flex items-center gap-2">
+          <Phone className="size-5 text-[#d14041]" />
+          <h2 className="text-xl font-semibold text-[#1E104E] dark:text-white">
+            Phone Numbers
+          </h2>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {phoneNumbers.map((phone) => (
+            <a
+              key={phone.number}
+              href={phone.href}
+              className="rounded-xl border border-[#452E5A]/15 bg-[#f8f5ff] px-4 py-3 transition-colors hover:bg-[#f1ebff] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            >
+              <p className="text-sm font-semibold text-[#1E104E] sm:text-base dark:text-white">
+                <span className="mr-2 text-[#452E5A]/75 dark:text-white/70">
+                  {phone.country}:
+                </span>
+                {phone.number}
+              </p>
+            </a>
+          ))}
+        </div>
+      </section>
     </AboutPageShell>
   );
 }
