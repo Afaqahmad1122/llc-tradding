@@ -10,3 +10,4 @@ export { TrustFeatures } from "@/components/landing/sections/trust-features";
 export { TestimonialGrid } from "@/components/landing/sections/testimonial-grid";
 export { ContactCta } from "@/components/landing/sections/contact-cta";
 export { TopCarsStrip } from "@/components/landing/sections/top-cars-strip";
+export { LandingPageShell } from "@/components/landing/landing-page-shell";
