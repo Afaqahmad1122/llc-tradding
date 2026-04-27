@@ -12,6 +12,7 @@ import { authRouter } from "./routes/auth.route.js";
 import { contactMessagesRouter } from "./routes/contact-messages.route.js";
 import { healthRouter } from "./routes/health.route.js";
 import { reviewsRouter } from "./routes/reviews.route.js";
+import { shippingRouter } from "./routes/shipping.route.js";
 
 export const app = express();
 
@@ -45,6 +46,7 @@ app.use("/health", healthRouter);
 app.use("/auth", authRouter);
 app.use("/reviews", reviewsRouter);
 app.use("/contact-messages", contactMessagesRouter);
+app.use("/shipping", shippingRouter);
 
 app.use((req: Request, res: Response) => {
   notFoundHandler(req, res);

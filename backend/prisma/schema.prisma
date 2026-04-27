@@ -171,6 +171,64 @@ model ContactMessage {
   @@index([reviewedById])
 }
 
+model ShippingRegion {
+  id        String             @id @default(cuid())
+  name      String
+  slug      String             @unique
+  sortOrder Int                @default(0)
+  isActive  Boolean            @default(true)
+  schedules ShippingSchedule[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([name])
+}
+
+model ShippingSchedule {
+  id         String                  @id @default(cuid())
+  regionId   String
+  region     ShippingRegion          @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  company    String
+  shipName   String
+  voyage     String
+  sortOrder  Int                     @default(0)
+  isActive   Boolean                 @default(true)
+  departures ShippingDepartureEntry[]
+  arrivals   ShippingArrivalEntry[]
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+
+  @@index([regionId, isActive, sortOrder])
+  @@index([company])
+}
+
+model ShippingDepartureEntry {
+  id        String           @id @default(cuid())
+  scheduleId String
+  schedule  ShippingSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  portName  String
+  etdText   String
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  @@unique([scheduleId, portName])
+  @@index([scheduleId, sortOrder])
+}
+
+model ShippingArrivalEntry {
+  id        String           @id @default(cuid())
+  scheduleId String
+  schedule  ShippingSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  portName  String
+  etaText   String
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  @@unique([scheduleId, portName])
+  @@index([scheduleId, sortOrder])
+}
+
 enum FuelType {
   GASOLINE
   DIESEL
