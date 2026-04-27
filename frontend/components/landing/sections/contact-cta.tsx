@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { type FormEvent, useState } from "react";
 import {
   Mail,
   MessageCircle,
@@ -16,6 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useContactMessageMutation } from "@/hooks/use-contact-message-mutation";
+import { ApiError } from "@/lib/api/client";
+
+const NAME_MIN_LENGTH = 2;
+const PHONE_MIN_LENGTH = 6;
+const MESSAGE_MIN_LENGTH = 10;
+const MESSAGE_MAX_LENGTH = 2000;
 
 const contactDetails = [
   {
@@ -39,6 +49,63 @@ const contactDetails = [
 ];
 
 export function ContactCta() {
+  const contactMutation = useContactMessageMutation();
+  const [vehicleRequirement, setVehicleRequirement] = useState<string>("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: String(formData.get("name") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
+      country: String(formData.get("country") ?? "").trim() || undefined,
+      city: String(formData.get("city") ?? "").trim() || undefined,
+      company: String(formData.get("company") ?? "").trim() || undefined,
+      vehicleRequirement: String(formData.get("vehicleRequirement") ?? "").trim() || undefined,
+      message: String(formData.get("message") ?? "").trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.phone || !payload.message) {
+      setSubmitError("Please fill name, email, phone and message.");
+      return;
+    }
+    if (payload.name.length < NAME_MIN_LENGTH) {
+      setSubmitError("Name must be at least 2 characters.");
+      return;
+    }
+    if (payload.phone.length < PHONE_MIN_LENGTH) {
+      setSubmitError("Phone must be at least 6 characters.");
+      return;
+    }
+    if (payload.message.length < MESSAGE_MIN_LENGTH) {
+      setSubmitError("Message must be at least 10 characters.");
+      return;
+    }
+    if (payload.message.length > MESSAGE_MAX_LENGTH) {
+      setSubmitError("Message cannot exceed 2000 characters.");
+      return;
+    }
+
+    try {
+      await contactMutation.mutateAsync(payload);
+      event.currentTarget.reset();
+      setVehicleRequirement("");
+      setSubmitSuccess("Thank you. Your message has been sent successfully.");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setSubmitError(error.message);
+        return;
+      }
+      setSubmitError("Unable to send your message right now. Please try again.");
+    }
+  };
+
   return (
     <section
       id="contact"
@@ -59,24 +126,43 @@ export function ContactCta() {
               </p>
             </div>
 
-            <form className="space-y-3">
+            <form className="space-y-3" onSubmit={handleSubmit}>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
+                  name="name"
+                  required
+                  minLength={NAME_MIN_LENGTH}
+                  maxLength={120}
+                  autoComplete="name"
                   placeholder="Full name*"
                   className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <Input
+                  name="email"
                   type="email"
+                  required
+                  maxLength={254}
+                  autoComplete="email"
                   placeholder="Email*"
                   className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input
+                  name="phone"
+                  required
+                  minLength={PHONE_MIN_LENGTH}
+                  maxLength={40}
+                  autoComplete="tel"
                   placeholder="Phone*"
                   className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
-                <Select>
+                <input
+                  type="hidden"
+                  name="vehicleRequirement"
+                  value={vehicleRequirement}
+                />
+                <Select value={vehicleRequirement} onValueChange={setVehicleRequirement}>
                   <SelectTrigger className="h-10 w-full border-white/25 bg-white/12 text-white data-placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10">
                     <SelectValue placeholder="Vehicle requirement" />
                   </SelectTrigger>
@@ -91,25 +177,48 @@ export function ContactCta() {
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Input
+                  name="country"
+                  maxLength={120}
+                  autoComplete="country-name"
                   placeholder="Country"
                   className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <Input
+                  name="city"
+                  maxLength={120}
+                  autoComplete="address-level2"
                   placeholder="City"
                   className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
                 <Input
+                  name="company"
+                  maxLength={120}
+                  autoComplete="organization"
                   placeholder="Company"
                   className="h-10 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
                 />
               </div>
               <Textarea
+                name="message"
+                required
+                minLength={MESSAGE_MIN_LENGTH}
+                maxLength={MESSAGE_MAX_LENGTH}
                 placeholder="Message*"
                 className="min-h-28 border-white/25 bg-white/12 text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
               />
-              <Button className="h-11 rounded-xl border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-5 font-semibold text-[#1E104E] hover:opacity-90">
+              {submitError ? (
+                <p className="text-sm font-medium text-[#ffd6d6]">{submitError}</p>
+              ) : null}
+              {submitSuccess ? (
+                <p className="text-sm font-medium text-[#cfffd6]">{submitSuccess}</p>
+              ) : null}
+              <Button
+                type="submit"
+                disabled={contactMutation.isPending}
+                className="h-11 rounded-xl border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-5 font-semibold text-[#1E104E] hover:opacity-90"
+              >
                 <Send className="size-4" />
-                Send Message
+                {contactMutation.isPending ? "Sending..." : "Send Message"}
               </Button>
             </form>
           </div>

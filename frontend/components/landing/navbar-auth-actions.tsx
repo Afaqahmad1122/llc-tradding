@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleUserRound, LogOut, Settings, User } from "lucide-react";
+import { CircleUserRound, LogOut, Settings, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -95,6 +95,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
                   Profile
                 </Link>
               </DropdownMenuItem>
+              {user.role === "ADMIN" ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/contact-messages">
+                    <ShieldCheck className="size-4" />
+                    Admin Messages
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem>
                 <Settings className="size-4" />
                 Settings
@@ -138,6 +146,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
               Profile
             </Link>
           </DropdownMenuItem>
+          {user.role === "ADMIN" ? (
+            <DropdownMenuItem asChild>
+              <Link href="/admin/contact-messages">
+                <ShieldCheck className="size-4" />
+                Admin Messages
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem>
             <Settings className="size-4" />
             Settings

@@ -9,6 +9,7 @@ import morgan from "morgan";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 import { authRouter } from "./routes/auth.route.js";
+import { contactMessagesRouter } from "./routes/contact-messages.route.js";
 import { healthRouter } from "./routes/health.route.js";
 import { reviewsRouter } from "./routes/reviews.route.js";
 
@@ -43,6 +44,7 @@ app.get("/", (_req, res) => {
 app.use("/health", healthRouter);
 app.use("/auth", authRouter);
 app.use("/reviews", reviewsRouter);
+app.use("/contact-messages", contactMessagesRouter);
 
 app.use((req: Request, res: Response) => {
   notFoundHandler(req, res);
