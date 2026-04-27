@@ -50,7 +50,17 @@ type PublicUser = {
 };
 
 const PROFILE_FIELD_KEYS = ["phone", "country", "city", "address", "postalCode"] as const;
+const UPDATE_PROFILE_FIELD_KEYS = ["name", ...PROFILE_FIELD_KEYS] as const;
+type UpdateProfileData = {
+  name?: string;
+  phone?: string | null;
+  country?: string | null;
+  city?: string | null;
+  address?: string | null;
+  postalCode?: string | null;
+};
 const PROFILE_MAX_LENGTHS = {
+  name: 100,
   phone: 32,
   country: 100,
   city: 100,
@@ -163,6 +173,44 @@ const parseProfileData = (
       if (mode === "update") {
         data[key] = null;
       }
+      continue;
+    }
+
+    if (value.length > PROFILE_MAX_LENGTHS[key]) {
+      return { data: {}, error: `${key} exceeds allowed length` };
+    }
+
+    if (key === "phone" && !PHONE_PATTERN.test(value)) {
+      return { data: {}, error: "invalid phone format" };
+    }
+
+    if (key === "postalCode" && !POSTAL_CODE_PATTERN.test(value)) {
+      return { data: {}, error: "invalid postalCode format" };
+    }
+
+    data[key] = value;
+  }
+
+  return { data };
+};
+
+const parseUpdateProfileData = (
+  body: AuthBody,
+): { data: UpdateProfileData; error?: string } => {
+  const data: UpdateProfileData = {};
+
+  for (const key of UPDATE_PROFILE_FIELD_KEYS) {
+    const rawValue = body[key];
+    if (rawValue === undefined) {
+      continue;
+    }
+
+    const value = rawValue.trim();
+    if (!value) {
+      if (key === "name") {
+        return { data: {}, error: "name is required" };
+      }
+      data[key] = null;
       continue;
     }
 
@@ -593,7 +641,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
   }
 
   const body = req.body as AuthBody;
-  const parsedProfile = parseProfileData(body, "update");
+  const parsedProfile = parseUpdateProfileData(body);
   if (parsedProfile.error) {
     res.status(400).json({ message: parsedProfile.error });
     return;

@@ -10,7 +10,7 @@ type AuthSessionProviderProps = {
 };
 
 export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
-  const setAuthUser = useAuthStore((state) => state.setAuthUser);
+  const setAuthSession = useAuthStore((state) => state.setAuthSession);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setBootstrapped = useAuthStore((state) => state.setBootstrapped);
 
@@ -23,7 +23,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
         if (!isMounted) {
           return;
         }
-        setAuthUser(response.user);
+        setAuthSession(response.user, response.accessToken);
       } catch {
         if (!isMounted) {
           return;
@@ -42,7 +42,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     return () => {
       isMounted = false;
     };
-  }, [clearAuth, setAuthUser, setBootstrapped]);
+  }, [clearAuth, setAuthSession, setBootstrapped]);
 
   return <>{children}</>;
 }

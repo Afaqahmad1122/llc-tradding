@@ -18,6 +18,7 @@ import {
   loginSchema,
   registerSchema,
   resetPasswordSchema,
+  updateProfileSchema,
   verifyOtpSchema,
 } from "../validations/auth.validation.js";
 
@@ -57,4 +58,4 @@ authRouter.post("/login", loginLimiter, validateRequestBody(loginSchema), login)
 authRouter.post("/admin/login", loginLimiter, validateRequestBody(loginSchema), adminLogin);
 authRouter.post("/refresh", refresh);
 authRouter.post("/logout", logout);
-authRouter.patch("/profile", requireAuth, updateProfile);
+authRouter.patch("/profile", requireAuth, validateRequestBody(updateProfileSchema), updateProfile);

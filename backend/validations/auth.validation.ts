@@ -39,3 +39,21 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(1, "newPassword is required"),
   confirmNewPassword: z.string().optional(),
 });
+
+export const updateProfileSchema = z
+  .object({
+    name: optionalTrimmed,
+    ...profileFields,
+  })
+  .refine(
+    (value) =>
+      value.name !== undefined ||
+      value.phone !== undefined ||
+      value.country !== undefined ||
+      value.city !== undefined ||
+      value.address !== undefined ||
+      value.postalCode !== undefined,
+    {
+      message: "at least one profile field is required",
+    },
+  );
