@@ -18,6 +18,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useContactMessageMutation } from "@/hooks/use-contact-message-mutation";
 import { ApiError } from "@/lib/api/client";
+import {
+  CONTACT_EMAIL,
+  CONTACT_EMAIL_MAILTO,
+  CONTACT_PHONE,
+  CONTACT_PHONE_TEL_URL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_URL,
+  WHATSAPP_URL,
+} from "@/lib/contact-info";
 
 const NAME_MIN_LENGTH = 2;
 const PHONE_MIN_LENGTH = 6;
@@ -27,26 +36,26 @@ const MESSAGE_MAX_LENGTH = 2000;
 const contactDetails = [
   {
     label: "WhatsApp",
-    value: "+81 70-6436-2003",
-    href: "https://wa.me/817064362003",
+    value: CONTACT_PHONE,
+    href: WHATSAPP_URL,
     icon: WhatsAppIcon,
   },
   {
     label: "Phone",
-    value: "+81 70-6436-2003",
-    href: "tel:+817064362003",
+    value: CONTACT_PHONE,
+    href: CONTACT_PHONE_TEL_URL,
     icon: Phone,
   },
   {
     label: "Email",
-    value: "icctradingjp@gmail.com",
-    href: "mailto:icctradingjp@gmail.com",
+    value: CONTACT_EMAIL,
+    href: CONTACT_EMAIL_MAILTO,
     icon: Mail,
   },
   {
     label: "Instagram",
-    value: "@icc_trading_japan",
-    href: "https://www.instagram.com/icc_trading_japan?utm_source=qr",
+    value: INSTAGRAM_HANDLE,
+    href: INSTAGRAM_URL,
     icon: InstagramIcon,
   },
 ];
@@ -277,7 +286,7 @@ export function ContactCta() {
               asChild
               className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
             >
-              <Link href="https://wa.me/817064362003">
+              <Link href={WHATSAPP_URL}>
                 <WhatsAppIcon className="size-4" />
                 WhatsApp
               </Link>
@@ -287,7 +296,7 @@ export function ContactCta() {
               variant="outline"
               className="border-[#452E5A]/20 bg-white/90 text-[#2F2142] hover:bg-[#fff5f7] hover:text-[#2F2142] dark:border-white/20 dark:bg-white/8 dark:text-white dark:hover:bg-white/15 dark:hover:text-white"
             >
-              <Link href="mailto:icctradingjp@gmail.com">
+              <Link href={CONTACT_EMAIL_MAILTO}>
                 <Mail className="size-4" />
                 Email Us
               </Link>

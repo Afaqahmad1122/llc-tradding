@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { StaticContentPage } from "@/components/landing/static-content-page";
 import { buildPageMetadata } from "@/app/seo";
+import { CareersJobsSection } from "@/components/landing/sections/careers-jobs-section";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Careers",
@@ -10,10 +10,5 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default function CareersPage() {
-  return (
-    <StaticContentPage
-      title="Careers"
-      description="Open roles, culture details, and the application flow will be connected from dynamic data."
-    />
-  );
+  return <CareersJobsSection />;
 }

@@ -37,6 +37,7 @@ model User {
   reviews      Review[]
   reviewEligibilities ReviewEligibility[]
   reviewedContactMessages ContactMessage[] @relation("ContactMessageReviewer")
+  jobApplications JobApplication[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -229,6 +230,38 @@ model ShippingArrivalEntry {
   @@index([scheduleId, sortOrder])
 }
 
+model Job {
+  id          String           @id @default(cuid())
+  title       String
+  slug        String           @unique
+  location    String?
+  type        String?
+  description String
+  applyEmail  String?
+  isActive    Boolean          @default(true)
+  applications JobApplication[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([isActive, createdAt])
+}
+
+model JobApplication {
+  id        String                @id @default(cuid())
+  jobId     String
+  job       Job                   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    JobApplicationStatus  @default(APPLIED)
+  appliedAt DateTime              @default(now())
+  note      String?
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@unique([jobId, userId])
+  @@index([userId, createdAt])
+}
+
 enum FuelType {
   GASOLINE
   DIESEL
@@ -263,4 +296,8 @@ enum ContactMessageStatus {
   IN_REVIEW
   RESOLVED
   SPAM
+}
+
+enum JobApplicationStatus {
+  APPLIED
 }

@@ -10,6 +10,15 @@ import {
 } from "lucide-react";
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
+import {
+  CONTACT_EMAIL,
+  CONTACT_EMAIL_MAILTO,
+  CONTACT_PHONE,
+  CONTACT_PHONE_TEL_URL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_URL,
+  WHATSAPP_URL,
+} from "@/lib/contact-info";
 
 const quickLinks = [
   { label: "Cars", href: "#inventory" },
@@ -51,32 +60,32 @@ export function SiteFooter() {
             <p className="mb-3 text-lg font-semibold">Contact Us</p>
             <div className="space-y-2 text-sm">
               <Link
-                href="https://wa.me/817064362003"
+                href={WHATSAPP_URL}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <WhatsAppIcon className="size-4 text-[#FFC85C]" />
-                +81 70-6436-2003
+                {CONTACT_PHONE}
               </Link>
               <Link
-                href="tel:+817064362003"
+                href={CONTACT_PHONE_TEL_URL}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <Phone className="size-4 text-[#FFC85C]" />
-                +81 70-6436-2003
+                {CONTACT_PHONE}
               </Link>
               <Link
-                href="mailto:icctradingjp@gmail.com"
+                href={CONTACT_EMAIL_MAILTO}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <Mail className="size-4 text-[#FFC85C]" />
-                icctradingjp@gmail.com
+                {CONTACT_EMAIL}
               </Link>
               <Link
-                href="https://www.instagram.com/icc_trading_japan?utm_source=qr"
+                href={INSTAGRAM_URL}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <InstagramIcon className="size-4 text-[#FFC85C]" />
-                @icc_trading_japan
+                {INSTAGRAM_HANDLE}
               </Link>
             </div>
           </div>

@@ -11,6 +11,7 @@ import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js
 import { authRouter } from "./routes/auth.route.js";
 import { contactMessagesRouter } from "./routes/contact-messages.route.js";
 import { healthRouter } from "./routes/health.route.js";
+import { jobsRouter } from "./routes/jobs.route.js";
 import { reviewsRouter } from "./routes/reviews.route.js";
 import { shippingRouter } from "./routes/shipping.route.js";
 
@@ -45,6 +46,7 @@ app.get("/", (_req, res) => {
 app.use("/health", healthRouter);
 app.use("/auth", authRouter);
 app.use("/reviews", reviewsRouter);
+app.use("/jobs", jobsRouter);
 app.use("/contact-messages", contactMessagesRouter);
 app.use("/shipping", shippingRouter);
 
