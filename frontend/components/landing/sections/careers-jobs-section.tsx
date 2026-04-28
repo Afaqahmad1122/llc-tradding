@@ -141,13 +141,13 @@ export function CareersJobsSection() {
             so you can send your CV directly.
           </p>
         </div>
-        <div className="relative overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white/70 dark:border-white/10 dark:bg-white/10">
+        <div className="relative overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white/70 p-2 dark:border-white/10 dark:bg-white/10 lg:p-4">
           <Image
             src="/bernardsie-honda-1596081_1920.png"
             alt="Team collaboration"
             width={700}
             height={480}
-            className="h-full w-full object-cover"
+            className="h-full w-full rounded-xl object-cover lg:object-contain"
           />
         </div>
       </div>

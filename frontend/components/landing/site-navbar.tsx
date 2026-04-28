@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, Menu } from "lucide-react";
 
 import { NavbarAuthActions } from "@/components/landing/navbar-auth-actions";
@@ -48,6 +51,30 @@ const navItems: NavItem[] = [
 ];
 
 export function SiteNavbar() {
+  const pathname = usePathname();
+
+  const normalize = (value: string): string =>
+    value !== "/" && value.endsWith("/") ? value.slice(0, -1) : value;
+
+  const isPathActive = (href: string): boolean => {
+    const current = normalize(pathname);
+    const target = normalize(href);
+    if (target === "/") {
+      return current === "/";
+    }
+    return current === target || current.startsWith(`${target}/`);
+  };
+
+  const isNavItemActive = (item: NavItem): boolean => {
+    if (item.href && isPathActive(item.href)) {
+      return true;
+    }
+    if (item.children) {
+      return item.children.some((child) => isPathActive(child.href));
+    }
+    return false;
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-[#452E5A]/15 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#0c0720]/80">
       <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
@@ -74,7 +101,11 @@ export function SiteNavbar() {
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                    className={`flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      isNavItemActive(item)
+                        ? "bg-[#452E5A]/12 text-[#1E104E] dark:bg-white/15 dark:text-white"
+                        : "text-[#452E5A] hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                    }`}
                   >
                     {item.label}
                     <ChevronDown className="size-3.5" />
@@ -106,7 +137,11 @@ export function SiteNavbar() {
               <Link
                 key={item.label}
                 href={item.href ?? "#"}
-                className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                className={`whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  item.href && isPathActive(item.href)
+                    ? "bg-[#452E5A]/12 text-[#1E104E] dark:bg-white/15 dark:text-white"
+                    : "text-[#452E5A] hover:bg-[#452E5A]/8 hover:text-[#1E104E] dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white"
+                }`}
               >
                 {item.label}
               </Link>
@@ -139,7 +174,11 @@ export function SiteNavbar() {
                         {item.href ? (
                           <Link
                             href={item.href}
-                            className="block rounded-md px-2 py-1.5 text-sm font-medium text-[#452E5A]/90 hover:bg-[#452E5A]/8 dark:text-white/75 dark:hover:bg-white/10"
+                            className={`block rounded-md px-2 py-1.5 text-sm font-medium ${
+                              isPathActive(item.href)
+                                ? "bg-[#452E5A]/12 text-[#1E104E] dark:bg-white/15 dark:text-white"
+                                : "text-[#452E5A]/90 hover:bg-[#452E5A]/8 dark:text-white/75 dark:hover:bg-white/10"
+                            }`}
                           >
                             Open {item.label}
                           </Link>
@@ -148,7 +187,11 @@ export function SiteNavbar() {
                           <Link
                             key={child.label}
                             href={child.href}
-                            className="block rounded-md px-2 py-1.5 text-sm font-medium text-[#452E5A]/90 hover:bg-[#452E5A]/8 dark:text-white/75 dark:hover:bg-white/10"
+                            className={`block rounded-md px-2 py-1.5 text-sm font-medium ${
+                              isPathActive(child.href)
+                                ? "bg-[#452E5A]/12 text-[#1E104E] dark:bg-white/15 dark:text-white"
+                                : "text-[#452E5A]/90 hover:bg-[#452E5A]/8 dark:text-white/75 dark:hover:bg-white/10"
+                            }`}
                           >
                             {child.label}
                           </Link>
@@ -159,7 +202,11 @@ export function SiteNavbar() {
                     <Link
                       key={item.label}
                       href={item.href ?? "#"}
-                      className="rounded-md px-3 py-2 text-sm font-medium text-[#452E5A] hover:bg-[#452E5A]/8 dark:text-white/80 dark:hover:bg-white/10"
+                      className={`rounded-md px-3 py-2 text-sm font-medium ${
+                        item.href && isPathActive(item.href)
+                          ? "bg-[#452E5A]/12 text-[#1E104E] dark:bg-white/15 dark:text-white"
+                          : "text-[#452E5A] hover:bg-[#452E5A]/8 dark:text-white/80 dark:hover:bg-white/10"
+                      }`}
                     >
                       {item.label}
                     </Link>
