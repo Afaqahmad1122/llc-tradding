@@ -4,6 +4,7 @@ import {
   Clock3,
   Globe2,
   Mail,
+  MapPin,
   Phone,
   ShieldCheck,
   Star,
@@ -17,6 +18,9 @@ import {
   CONTACT_PHONE_TEL_URL,
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
+  UGANDA_CONTACT_PHONE,
+  UGANDA_CONTACT_PHONE_TEL_URL,
+  UGANDA_OFFICE_ADDRESS,
   WHATSAPP_URL,
 } from "@/lib/contact-info";
 
@@ -72,6 +76,20 @@ export function SiteFooter() {
               >
                 <Phone className="size-4 text-[#FFC85C]" />
                 {CONTACT_PHONE}
+              </Link>
+              <Link
+                href={UGANDA_CONTACT_PHONE_TEL_URL}
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
+              >
+                <Phone className="size-4 text-[#FFC85C]" />
+                {UGANDA_CONTACT_PHONE}
+              </Link>
+              <Link
+                href="/contact/global-offices"
+                className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
+              >
+                <MapPin className="mt-0.5 size-4 shrink-0 text-[#FFC85C]" />
+                <span>{UGANDA_OFFICE_ADDRESS}</span>
               </Link>
               <Link
                 href={CONTACT_EMAIL_MAILTO}

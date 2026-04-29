@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { buildPageMetadata } from "@/app/seo";
+import { OFFICE_CONTACTS } from "@/lib/contact-info";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Company Profile",
@@ -19,44 +20,17 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/about/company-profile",
 });
 
-const officeAddresses = [
-  {
-    title: "Australia Office",
-    lines: ["28 Elderwood Ave", "TRUGANINA VIC 3029, AUSTRALIA"],
-  },
-  {
-    title: "Japan Office",
-    lines: [
-      "3231102",
-      "栃木県栃木市藤岡町赤麻字西原868番3",
-      "株式会社ICC TRADING 御中",
-      "323-1102",
-      "Tochigi Ken, Tochigi Shi, Fujioka-cho, Akamaza, Nishihara 867-3, Japan",
-      "ICC TRADING CO, LTD",
-    ],
-  },
-  {
-    title: "Pakistan Office",
-    lines: [
-      "Dean city tri building opposite to sarhad university",
-      "4th floor, 402 office",
-      "Peshawar, Pakistan",
-    ],
-  },
-];
+const phoneNumbers = OFFICE_CONTACTS.flatMap((office) => {
+  if (!office.phone || !office.phoneHref) {
+    return [];
+  }
 
-const phoneNumbers = [
-  {
-    country: "Australia",
-    number: "+61 415 136 181",
-    href: "tel:+61415136181",
-  },
-  {
-    country: "Japan",
-    number: "+81 70-6436-2003",
-    href: "tel:+817064362003",
-  },
-];
+  return [{
+    country: office.phoneLabel ?? office.title.replace(" Office", ""),
+    number: office.phone,
+    href: office.phoneHref,
+  }];
+});
 
 const companyStrengths = [
   {
@@ -104,7 +78,7 @@ export default function CompanyProfilePage() {
             International Offices
           </p>
           <p className="mt-1 text-3xl font-bold text-[#1E104E] dark:text-white">
-            3
+            {OFFICE_CONTACTS.length}
           </p>
         </article>
         <article className="relative overflow-hidden rounded-2xl border border-[#452E5A]/15 bg-white/90 p-5 shadow-[0_16px_40px_-28px_rgba(30,16,78,0.9)] backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
@@ -174,7 +148,7 @@ export default function CompanyProfilePage() {
       </section>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {officeAddresses.map((office) => (
+        {OFFICE_CONTACTS.map((office) => (
           <article
             key={office.title}
             className="rounded-2xl border border-[#452E5A]/15 bg-white/90 p-6 shadow-[0_16px_40px_-30px_rgba(30,16,78,0.75)] backdrop-blur-sm dark:border-white/10 dark:bg-white/5"

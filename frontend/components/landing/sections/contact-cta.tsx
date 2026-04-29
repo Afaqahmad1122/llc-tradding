@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import { Mail, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send } from "lucide-react";
 
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -25,6 +25,10 @@ import {
   CONTACT_PHONE_TEL_URL,
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
+  UGANDA_CONTACT_PHONE,
+  UGANDA_CONTACT_PHONE_TEL_URL,
+  UGANDA_OFFICE_ADDRESS,
+  UGANDA_WHATSAPP_URL,
   WHATSAPP_URL,
 } from "@/lib/contact-info";
 
@@ -45,6 +49,24 @@ const contactDetails = [
     value: CONTACT_PHONE,
     href: CONTACT_PHONE_TEL_URL,
     icon: Phone,
+  },
+  {
+    label: "Uganda Phone",
+    value: UGANDA_CONTACT_PHONE,
+    href: UGANDA_CONTACT_PHONE_TEL_URL,
+    icon: Phone,
+  },
+  {
+    label: "Uganda WhatsApp",
+    value: UGANDA_CONTACT_PHONE,
+    href: UGANDA_WHATSAPP_URL,
+    icon: WhatsAppIcon,
+  },
+  {
+    label: "Uganda Office",
+    value: UGANDA_OFFICE_ADDRESS,
+    href: "/contact/global-offices",
+    icon: MapPin,
   },
   {
     label: "Email",
