@@ -48,8 +48,8 @@ export const OFFICE_CONTACTS: OfficeContact[] = [
   {
     title: "Pakistan Office",
     lines: [
-      "Dean city tri building opposite to sarhad university",
-      "4th floor, 402 office",
+      "Office 402, Tri Tower, 4th Floor",
+      "Deans City, opposite Sarhad University, near Imtiaz Mall",
       "Peshawar, Pakistan",
     ],
   },
