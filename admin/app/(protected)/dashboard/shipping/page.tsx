@@ -180,7 +180,14 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
   );
 }
 
-type PortDraft = { portName: string; cellText: string };
+type PortDraft = { key: string; portName: string; cellText: string };
+
+function newPortRowKey(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
 
 function portsFromSchedule(
   kind: "departure" | "arrival",
@@ -188,11 +195,13 @@ function portsFromSchedule(
 ): PortDraft[] {
   if (kind === "departure") {
     return schedule.departures.map((d) => ({
+      key: d.id,
       portName: d.portName,
       cellText: d.etdText,
     }));
   }
   return schedule.arrivals.map((a) => ({
+    key: a.id,
     portName: a.portName,
     cellText: a.etaText,
   }));
@@ -225,7 +234,7 @@ function PortRowsEditor({
     onChange(next);
   };
 
-  const updateRow = (index: number, patch: Partial<PortDraft>) => {
+  const updateRow = (index: number, patch: Partial<Pick<PortDraft, "portName" | "cellText">>) => {
     const next = rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
     onChange(next);
   };
@@ -249,7 +258,10 @@ function PortRowsEditor({
           variant="outline"
           disabled={disabled || pending}
           onClick={() =>
-            onChange([...rows, { portName: "", cellText: "-" }])
+            onChange([
+              ...rows,
+              { key: newPortRowKey(), portName: "", cellText: "-" },
+            ])
           }
         >
           <Plus className="mr-1.5 size-3.5" aria-hidden />
@@ -270,7 +282,7 @@ function PortRowsEditor({
         <ul className="flex flex-col gap-2">
           {rows.map((row, index) => (
             <li
-              key={`${index}-${row.portName}`}
+              key={row.key}
               className="bg-card flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:flex-wrap sm:items-end"
             >
               <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
@@ -1301,7 +1313,7 @@ export default function AdminShippingPage() {
 
               <PortRowsEditor
                 title="Departures"
-                hint="Each save replaces all departure ports for this schedule. Use “-” when there is no ETD. Port names must be unique per schedule."
+                hint="Each save replaces all departure ports for this schedule. Use “-” when there is no ETD. Port names must be unique per schedule. On the public page, column headers are the union of all departure ports across every active schedule in this region—keep names and order aligned across rows for a consistent grid."
                 rows={departureDrafts}
                 onChange={setDepartureDrafts}
                 onSave={() => saveDeparturesMutation.mutate()}
@@ -1311,7 +1323,7 @@ export default function AdminShippingPage() {
 
               <PortRowsEditor
                 title="Arrivals"
-                hint="Each save replaces all arrival ports. Use “-” when there is no ETA."
+                hint="Each save replaces all arrival ports. Use “-” when there is no ETA. Port names must be unique per schedule. Public arrival columns are the union of all arrivals across schedules in this region—use matching port names and order when you want the same columns on every row."
                 rows={arrivalDrafts}
                 onChange={setArrivalDrafts}
                 onSave={() => saveArrivalsMutation.mutate()}
