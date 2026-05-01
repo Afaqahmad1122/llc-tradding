@@ -3,8 +3,9 @@
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 
-import { Toaster } from "@/components/ui/sonner";
+import { AdminSessionProvider } from "@/components/providers/admin-session-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
@@ -15,7 +16,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
+        <AdminSessionProvider>{children}</AdminSessionProvider>
         <Toaster />
       </ThemeProvider>
     </QueryProvider>

@@ -6,6 +6,7 @@ import axios, {
   type AxiosRequestConfig,
 } from "axios";
 
+import type { AuthUser } from "@/lib/api/auth";
 import { useAdminAuthStore } from "@/stores/auth-store";
 
 export type ApiErrorResponse = {
@@ -60,8 +61,46 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<ApiErrorResponse>) => {
+  async (error: AxiosError<ApiErrorResponse>) => {
+    const originalRequest = error.config as (InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    }) | undefined;
     const statusCode = error.response?.status;
+
+    const url = typeof originalRequest?.url === "string" ? originalRequest.url : "";
+    const isRefreshRequest =
+      url.includes("/auth/refresh") || url.endsWith("/auth/refresh");
+
+    if (
+      statusCode === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isRefreshRequest
+    ) {
+      originalRequest._retry = true;
+      try {
+        const refreshResponse = await apiClient.post<{
+          accessToken: string;
+          user: AuthUser;
+        }>("/auth/refresh");
+
+        useAdminAuthStore
+          .getState()
+          .setAuthSession(
+            refreshResponse.data.user,
+            refreshResponse.data.accessToken,
+          );
+
+        const headers =
+          originalRequest.headers as AxiosHeaders & { Authorization?: string };
+        headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+
+        return apiClient.request(originalRequest);
+      } catch {
+        useAdminAuthStore.getState().clearAuth();
+      }
+    }
+
     const errorPayload = error.response?.data;
     const message =
       errorPayload?.message ??

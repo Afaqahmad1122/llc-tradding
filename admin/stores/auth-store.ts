@@ -1,14 +1,33 @@
 import { create } from "zustand";
 
+import type { AuthUser } from "@/lib/api/auth";
+
 type AdminAuthState = {
+  user: AuthUser | null;
   accessToken: string | null;
-  setAccessToken: (token: string | null) => void;
+  isAuthenticated: boolean;
+  hasBootstrapped: boolean;
+  setAuthSession: (user: AuthUser, accessToken: string) => void;
   clearAuth: () => void;
+  setBootstrapped: (value: boolean) => void;
 };
 
-/** Attach tokens after login; the API client reads from here for Bearer auth. */
 export const useAdminAuthStore = create<AdminAuthState>((set) => ({
+  user: null,
   accessToken: null,
-  setAccessToken: (accessToken) => set({ accessToken }),
-  clearAuth: () => set({ accessToken: null }),
+  isAuthenticated: false,
+  hasBootstrapped: false,
+  setAuthSession: (user, accessToken) =>
+    set(() => ({
+      user,
+      accessToken,
+      isAuthenticated: true,
+    })),
+  clearAuth: () =>
+    set(() => ({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+    })),
+  setBootstrapped: (value) => set(() => ({ hasBootstrapped: value })),
 }));

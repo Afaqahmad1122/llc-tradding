@@ -4,11 +4,23 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(8).max(15).default(12),
   DATABASE_URL: z.string().min(1),
-  CORS_ORIGIN: z.string().url(),
+  /** Comma-separated list of browser origins allowed to send credentialed requests (e.g. storefront + admin). */
+  CORS_ORIGIN: z
+    .string()
+    .min(1)
+    .transform((raw) =>
+      raw
+        .split(",")
+        .map((segment) => segment.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.string().url()).min(1)),
   AWS_REGION: z.string().default(""),
   AWS_ACCESS_KEY_ID: z.string().default(""),
   AWS_SECRET_ACCESS_KEY: z.string().default(""),
