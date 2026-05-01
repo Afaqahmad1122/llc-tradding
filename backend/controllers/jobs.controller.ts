@@ -43,13 +43,7 @@ const normalizeSlug = (value: string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const getApplyEmail = (jobApplyEmail: string | null): string => {
-  const fallback = env.MAIL_FROM.includes("<")
-    ? env.MAIL_FROM.match(/<([^>]+)>/)?.[1]?.trim()
-    : env.MAIL_FROM.trim();
-
-  return (jobApplyEmail ?? fallback ?? "").trim();
-};
+const getApplyEmail = (): string => env.JOB_APPLICATIONS_EMAIL;
 
 const requireAdmin = (res: Response): boolean => {
   const authUserRole = res.locals.authUserRole as UserRole | undefined;
@@ -115,7 +109,7 @@ export const getJobs = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({
     data: data.map((item) => ({
       ...item,
-      applyEmail: getApplyEmail(item.applyEmail),
+      applyEmail: getApplyEmail(),
     })),
     pagination: {
       page,
@@ -158,7 +152,7 @@ export const getJobBySlug = async (
   res.status(200).json({
     job: {
       ...job,
-      applyEmail: getApplyEmail(job.applyEmail),
+      applyEmail: getApplyEmail(),
     },
   });
 };
@@ -241,7 +235,7 @@ export const getAdminJobs = async (
   res.status(200).json({
     data: data.map((item) => ({
       ...item,
-      applyEmail: getApplyEmail(item.applyEmail),
+      applyEmail: getApplyEmail(),
     })),
     pagination: {
       page,
@@ -286,7 +280,7 @@ export const createAdminJob = async (
     });
     res
       .status(201)
-      .json({ job: { ...job, applyEmail: getApplyEmail(job.applyEmail) } });
+      .json({ job: { ...job, applyEmail: getApplyEmail() } });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -344,7 +338,7 @@ export const updateAdminJob = async (
     });
     res
       .status(200)
-      .json({ job: { ...job, applyEmail: getApplyEmail(job.applyEmail) } });
+      .json({ job: { ...job, applyEmail: getApplyEmail() } });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -447,7 +441,7 @@ export const applyToJob = async (
   const body = req.body as ApplyJobBody;
   const job = await prisma.job.findFirst({
     where: { id: jobId, isActive: true },
-    select: { id: true, title: true, applyEmail: true },
+    select: { id: true, title: true },
   });
 
   if (!job) {
@@ -473,7 +467,7 @@ export const applyToJob = async (
 
     res.status(201).json({
       application,
-      applyEmail: getApplyEmail(job.applyEmail),
+      applyEmail: getApplyEmail(),
       jobTitle: job.title,
     });
   } catch (error) {

@@ -39,6 +39,11 @@ const envSchema = z.object({
   SMTP_USER: z.string().email(),
   SMTP_PASS: z.string().min(1),
   MAIL_FROM: z.string().min(1),
+  /** Inbox for career applications (mailto target after apply); same for every job. */
+  JOB_APPLICATIONS_EMAIL: z
+    .string()
+    .email()
+    .default("icctradingjp@gmail.com"),
 });
 
 const parsed = envSchema.safeParse(process.env);
