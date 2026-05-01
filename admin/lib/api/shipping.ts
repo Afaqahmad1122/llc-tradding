@@ -78,7 +78,10 @@ export type CreateAdminShippingRegionResponse = {
 export type UpdateAdminShippingRegionResponse =
   CreateAdminShippingRegionResponse;
 
-export type DeactivateAdminShippingRegionResponse = {
+export type DeactivateAdminShippingRegionResponse =
+  UpdateAdminShippingRegionResponse;
+
+export type DeleteAdminShippingRegionResponse = {
   message: string;
 };
 
@@ -172,8 +175,19 @@ export function updateAdminShippingRegion(
   );
 }
 
+/** Hides the destination from the site; data is kept. */
 export function deactivateAdminShippingRegion(id: string) {
-  return http.delete<DeactivateAdminShippingRegionResponse>(
+  return http.patch<
+    DeactivateAdminShippingRegionResponse,
+    UpdateAdminShippingRegionBody
+  >(`/shipping/admin/regions/${encodeURIComponent(id)}`, {
+    isActive: false,
+  });
+}
+
+/** Permanently removes the region and all sailing rows (cascade). Requires admin auth on the API. */
+export function deleteAdminShippingRegion(id: string) {
+  return http.delete<DeleteAdminShippingRegionResponse>(
     `/shipping/admin/regions/${encodeURIComponent(id)}`,
   );
 }

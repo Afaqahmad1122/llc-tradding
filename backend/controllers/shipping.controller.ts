@@ -431,13 +431,10 @@ export const deleteAdminShippingRegion = async (
   }
 
   try {
-    await prisma.shippingRegion.update({
+    await prisma.shippingRegion.delete({
       where: { id: regionId },
-      data: { isActive: false },
     });
-    res
-      .status(200)
-      .json({ message: "shipping region deactivated successfully" });
+    res.status(200).json({ message: "shipping region deleted successfully" });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

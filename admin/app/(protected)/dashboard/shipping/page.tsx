@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -66,6 +67,7 @@ import {
   createAdminShippingSchedule,
   deactivateAdminShippingRegion,
   deactivateAdminShippingSchedule,
+  deleteAdminShippingRegion,
   fetchAdminShippingRegions,
   fetchAdminShippingScheduleById,
   fetchAdminShippingSchedulesByRegion,
@@ -216,6 +218,7 @@ function PortRowsEditor({
   disabled,
   pending,
   error,
+  showSaveFooter = true,
 }: {
   title: string;
   hint: string;
@@ -225,6 +228,8 @@ function PortRowsEditor({
   disabled?: boolean;
   pending: boolean;
   error: string | null;
+  /** When false, hide the per-section save button (e.g. parent submits everything at once). */
+  showSaveFooter?: boolean;
 }) {
   const move = (index: number, dir: -1 | 1) => {
     const j = index + dir;
@@ -352,24 +357,43 @@ function PortRowsEditor({
           ))}
         </ul>
       )}
-      <div className="flex justify-end border-t border-border/60 pt-3">
-        <Button
-          type="button"
-          disabled={disabled || pending}
-          onClick={onSave}
-        >
-          {pending ? (
-            <>
-              <Spinner className="mr-2 size-4" />
-              Saving…
-            </>
-          ) : (
-            `Save ${title.toLowerCase()}`
-          )}
-        </Button>
-      </div>
+      {showSaveFooter ? (
+        <div className="flex justify-end border-t border-border/60 pt-3">
+          <Button
+            type="button"
+            disabled={disabled || pending}
+            onClick={onSave}
+          >
+            {pending ? (
+              <>
+                <Spinner className="mr-2 size-4" />
+                Saving…
+              </>
+            ) : (
+              `Save ${title.toLowerCase()}`
+            )}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
+}
+
+function validatePortDrafts(
+  rows: PortDraft[],
+  emptyTextLabel: string,
+): string | null {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const name = row.portName.trim();
+    const text = row.cellText.trim();
+    if (!name) return "Each port row needs a port name.";
+    if (!text) return `${emptyTextLabel} cannot be empty (use “-”).`;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return "Duplicate port names are not allowed.";
+    seen.add(key);
+  }
+  return null;
 }
 
 export default function AdminShippingPage() {
@@ -385,6 +409,18 @@ export default function AdminShippingPage() {
     sortOrder: 0,
     isActive: true,
   });
+  const [createFirstSchedule, setCreateFirstSchedule] = useState({
+    company: "",
+    shipName: "",
+    voyage: "",
+    sortOrder: 0,
+    isActive: true,
+  });
+  const [createRegionDepartureDrafts, setCreateRegionDepartureDrafts] =
+    useState<PortDraft[]>([]);
+  const [createRegionArrivalDrafts, setCreateRegionArrivalDrafts] = useState<
+    PortDraft[]
+  >([]);
   const [createRegionError, setCreateRegionError] = useState<string | null>(
     null,
   );
@@ -403,6 +439,8 @@ export default function AdminShippingPage() {
   const [regionDanger, setRegionDanger] = useState<AdminShippingRegion | null>(
     null,
   );
+  const [regionDeleteTarget, setRegionDeleteTarget] =
+    useState<AdminShippingRegion | null>(null);
 
   const [createScheduleOpen, setCreateScheduleOpen] = useState(false);
   const [createSchedule, setCreateSchedule] = useState({
@@ -412,6 +450,10 @@ export default function AdminShippingPage() {
     sortOrder: 0,
     isActive: true,
   });
+  const [createScheduleDepartureDrafts, setCreateScheduleDepartureDrafts] =
+    useState<PortDraft[]>([]);
+  const [createScheduleArrivalDrafts, setCreateScheduleArrivalDrafts] =
+    useState<PortDraft[]>([]);
   const [createScheduleError, setCreateScheduleError] = useState<
     string | null
   >(null);
@@ -516,18 +558,79 @@ export default function AdminShippingPage() {
     setArrivalsSaveError(null);
   }, [scheduleData, nav.screen]);
 
-  const createRegionMutation = useMutation({
-    mutationFn: () =>
-      createAdminShippingRegion({
-        name: createRegion.name.trim(),
-        slug: slugFromName(createRegion.slug || createRegion.name),
+  const createDestinationMutation = useMutation({
+    mutationFn: async () => {
+      const name = createRegion.name.trim();
+      if (!name) throw new Error("Destination name is required.");
+      const slug = slugFromName(createRegion.slug || createRegion.name);
+      if (!slug) throw new Error("Slug is required.");
+
+      const company = createFirstSchedule.company.trim();
+      const shipName = createFirstSchedule.shipName.trim();
+      const voyage = createFirstSchedule.voyage.trim();
+      if (!company) {
+        throw new Error("Shipping company is required for the first sailing row.");
+      }
+      if (!shipName) throw new Error("Ship name is required.");
+      if (!voyage) throw new Error("Voyage number or code is required.");
+
+      const depErr = validatePortDrafts(
+        createRegionDepartureDrafts,
+        "ETD text",
+      );
+      if (depErr) throw new Error(depErr);
+      const arrErr = validatePortDrafts(
+        createRegionArrivalDrafts,
+        "ETA text",
+      );
+      if (arrErr) throw new Error(arrErr);
+
+      const { region } = await createAdminShippingRegion({
+        name,
+        slug,
         sortOrder: createRegion.sortOrder,
         isActive: createRegion.isActive,
-      }),
+      });
+
+      const { schedule } = await createAdminShippingSchedule(region.id, {
+        company,
+        shipName,
+        voyage,
+        sortOrder: createFirstSchedule.sortOrder,
+        isActive: createFirstSchedule.isActive,
+      });
+
+      await replaceAdminShippingDepartures(schedule.id, {
+        entries: createRegionDepartureDrafts.map((r, i) => ({
+          portName: r.portName.trim(),
+          etdText: r.cellText.trim(),
+          sortOrder: i,
+        })),
+      });
+
+      await replaceAdminShippingArrivals(schedule.id, {
+        entries: createRegionArrivalDrafts.map((r, i) => ({
+          portName: r.portName.trim(),
+          etaText: r.cellText.trim(),
+          sortOrder: i,
+        })),
+      });
+
+      return region;
+    },
     onSuccess: () => {
       setCreateRegionOpen(false);
       setCreateSlugTouched(false);
       setCreateRegion({ name: "", slug: "", sortOrder: 0, isActive: true });
+      setCreateFirstSchedule({
+        company: "",
+        shipName: "",
+        voyage: "",
+        sortOrder: 0,
+        isActive: true,
+      });
+      setCreateRegionDepartureDrafts([]);
+      setCreateRegionArrivalDrafts([]);
       setCreateRegionError(null);
       invalidateRegions();
     },
@@ -569,17 +672,63 @@ export default function AdminShippingPage() {
     },
   });
 
+  const deleteRegionMutation = useMutation({
+    mutationFn: (id: string) => deleteAdminShippingRegion(id),
+    onSuccess: (_data, deletedId) => {
+      setRegionDeleteTarget(null);
+      invalidateRegions();
+      if (nav.screen !== "regions" && nav.regionId === deletedId) {
+        setNav({ screen: "regions" });
+      }
+    },
+  });
+
   const createScheduleMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (nav.screen !== "schedules" && nav.screen !== "schedule") {
         throw new Error("No region");
       }
-      return createAdminShippingSchedule(nav.regionId, {
-        company: createSchedule.company.trim(),
-        shipName: createSchedule.shipName.trim(),
-        voyage: createSchedule.voyage.trim(),
+      const regionId = nav.regionId;
+      const company = createSchedule.company.trim();
+      const shipName = createSchedule.shipName.trim();
+      const voyage = createSchedule.voyage.trim();
+      if (!company) throw new Error("Company is required.");
+      if (!shipName) throw new Error("Ship name is required.");
+      if (!voyage) throw new Error("Voyage is required.");
+
+      const depErr = validatePortDrafts(
+        createScheduleDepartureDrafts,
+        "ETD text",
+      );
+      if (depErr) throw new Error(depErr);
+      const arrErr = validatePortDrafts(
+        createScheduleArrivalDrafts,
+        "ETA text",
+      );
+      if (arrErr) throw new Error(arrErr);
+
+      const { schedule } = await createAdminShippingSchedule(regionId, {
+        company,
+        shipName,
+        voyage,
         sortOrder: createSchedule.sortOrder,
         isActive: createSchedule.isActive,
+      });
+
+      await replaceAdminShippingDepartures(schedule.id, {
+        entries: createScheduleDepartureDrafts.map((r, i) => ({
+          portName: r.portName.trim(),
+          etdText: r.cellText.trim(),
+          sortOrder: i,
+        })),
+      });
+
+      await replaceAdminShippingArrivals(schedule.id, {
+        entries: createScheduleArrivalDrafts.map((r, i) => ({
+          portName: r.portName.trim(),
+          etaText: r.cellText.trim(),
+          sortOrder: i,
+        })),
       });
     },
     onSuccess: () => {
@@ -591,6 +740,8 @@ export default function AdminShippingPage() {
         sortOrder: 0,
         isActive: true,
       });
+      setCreateScheduleDepartureDrafts([]);
+      setCreateScheduleArrivalDrafts([]);
       setCreateScheduleError(null);
       if (nav.screen === "schedules" || nav.screen === "schedule") {
         invalidateSchedules(nav.regionId);
@@ -642,16 +793,8 @@ export default function AdminShippingPage() {
   const saveDeparturesMutation = useMutation({
     mutationFn: () => {
       if (nav.screen !== "schedule") throw new Error("No schedule");
-      const seen = new Set<string>();
-      for (const row of departureDrafts) {
-        const name = row.portName.trim();
-        const text = row.cellText.trim();
-        if (!name) throw new Error("Each row needs a port name.");
-        if (!text) throw new Error("ETD text cannot be empty (use “-”).");
-        const key = name.toLowerCase();
-        if (seen.has(key)) throw new Error("Duplicate port names are not allowed.");
-        seen.add(key);
-      }
+      const err = validatePortDrafts(departureDrafts, "ETD text");
+      if (err) throw new Error(err);
       return replaceAdminShippingDepartures(nav.scheduleId, {
         entries: departureDrafts.map((r, i) => ({
           portName: r.portName.trim(),
@@ -675,16 +818,8 @@ export default function AdminShippingPage() {
   const saveArrivalsMutation = useMutation({
     mutationFn: () => {
       if (nav.screen !== "schedule") throw new Error("No schedule");
-      const seen = new Set<string>();
-      for (const row of arrivalDrafts) {
-        const name = row.portName.trim();
-        const text = row.cellText.trim();
-        if (!name) throw new Error("Each row needs a port name.");
-        if (!text) throw new Error("ETA text cannot be empty (use “-”).");
-        const key = name.toLowerCase();
-        if (seen.has(key)) throw new Error("Duplicate port names are not allowed.");
-        seen.add(key);
-      }
+      const err = validatePortDrafts(arrivalDrafts, "ETA text");
+      if (err) throw new Error(err);
       return replaceAdminShippingArrivals(nav.scheduleId, {
         entries: arrivalDrafts.map((r, i) => ({
           portName: r.portName.trim(),
@@ -714,7 +849,30 @@ export default function AdminShippingPage() {
     setCreateRegionError(null);
     setCreateSlugTouched(false);
     setCreateRegion({ name: "", slug: "", sortOrder: 0, isActive: true });
+    setCreateFirstSchedule({
+      company: "",
+      shipName: "",
+      voyage: "",
+      sortOrder: 0,
+      isActive: true,
+    });
+    setCreateRegionDepartureDrafts([]);
+    setCreateRegionArrivalDrafts([]);
     setCreateRegionOpen(true);
+  };
+
+  const openCreateSchedule = () => {
+    setCreateScheduleError(null);
+    setCreateSchedule({
+      company: "",
+      shipName: "",
+      voyage: "",
+      sortOrder: 0,
+      isActive: true,
+    });
+    setCreateScheduleDepartureDrafts([]);
+    setCreateScheduleArrivalDrafts([]);
+    setCreateScheduleOpen(true);
   };
 
   const openEditRegion = (r: AdminShippingRegion) => {
@@ -741,22 +899,29 @@ export default function AdminShippingPage() {
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight">Shipping</h1>
           <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-relaxed">
-            Manage destination regions and sailing schedules shown on the public
-            shipping information page.
+            Destinations power the public shipping information page. Add a
+            region and its first sailing row—including departure and arrival
+            ports—in one step.
           </p>
         </div>
         {nav.screen === "regions" ? (
-          <Button type="button" onClick={openCreateRegion} className="shrink-0">
-            New region
+          <Button
+            type="button"
+            onClick={openCreateRegion}
+            className="shrink-0 gap-2"
+          >
+            <Plus className="size-4" aria-hidden />
+            Add destination
           </Button>
         ) : null}
         {nav.screen === "schedules" && schedulesRegion ? (
           <Button
             type="button"
-            onClick={() => setCreateScheduleOpen(true)}
-            className="shrink-0"
+            onClick={openCreateSchedule}
+            className="shrink-0 gap-2"
           >
-            New schedule
+            <Plus className="size-4" aria-hidden />
+            Add sailing row
           </Button>
         ) : null}
       </div>
@@ -771,7 +936,7 @@ export default function AdminShippingPage() {
             onClick={() => setNav({ screen: "regions" })}
           >
             <ArrowLeft className="size-3.5" aria-hidden />
-            Regions
+            Destinations
           </Button>
           <span aria-hidden>/</span>
           {nav.screen === "schedule" ? (
@@ -823,7 +988,7 @@ export default function AdminShippingPage() {
                     <span className="text-foreground font-semibold">
                       {pagination.total}
                     </span>
-                    <span className="font-normal"> regions</span>
+                    <span className="font-normal"> destinations</span>
                   </>
                 ) : (
                   "\u00a0"
@@ -872,7 +1037,7 @@ export default function AdminShippingPage() {
                     placeholder="Name or slug…"
                     className="pr-9 pl-9"
                     autoComplete="off"
-                    aria-label="Search regions"
+                    aria-label="Search destinations"
                   />
                   {list.searchInput.length > 0 ? (
                     <button
@@ -960,13 +1125,21 @@ export default function AdminShippingPage() {
                   <EmptyMedia variant="icon">
                     <MapPinned className="size-6" aria-hidden />
                   </EmptyMedia>
-                  <EmptyTitle>No regions</EmptyTitle>
-                  <EmptyDescription>
-                    Create a region to group schedules for the help center
-                    shipping tables.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+                  <EmptyTitle>No destinations yet</EmptyTitle>
+                <EmptyDescription>
+                  Add a destination with its first sailing schedule and port
+                  columns in one form.
+                </EmptyDescription>
+              </EmptyHeader>
+              <Button
+                type="button"
+                onClick={openCreateRegion}
+                className="gap-2"
+              >
+                <Plus className="size-4" aria-hidden />
+                Add destination
+              </Button>
+            </Empty>
             ) : null}
 
             {regionsQuery.data?.data.map((r) => (
@@ -1006,7 +1179,7 @@ export default function AdminShippingPage() {
                   </div>
                 </div>
                 <div
-                  className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto sm:max-w-[14rem] sm:flex-col"
+                  className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto sm:max-w-56 sm:flex-col"
                   role="group"
                   aria-label={`Actions for ${r.name}`}
                 >
@@ -1020,7 +1193,7 @@ export default function AdminShippingPage() {
                     }
                   >
                     <Ship className="size-3.5 shrink-0" aria-hidden />
-                    Schedules
+                    Sailing rows
                   </Button>
                   <Button
                     type="button"
@@ -1037,11 +1210,29 @@ export default function AdminShippingPage() {
                     variant="outline"
                     size="sm"
                     className="inline-flex min-h-9 flex-1 items-center gap-2 sm:flex-initial"
-                    disabled={!r.isActive || deactivateRegionMutation.isPending}
+                    disabled={
+                      !r.isActive ||
+                      deactivateRegionMutation.isPending ||
+                      deleteRegionMutation.isPending
+                    }
                     onClick={() => setRegionDanger(r)}
                   >
                     <UserMinus className="size-3.5 shrink-0" aria-hidden />
                     Deactivate
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive inline-flex min-h-9 flex-1 items-center gap-2 sm:flex-initial"
+                    disabled={
+                      deleteRegionMutation.isPending ||
+                      deactivateRegionMutation.isPending
+                    }
+                    onClick={() => setRegionDeleteTarget(r)}
+                  >
+                    <Trash2 className="size-3.5 shrink-0" aria-hidden />
+                    Delete
                   </Button>
                 </div>
               </article>
@@ -1114,11 +1305,19 @@ export default function AdminShippingPage() {
                 <EmptyMedia variant="icon">
                   <Ship className="size-6" aria-hidden />
                 </EmptyMedia>
-                <EmptyTitle>No schedules</EmptyTitle>
+                <EmptyTitle>No sailing rows yet</EmptyTitle>
                 <EmptyDescription>
-                  Add a schedule row (company, ship, voyage) for this region.
+                  Add a row with company, ship, voyage, and ports in one form.
                 </EmptyDescription>
               </EmptyHeader>
+              <Button
+                type="button"
+                onClick={openCreateSchedule}
+                className="gap-2"
+              >
+                <Plus className="size-4" aria-hidden />
+                Add sailing row
+              </Button>
             </Empty>
           ) : null}
           <div className="divide-border/60 divide-y">
@@ -1336,100 +1535,244 @@ export default function AdminShippingPage() {
       ) : null}
 
       <Dialog open={createRegionOpen} onOpenChange={setCreateRegionOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>New shipping region</DialogTitle>
+        <DialogContent className="flex max-h-[min(92dvh,calc(100dvh-2rem))] min-h-0 w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="border-border/60 shrink-0 space-y-1 border-b px-6 py-5 text-left">
+            <DialogTitle className="text-lg">Add shipping destination</DialogTitle>
             <DialogDescription>
-              Regions appear as tabs on the public shipping information page.
+              Create the region tab, the first sailing row, and port columns in
+              one save. You can add more sailing rows afterward from the list.
             </DialogDescription>
           </DialogHeader>
-          {createRegionError ? (
-            <Alert variant="destructive">
-              <AlertTitle>Could not create</AlertTitle>
-              <AlertDescription>{createRegionError}</AlertDescription>
-            </Alert>
-          ) : null}
-          <div className="grid max-h-[min(60vh,calc(100vh-12rem))] gap-4 overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="cr-name">Name</Label>
-              <Input
-                id="cr-name"
-                value={createRegion.name}
-                onChange={(e) => {
-                  const name = e.target.value;
-                  setCreateRegion((r) => ({
-                    ...r,
-                    name,
-                    slug: createSlugTouched
-                      ? r.slug
-                      : slugFromName(name),
-                  }));
-                }}
-                autoComplete="off"
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 [-webkit-overflow-scrolling:touch]"
+            data-slot="dialog-scroll-body"
+          >
+            <div className="space-y-6 py-5">
+              {createRegionError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Could not save</AlertTitle>
+                  <AlertDescription>{createRegionError}</AlertDescription>
+                </Alert>
+              ) : null}
+
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-foreground text-sm font-semibold tracking-tight">
+                    Destination (public tab)
+                  </h3>
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                    Shown as a region tab on the help center shipping page.
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="cr-name">Name</Label>
+                    <Input
+                      id="cr-name"
+                      value={createRegion.name}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        setCreateRegion((r) => ({
+                          ...r,
+                          name,
+                          slug: createSlugTouched
+                            ? r.slug
+                            : slugFromName(name),
+                        }));
+                      }}
+                      placeholder="e.g. Pakistan"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cr-slug">URL slug</Label>
+                    <Input
+                      id="cr-slug"
+                      className="font-mono text-sm"
+                      value={createRegion.slug}
+                      onChange={(e) => {
+                        setCreateSlugTouched(true);
+                        setCreateRegion((r) => ({
+                          ...r,
+                          slug: e.target.value,
+                        }));
+                      }}
+                      spellCheck={false}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cr-sort">Tab sort order</Label>
+                    <Input
+                      id="cr-sort"
+                      type="number"
+                      min={0}
+                      value={createRegion.sortOrder}
+                      onChange={(e) =>
+                        setCreateRegion((r) => ({
+                          ...r,
+                          sortOrder: Number(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 sm:col-span-2">
+                    <Checkbox
+                      id="cr-active"
+                      checked={createRegion.isActive}
+                      onCheckedChange={(c) =>
+                        setCreateRegion((r) => ({
+                          ...r,
+                          isActive: c === true,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="cr-active" className="font-normal">
+                      Show this destination on the site
+                    </Label>
+                  </div>
+                </div>
+              </section>
+
+              <Separator />
+
+              <section className="space-y-4">
+                <div>
+                  <h3 className="text-foreground text-sm font-semibold tracking-tight">
+                    First sailing row
+                  </h3>
+                  <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                    One schedule row (you can add more later from{" "}
+                    <span className="text-foreground font-medium">
+                      Sailing rows
+                    </span>
+                    ).
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="cr-co">Company</Label>
+                    <Input
+                      id="cr-co"
+                      value={createFirstSchedule.company}
+                      onChange={(e) =>
+                        setCreateFirstSchedule((s) => ({
+                          ...s,
+                          company: e.target.value,
+                        }))
+                      }
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cr-ship">Ship name</Label>
+                    <Input
+                      id="cr-ship"
+                      value={createFirstSchedule.shipName}
+                      onChange={(e) =>
+                        setCreateFirstSchedule((s) => ({
+                          ...s,
+                          shipName: e.target.value,
+                        }))
+                      }
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cr-voy">Voyage</Label>
+                    <Input
+                      id="cr-voy"
+                      value={createFirstSchedule.voyage}
+                      onChange={(e) =>
+                        setCreateFirstSchedule((s) => ({
+                          ...s,
+                          voyage: e.target.value,
+                        }))
+                      }
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cr-ssort">Row sort order</Label>
+                    <Input
+                      id="cr-ssort"
+                      type="number"
+                      min={0}
+                      value={createFirstSchedule.sortOrder}
+                      onChange={(e) =>
+                        setCreateFirstSchedule((s) => ({
+                          ...s,
+                          sortOrder: Number(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 sm:col-span-2">
+                    <Checkbox
+                      id="cr-sactive"
+                      checked={createFirstSchedule.isActive}
+                      onCheckedChange={(c) =>
+                        setCreateFirstSchedule((s) => ({
+                          ...s,
+                          isActive: c === true,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="cr-sactive" className="font-normal">
+                      Active on public shipping tables
+                    </Label>
+                  </div>
+                </div>
+              </section>
+
+              <PortRowsEditor
+                title="Departures"
+                hint="Optional until you add ports. Use “-” when there is no ETD. Port names must be unique. Public columns are the union of all departure ports in this destination—keep naming consistent across rows you add later."
+                rows={createRegionDepartureDrafts}
+                onChange={setCreateRegionDepartureDrafts}
+                onSave={() => {}}
+                disabled={createDestinationMutation.isPending}
+                pending={false}
+                error={null}
+                showSaveFooter={false}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cr-slug">Slug</Label>
-              <Input
-                id="cr-slug"
-                className="font-mono text-sm"
-                value={createRegion.slug}
-                onChange={(e) => {
-                  setCreateSlugTouched(true);
-                  setCreateRegion((r) => ({
-                    ...r,
-                    slug: e.target.value,
-                  }));
-                }}
-                spellCheck={false}
-                autoComplete="off"
+
+              <PortRowsEditor
+                title="Arrivals"
+                hint="Optional until you add ports. Use “-” when there is no ETA. Arrival columns work the same way as departures for the public grid."
+                rows={createRegionArrivalDrafts}
+                onChange={setCreateRegionArrivalDrafts}
+                onSave={() => {}}
+                disabled={createDestinationMutation.isPending}
+                pending={false}
+                error={null}
+                showSaveFooter={false}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cr-sort">Sort order</Label>
-              <Input
-                id="cr-sort"
-                type="number"
-                min={0}
-                value={createRegion.sortOrder}
-                onChange={(e) =>
-                  setCreateRegion((r) => ({
-                    ...r,
-                    sortOrder: Number(e.target.value) || 0,
-                  }))
-                }
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="cr-active"
-                checked={createRegion.isActive}
-                onCheckedChange={(c) =>
-                  setCreateRegion((r) => ({
-                    ...r,
-                    isActive: c === true,
-                  }))
-                }
-              />
-              <Label htmlFor="cr-active" className="font-normal">
-                Active
-              </Label>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="border-border/60 bg-muted/20 shrink-0 gap-2 border-t px-6 py-4 sm:gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => setCreateRegionOpen(false)}
+              disabled={createDestinationMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               type="button"
-              onClick={() => createRegionMutation.mutate()}
-              disabled={createRegionMutation.isPending}
+              onClick={() => createDestinationMutation.mutate()}
+              disabled={createDestinationMutation.isPending}
+              className="min-w-36"
             >
-              {createRegionMutation.isPending ? "Creating…" : "Create"}
+              {createDestinationMutation.isPending ? (
+                <>
+                  <Spinner className="mr-2 size-4" />
+                  Saving…
+                </>
+              ) : (
+                "Save destination"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1447,9 +1790,9 @@ export default function AdminShippingPage() {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit region</DialogTitle>
+            <DialogTitle>Edit destination</DialogTitle>
             <DialogDescription>
-              Changes apply to the admin list and the public help center.
+              Updates the tab label and URL slug on the public shipping page.
             </DialogDescription>
           </DialogHeader>
           {editRegionError ? (
@@ -1593,103 +1936,183 @@ export default function AdminShippingPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={createScheduleOpen} onOpenChange={setCreateScheduleOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>New schedule</DialogTitle>
-            <DialogDescription>
-              Add a sailing row for{" "}
-              <span className="text-foreground font-medium">
-                {schedulesRegion?.name ?? "this region"}
-              </span>
-              .
-            </DialogDescription>
-          </DialogHeader>
-          {createScheduleError ? (
+      <AlertDialog
+        open={Boolean(regionDeleteTarget)}
+        onOpenChange={(open) => !open && setRegionDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete destination permanently?</AlertDialogTitle>
+            <AlertDialogDescription className="text-pretty">
+              {regionDeleteTarget ? (
+                <>
+                  This removes{" "}
+                  <span className="text-foreground font-medium">
+                    {regionDeleteTarget.name}
+                  </span>{" "}
+                  and every sailing row and port entry under it. This cannot be
+                  undone.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteRegionMutation.error ? (
             <Alert variant="destructive">
-              <AlertTitle>Could not create</AlertTitle>
-              <AlertDescription>{createScheduleError}</AlertDescription>
+              <AlertTitle>Request failed</AlertTitle>
+              <AlertDescription>
+                {formatErrorMessage(deleteRegionMutation.error)}
+              </AlertDescription>
             </Alert>
           ) : null}
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cs-company">Company</Label>
-              <Input
-                id="cs-company"
-                value={createSchedule.company}
-                onChange={(e) =>
-                  setCreateSchedule((s) => ({
-                    ...s,
-                    company: e.target.value,
-                  }))
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteRegionMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={
+                !regionDeleteTarget || deleteRegionMutation.isPending
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                if (regionDeleteTarget) {
+                  void deleteRegionMutation.mutateAsync(regionDeleteTarget.id);
                 }
-                autoComplete="off"
+              }}
+            >
+              {deleteRegionMutation.isPending ? "Deleting…" : "Delete forever"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={createScheduleOpen} onOpenChange={setCreateScheduleOpen}>
+        <DialogContent className="flex max-h-[min(92dvh,calc(100dvh-2rem))] min-h-0 w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <DialogHeader className="border-border/60 shrink-0 space-y-1 border-b px-6 py-5 text-left">
+            <DialogTitle className="text-lg">Add sailing row</DialogTitle>
+            <DialogDescription>
+              For{" "}
+              <span className="text-foreground font-medium">
+                {schedulesRegion?.name ?? "this destination"}
+              </span>
+              . Includes departure and arrival ports in one save.
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-6 [-webkit-overflow-scrolling:touch]"
+            data-slot="dialog-scroll-body"
+          >
+            <div className="space-y-6 py-5">
+              {createScheduleError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Could not save</AlertTitle>
+                  <AlertDescription>{createScheduleError}</AlertDescription>
+                </Alert>
+              ) : null}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="cs-company">Company</Label>
+                  <Input
+                    id="cs-company"
+                    value={createSchedule.company}
+                    onChange={(e) =>
+                      setCreateSchedule((s) => ({
+                        ...s,
+                        company: e.target.value,
+                      }))
+                    }
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cs-ship">Ship name</Label>
+                  <Input
+                    id="cs-ship"
+                    value={createSchedule.shipName}
+                    onChange={(e) =>
+                      setCreateSchedule((s) => ({
+                        ...s,
+                        shipName: e.target.value,
+                      }))
+                    }
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cs-voyage">Voyage</Label>
+                  <Input
+                    id="cs-voyage"
+                    value={createSchedule.voyage}
+                    onChange={(e) =>
+                      setCreateSchedule((s) => ({
+                        ...s,
+                        voyage: e.target.value,
+                      }))
+                    }
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cs-sort">Sort order</Label>
+                  <Input
+                    id="cs-sort"
+                    type="number"
+                    min={0}
+                    value={createSchedule.sortOrder}
+                    onChange={(e) =>
+                      setCreateSchedule((s) => ({
+                        ...s,
+                        sortOrder: Number(e.target.value) || 0,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center gap-2 sm:col-span-2">
+                  <Checkbox
+                    id="cs-active"
+                    checked={createSchedule.isActive}
+                    onCheckedChange={(c) =>
+                      setCreateSchedule((s) => ({
+                        ...s,
+                        isActive: c === true,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="cs-active" className="font-normal">
+                    Active on public shipping tables
+                  </Label>
+                </div>
+              </div>
+              <PortRowsEditor
+                title="Departures"
+                hint="Optional until you add ports. Use “-” when there is no ETD. Keep port names aligned with other rows in this destination for a clean public table."
+                rows={createScheduleDepartureDrafts}
+                onChange={setCreateScheduleDepartureDrafts}
+                onSave={() => {}}
+                disabled={createScheduleMutation.isPending}
+                pending={false}
+                error={null}
+                showSaveFooter={false}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cs-ship">Ship name</Label>
-              <Input
-                id="cs-ship"
-                value={createSchedule.shipName}
-                onChange={(e) =>
-                  setCreateSchedule((s) => ({
-                    ...s,
-                    shipName: e.target.value,
-                  }))
-                }
-                autoComplete="off"
+              <PortRowsEditor
+                title="Arrivals"
+                hint="Optional until you add ports. Use “-” when there is no ETA."
+                rows={createScheduleArrivalDrafts}
+                onChange={setCreateScheduleArrivalDrafts}
+                onSave={() => {}}
+                disabled={createScheduleMutation.isPending}
+                pending={false}
+                error={null}
+                showSaveFooter={false}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cs-voyage">Voyage</Label>
-              <Input
-                id="cs-voyage"
-                value={createSchedule.voyage}
-                onChange={(e) =>
-                  setCreateSchedule((s) => ({
-                    ...s,
-                    voyage: e.target.value,
-                  }))
-                }
-                autoComplete="off"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cs-sort">Sort order</Label>
-              <Input
-                id="cs-sort"
-                type="number"
-                min={0}
-                value={createSchedule.sortOrder}
-                onChange={(e) =>
-                  setCreateSchedule((s) => ({
-                    ...s,
-                    sortOrder: Number(e.target.value) || 0,
-                  }))
-                }
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="cs-active"
-                checked={createSchedule.isActive}
-                onCheckedChange={(c) =>
-                  setCreateSchedule((s) => ({
-                    ...s,
-                    isActive: c === true,
-                  }))
-                }
-              />
-              <Label htmlFor="cs-active" className="font-normal">
-                Active
-              </Label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-border/60 bg-muted/20 shrink-0 gap-2 border-t px-6 py-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setCreateScheduleOpen(false)}
+              disabled={createScheduleMutation.isPending}
             >
               Cancel
             </Button>
@@ -1699,8 +2122,16 @@ export default function AdminShippingPage() {
               disabled={
                 createScheduleMutation.isPending || nav.screen === "regions"
               }
+              className="min-w-32"
             >
-              {createScheduleMutation.isPending ? "Creating…" : "Create"}
+              {createScheduleMutation.isPending ? (
+                <>
+                  <Spinner className="mr-2 size-4" />
+                  Saving…
+                </>
+              ) : (
+                "Save row"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
