@@ -1,2 +1,5 @@
 /.cursor/
 copilot-instructions.md/
+
+# pnpm content-addressable store (must not be committed)
+.pnpm-store/
