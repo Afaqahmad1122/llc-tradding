@@ -9,6 +9,7 @@ import morgan from "morgan";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 import { authRouter } from "./routes/auth.route.js";
+import { carsRouter } from "./routes/cars.route.js";
 import { contactMessagesRouter } from "./routes/contact-messages.route.js";
 import { healthRouter } from "./routes/health.route.js";
 import { jobsRouter } from "./routes/jobs.route.js";
@@ -45,6 +46,7 @@ app.get("/", (_req, res) => {
 
 app.use("/health", healthRouter);
 app.use("/auth", authRouter);
+app.use("/cars", carsRouter);
 app.use("/reviews", reviewsRouter);
 app.use("/jobs", jobsRouter);
 app.use("/contact-messages", contactMessagesRouter);
