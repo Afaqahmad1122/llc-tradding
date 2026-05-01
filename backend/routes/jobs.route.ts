@@ -3,6 +3,7 @@ import {
   applyToJob,
   createAdminJob,
   deleteAdminJob,
+  destroyAdminJob,
   getAdminJobs,
   getJobBySlug,
   getJobs,
@@ -32,6 +33,11 @@ jobsRouter.patch(
   requireAuth,
   validateRequestBody(updateJobSchema),
   updateAdminJob,
+);
+jobsRouter.delete(
+  "/admin/:id/permanent",
+  requireAuth,
+  destroyAdminJob,
 );
 jobsRouter.delete("/admin/:id", requireAuth, deleteAdminJob);
 

@@ -1,6 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   Briefcase,
@@ -8,10 +14,11 @@ import {
   ChevronRightIcon,
   Pencil,
   SearchIcon,
+  Trash2,
   UserMinus,
   X,
 } from "lucide-react";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 
 import {
   AlertDialog,
@@ -55,10 +62,13 @@ import {
   createAdminJob,
   deactivateAdminJob,
   fetchAdminJobs,
+  permanentlyDeleteAdminJob,
   updateAdminJob,
   type AdminJob,
   type AdminJobsQuery,
+  type DeactivateAdminJobResponse,
 } from "@/lib/api/jobs";
+import { cn } from "@/lib/utils";
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 
 type VisibilityFilter = "all" | "active" | "inactive";
@@ -143,8 +153,7 @@ function validateJobFields(v: JobFields): string | null {
   if (!slugNorm || slugNorm.length < 2)
     return "Slug must be at least 2 characters.";
   const desc = v.description.trim();
-  if (desc.length < 10)
-    return "Description must be at least 10 characters.";
+  if (desc.length < 10) return "Description must be at least 10 characters.";
   if (!isValidOptionalEmail(v.applyEmail)) return "Apply email must be valid.";
   return null;
 }
@@ -173,9 +182,7 @@ function emptyJobFields(active = true): JobFields {
   };
 }
 
-function buildJobsQuery(
-  list: ListState,
-): AdminJobsQuery {
+function buildJobsQuery(list: ListState): AdminJobsQuery {
   const query: AdminJobsQuery = {
     page: list.page,
     pageSize: list.pageSize,
@@ -185,6 +192,195 @@ function buildJobsQuery(
   if (list.visibility === "active") query.isActive = true;
   if (list.visibility === "inactive") query.isActive = false;
   return query;
+}
+
+function formatErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed";
+}
+
+type JobDangerAction =
+  | { kind: "deactivate"; job: AdminJob }
+  | { kind: "delete"; job: AdminJob };
+
+function JobStatusBadge({ isActive }: { isActive: boolean }) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "shrink-0 border font-medium tabular-nums",
+        isActive
+          ? "border-emerald-500/45 bg-emerald-500/12 text-emerald-800 dark:text-emerald-200"
+          : "border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-100",
+      )}
+    >
+      {isActive ? "Active" : "Inactive"}
+    </Badge>
+  );
+}
+
+function JobMetaItem({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="bg-muted/25 flex min-w-0 flex-col gap-1 rounded-lg border border-border/60 px-3 py-2.5">
+      <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider">
+        {label}
+      </p>
+      <div className="text-foreground min-w-0 wrap-break-word text-sm leading-snug">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function JobRowActions({
+  job,
+  onEdit,
+  onDeactivate,
+  onDelete,
+  deactivatePending,
+  deletePending,
+}: {
+  job: AdminJob;
+  onEdit: (job: AdminJob) => void;
+  onDeactivate: (job: AdminJob) => void;
+  onDelete: (job: AdminJob) => void;
+  deactivatePending: boolean;
+  deletePending: boolean;
+}) {
+  return (
+    <div
+      className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto sm:max-w-[min(100%,20rem)] sm:flex-col sm:items-stretch"
+      role="group"
+      aria-label={`Actions for ${job.title}`}
+    >
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="inline-flex min-h-9 flex-1 items-center gap-2 sm:flex-initial"
+        onClick={() => onEdit(job)}
+      >
+        <Pencil className="size-3.5 shrink-0" aria-hidden />
+        Edit
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="inline-flex min-h-9 flex-1 items-center gap-2 sm:flex-initial"
+        disabled={!job.isActive || deactivatePending}
+        onClick={() => onDeactivate(job)}
+      >
+        <UserMinus className="size-3.5 shrink-0" aria-hidden />
+        Hide listing
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="text-destructive hover:text-destructive border-destructive/35 hover:bg-destructive/10 inline-flex min-h-9 flex-1 items-center gap-2 sm:flex-initial"
+        disabled={deletePending}
+        onClick={() => onDelete(job)}
+      >
+        <Trash2 className="size-3.5 shrink-0" aria-hidden />
+        Delete
+      </Button>
+    </div>
+  );
+}
+
+type JobDangerMut = UseMutationResult<
+  DeactivateAdminJobResponse,
+  unknown,
+  string
+>;
+
+function JobDangerDialog({
+  action,
+  onOpenChange,
+  deactivateMutation,
+  deleteMutation,
+}: {
+  action: JobDangerAction | null;
+  onOpenChange: (open: boolean) => void;
+  deactivateMutation: JobDangerMut;
+  deleteMutation: JobDangerMut;
+}) {
+  const open = Boolean(action);
+  const isDelete = action?.kind === "delete";
+  const job = action?.job;
+  const mutation = isDelete ? deleteMutation : deactivateMutation;
+  const mutationError = mutation.error;
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent size="default" className="sm:max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {isDelete
+              ? "Delete job permanently?"
+              : "Hide job from careers page?"}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-pretty">
+            {job && isDelete ? (
+              <>
+                <span className="text-foreground font-medium">{job.title}</span>{" "}
+                will be removed from the database.{" "}
+                <span className="text-foreground font-medium tabular-nums">
+                  {job._count.applications}
+                </span>{" "}
+                {job._count.applications === 1 ? "application" : "applications"}{" "}
+                will be deleted. This cannot be undone.
+              </>
+            ) : job ? (
+              <>
+                <span className="text-foreground font-medium">{job.title}</span>{" "}
+                will no longer appear on the public careers page. You can show
+                it again by editing the job and enabling the listing.
+              </>
+            ) : null}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {mutationError ? (
+          <Alert variant="destructive">
+            <AlertTitle>
+              {isDelete ? "Delete failed" : "Could not hide listing"}
+            </AlertTitle>
+            <AlertDescription>
+              {formatErrorMessage(mutationError)}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        <AlertDialogFooter className="gap-2 sm:gap-3">
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            variant={isDelete ? "destructive" : "default"}
+            disabled={!job || mutation.isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              if (!job) return;
+              mutation.mutate(job.id);
+            }}
+          >
+            {mutation.isPending
+              ? isDelete
+                ? "Deleting…"
+                : "Hiding…"
+              : isDelete
+                ? "Delete permanently"
+                : "Hide listing"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function JobFormFields({
@@ -292,7 +488,15 @@ export default function AdminCareersPage() {
   const [editFields, setEditFields] = useState<JobFields | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const [deactivateJob, setDeactivateJob] = useState<AdminJob | null>(null);
+  const [dangerAction, setDangerAction] = useState<JobDangerAction | null>(
+    null,
+  );
+
+  const editJobRef = useRef<AdminJob | null>(null);
+
+  useEffect(() => {
+    editJobRef.current = editJob;
+  }, [editJob]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -334,9 +538,7 @@ export default function AdminCareersPage() {
         ...(createFields.location.trim()
           ? { location: createFields.location.trim() }
           : {}),
-        ...(createFields.type.trim()
-          ? { type: createFields.type.trim() }
-          : {}),
+        ...(createFields.type.trim() ? { type: createFields.type.trim() } : {}),
         ...(createFields.applyEmail.trim()
           ? { applyEmail: createFields.applyEmail.trim() }
           : {}),
@@ -386,7 +588,19 @@ export default function AdminCareersPage() {
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => deactivateAdminJob(id),
     onSuccess: () => {
-      setDeactivateJob(null);
+      setDangerAction(null);
+      void invalidateJobs();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => permanentlyDeleteAdminJob(id),
+    onSuccess: (_, deletedId) => {
+      setDangerAction(null);
+      if (editJobRef.current?.id === deletedId) {
+        setEditJob(null);
+        setEditFields(null);
+      }
       void invalidateJobs();
     },
   });
@@ -426,6 +640,18 @@ export default function AdminCareersPage() {
     setEditFields(jobToFields(job));
   };
 
+  const openDeactivateConfirm = (job: AdminJob) => {
+    deleteMutation.reset();
+    deactivateMutation.reset();
+    setDangerAction({ kind: "deactivate", job });
+  };
+
+  const openDeleteConfirm = (job: AdminJob) => {
+    deactivateMutation.reset();
+    deleteMutation.reset();
+    setDangerAction({ kind: "delete", job });
+  };
+
   const editOpen = Boolean(editJob && editFields);
 
   return (
@@ -434,8 +660,8 @@ export default function AdminCareersPage() {
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight">Careers</h1>
           <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-relaxed">
-            Manage job postings. Deactivating a role hides it from the site; edit to
-            activate again.
+            Hide a listing to remove it from the site without losing data, or delete
+            permanently when the role should be removed from the system.
           </p>
         </div>
         <Button type="button" onClick={openCreate} className="shrink-0">
@@ -459,7 +685,10 @@ export default function AdminCareersPage() {
                       pagination.total,
                     )}
                   </span>
-                  <span className="text-muted-foreground font-normal"> of </span>
+                  <span className="text-muted-foreground font-normal">
+                    {" "}
+                    of{" "}
+                  </span>
                   <span className="text-foreground font-semibold">
                     {pagination.total}
                   </span>
@@ -473,13 +702,17 @@ export default function AdminCareersPage() {
               )}
             </p>
             <label className="flex items-center gap-2 text-sm sm:shrink-0">
-              <span className="text-muted-foreground whitespace-nowrap">Rows</span>
+              <span className="text-muted-foreground whitespace-nowrap">
+                Rows
+              </span>
               <NativeSelect
                 value={String(list.pageSize)}
                 onChange={(e) => {
                   dispatch({
                     type: "SET_PAGE_SIZE",
-                    payload: Number(e.target.value) as (typeof PAGE_SIZE_OPTIONS)[number],
+                    payload: Number(
+                      e.target.value,
+                    ) as (typeof PAGE_SIZE_OPTIONS)[number],
                   });
                 }}
                 className="w-18"
@@ -542,8 +775,12 @@ export default function AdminCareersPage() {
                   })
                 }
               >
-                <NativeSelectOption value="latest">Newest first</NativeSelectOption>
-                <NativeSelectOption value="oldest">Oldest first</NativeSelectOption>
+                <NativeSelectOption value="latest">
+                  Newest first
+                </NativeSelectOption>
+                <NativeSelectOption value="oldest">
+                  Oldest first
+                </NativeSelectOption>
               </NativeSelect>
             </label>
             <label className="flex w-full min-w-36 flex-col gap-1.5 sm:w-auto">
@@ -561,7 +798,9 @@ export default function AdminCareersPage() {
               >
                 <NativeSelectOption value="all">All</NativeSelectOption>
                 <NativeSelectOption value="active">Active</NativeSelectOption>
-                <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+                <NativeSelectOption value="inactive">
+                  Inactive
+                </NativeSelectOption>
               </NativeSelect>
             </label>
           </div>
@@ -600,88 +839,86 @@ export default function AdminCareersPage() {
               </EmptyHeader>
             </Empty>
           ) : (
-            <ul className="divide-border/40 list-none divide-y">
+            <ul className="divide-border/50 list-none divide-y">
               {data?.data.map((job) => {
                 const created = new Date(job.createdAt);
 
                 return (
                   <li key={job.id}>
-                    <article className="hover:bg-muted/20 flex flex-col gap-4 p-4 transition-colors sm:flex-row sm:items-start sm:justify-between sm:p-5">
-                      <div className="min-w-0 flex-1 space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-foreground truncate text-base font-semibold tracking-tight">
-                            {job.title}
-                          </h2>
-                          <Badge variant={job.isActive ? "default" : "outline"}>
-                            {job.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                          <span className="text-muted-foreground text-xs tabular-nums">
-                            {job._count.applications}{" "}
-                            {job._count.applications === 1 ? "application" : "applications"}
-                          </span>
+                    <article className="hover:bg-muted/15 flex flex-col gap-5 p-5 transition-colors lg:flex-row lg:gap-8">
+                      <div className="flex min-w-0 flex-1 flex-col gap-5">
+                        <header className="flex flex-wrap items-start gap-3 gap-y-2">
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h2 className="text-foreground text-lg font-semibold tracking-tight wrap-break-word">
+                                {job.title}
+                              </h2>
+                              <JobStatusBadge isActive={job.isActive} />
+                            </div>
+                            <p className="text-muted-foreground text-xs tabular-nums">
+                              {job._count.applications}{" "}
+                              {job._count.applications === 1
+                                ? "application"
+                                : "applications"}
+                              {" · "}
+                              inactive listings stay in this list until deleted
+                            </p>
+                          </div>
+                        </header>
+
+                        <div
+                          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4"
+                          aria-label="Job details"
+                          role="group"
+                        >
+                          <JobMetaItem label="URL slug">
+                            <code className="bg-muted/80 text-foreground/90 rounded px-1.5 py-0.5 font-mono text-[11px] tracking-tight">
+                              /{job.slug}
+                            </code>
+                          </JobMetaItem>
+                          <JobMetaItem label="Location">
+                            {job.location ?? (
+                              <span className="text-muted-foreground">Not set</span>
+                            )}
+                          </JobMetaItem>
+                          <JobMetaItem label="Employment type">
+                            {job.type ?? (
+                              <span className="text-muted-foreground">Not set</span>
+                            )}
+                          </JobMetaItem>
+                          <JobMetaItem label="Listed">
+                            <time dateTime={job.createdAt} className="tabular-nums">
+                              {format(created, "MMM d, yyyy · HH:mm")}
+                            </time>
+                          </JobMetaItem>
                         </div>
-                        <dl className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-1 text-xs">
-                          <div>
-                            <dt className="sr-only">Slug</dt>
-                            <dd className="font-mono text-[11px] text-foreground/80">
-                              /jobs/{job.slug}
-                            </dd>
-                          </div>
-                          {job.location ? (
-                            <div>
-                              <dt className="font-medium text-foreground/70">
-                                Location{" "}
-                              </dt>
-                              <dd>{job.location}</dd>
-                            </div>
-                          ) : null}
-                          {job.type ? (
-                            <div>
-                              <dt className="font-medium text-foreground/70">
-                                Type{" "}
-                              </dt>
-                              <dd>{job.type}</dd>
-                            </div>
-                          ) : null}
-                          <div>
-                            <dt className="font-medium text-foreground/70">
-                              Listed{" "}
-                            </dt>
-                            <dd>
-                              <time dateTime={job.createdAt}>
-                                {format(created, "MMM d, yyyy · HH:mm")}
-                              </time>
-                            </dd>
-                          </div>
-                        </dl>
-                        <p className="text-foreground/90 line-clamp-2 text-sm leading-relaxed wrap-break-word text-pretty">
-                          {job.description}
-                        </p>
+
+                        <div className="border-border/60 bg-muted/15 rounded-lg border px-4 py-3">
+                          <p className="text-muted-foreground mb-1 text-[10px] font-semibold uppercase tracking-wider">
+                            Description
+                          </p>
+                          <p className="text-foreground/95 text-sm leading-relaxed wrap-break-word text-pretty whitespace-pre-wrap">
+                            {job.description}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex shrink-0 flex-row gap-2 sm:flex-col sm:items-stretch">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEdit(job)}
-                        >
-                          <Pencil data-icon="inline-start" />
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={!job.isActive || deactivateMutation.isPending}
-                          onClick={() => {
-                            deactivateMutation.reset();
-                            setDeactivateJob(job);
-                          }}
-                        >
-                          <UserMinus data-icon="inline-start" />
-                          Deactivate
-                        </Button>
-                      </div>
+
+                      <JobRowActions
+                        job={job}
+                        onEdit={openEdit}
+                        onDeactivate={openDeactivateConfirm}
+                        onDelete={openDeleteConfirm}
+                        deactivatePending={
+                          dangerAction?.kind === "deactivate" &&
+                          dangerAction.job.id === job.id &&
+                          deactivateMutation.isPending
+                        }
+                        deletePending={
+                          dangerAction?.kind === "delete" &&
+                          dangerAction.job.id === job.id &&
+                          deleteMutation.isPending
+                        }
+                      />
                     </article>
                   </li>
                 );
@@ -762,10 +999,12 @@ export default function AdminCareersPage() {
           className="max-h-[calc(100dvh-2rem)] gap-5 sm:max-w-lg md:max-w-xl"
         >
           <DialogHeader>
-            <DialogTitle>New job posting</DialogTitle>
+            <DialogTitle>Create a careers listing</DialogTitle>
             <DialogDescription>
-              Slug is generated from the title until you edit it. Title, slug, and
-              description are required by the API.
+              This job will appear on the public careers page when the listing is set
+              to visible. The URL slug is suggested from the role title until you edit
+              it. You need a role title, slug, and description; other fields are
+              optional.
             </DialogDescription>
           </DialogHeader>
           <JobFormFields
@@ -824,10 +1063,11 @@ export default function AdminCareersPage() {
           className="max-h-[calc(100dvh-2rem)] gap-5 sm:max-w-lg md:max-w-xl"
         >
           <DialogHeader>
-            <DialogTitle>Edit job</DialogTitle>
+            <DialogTitle>Edit careers listing</DialogTitle>
             <DialogDescription>
-              Changes apply immediately. Use the listing toggle to hide or show the
-              role on the public careers page.
+              Updates apply as soon as you save. Turn the visibility option off to
+              hide this role from the public careers page without removing it from
+              the admin list.
             </DialogDescription>
           </DialogHeader>
           {editFields ? (
@@ -877,54 +1117,18 @@ export default function AdminCareersPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
-        open={Boolean(deactivateJob)}
+      <JobDangerDialog
+        action={dangerAction}
         onOpenChange={(open) => {
-          if (!open) setDeactivateJob(null);
+          if (!open) {
+            deactivateMutation.reset();
+            deleteMutation.reset();
+            setDangerAction(null);
+          }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate job?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deactivateJob ? (
-                <>
-                  <span className="text-foreground font-medium">
-                    {deactivateJob.title}
-                  </span>{" "}
-                  will be hidden from the public careers page. You can activate it
-                  again from edit.
-                </>
-              ) : null}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {deactivateMutation.error ? (
-            <Alert variant="destructive">
-              <AlertTitle>Could not deactivate</AlertTitle>
-              <AlertDescription>
-                {deactivateMutation.error instanceof ApiError
-                  ? deactivateMutation.error.message
-                  : deactivateMutation.error instanceof Error
-                    ? deactivateMutation.error.message
-                    : "Request failed"}
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={!deactivateJob || deactivateMutation.isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                if (deactivateJob) deactivateMutation.mutate(deactivateJob.id);
-              }}
-            >
-              {deactivateMutation.isPending ? "Deactivating…" : "Deactivate"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        deactivateMutation={deactivateMutation}
+        deleteMutation={deleteMutation}
+      />
     </div>
   );
 }

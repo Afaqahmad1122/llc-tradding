@@ -396,6 +396,38 @@ export const deleteAdminJob = async (
   }
 };
 
+/** Permanently removes the job and related applications (DB cascade). Admin only. */
+export const destroyAdminJob = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) {
+    return;
+  }
+
+  const jobId = req.params.id?.trim();
+  if (!jobId) {
+    res.status(400).json({ message: "job id is required" });
+    return;
+  }
+
+  try {
+    await prisma.job.delete({
+      where: { id: jobId },
+    });
+    res.status(200).json({ message: "job deleted permanently" });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      res.status(404).json({ message: "job not found" });
+      return;
+    }
+    throw error;
+  }
+};
+
 export const applyToJob = async (
   req: Request,
   res: Response,

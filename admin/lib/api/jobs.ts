@@ -91,3 +91,9 @@ export function deactivateAdminJob(id: string) {
     `/jobs/admin/${encodeURIComponent(id)}`,
   );
 }
+
+export function permanentlyDeleteAdminJob(id: string) {
+  return http.delete<DeactivateAdminJobResponse>(
+    `/jobs/admin/${encodeURIComponent(id)}/permanent`,
+  );
+}
