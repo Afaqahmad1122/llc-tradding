@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
+  Briefcase,
+  CarFront,
+  Inbox,
   LayoutDashboard,
-  LineChart,
   LogOut,
-  Settings,
   Shield,
-  Users,
+  Ship,
+  Star,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -44,9 +46,15 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/users", label: "Users", icon: Users },
-  { href: "/dashboard/trading", label: "Trading", icon: LineChart },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/cars", label: "Cars", icon: CarFront },
+  { href: "/dashboard/careers", label: "Careers", icon: Briefcase },
+  { href: "/dashboard/reviews", label: "Reviews", icon: Star },
+  {
+    href: "/dashboard/contact-messages",
+    label: "Contact messages",
+    icon: Inbox,
+  },
+  { href: "/dashboard/shipping", label: "Shipping", icon: Ship },
 ];
 
 function navItemActive(pathname: string, href: string) {
