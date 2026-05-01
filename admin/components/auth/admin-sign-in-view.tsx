@@ -23,7 +23,9 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useAdminAuthStore } from "@/stores/auth-store";
 
-export function AdminLoginView() {
+const ADMIN_HOME = "/dashboard";
+
+export function AdminSignInView() {
   const router = useRouter();
   const hasBootstrapped = useAdminAuthStore((s) => s.hasBootstrapped);
   const user = useAdminAuthStore((s) => s.user);
@@ -36,7 +38,7 @@ export function AdminLoginView() {
       return;
     }
     if (user?.role === "ADMIN") {
-      router.replace("/");
+      router.replace(ADMIN_HOME);
     }
   }, [hasBootstrapped, router, user]);
 

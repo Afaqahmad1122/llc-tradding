@@ -20,7 +20,7 @@ export function AdminAuthGuard({ children }: AdminAuthGuardProps) {
       return;
     }
     if (!user || user.role !== "ADMIN") {
-      router.replace("/login");
+      router.replace("/");
     }
   }, [hasBootstrapped, router, user]);
 

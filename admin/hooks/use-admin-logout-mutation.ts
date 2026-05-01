@@ -15,7 +15,7 @@ export function useAdminLogoutMutation() {
     errorToast: (error) => error.message,
     onSuccess: () => {
       clearAuth();
-      router.replace("/login");
+      router.replace("/");
       router.refresh();
     },
   });

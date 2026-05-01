@@ -15,7 +15,7 @@ export function useAdminLoginMutation() {
     errorToast: () => null,
     onSuccess: (data) => {
       setAuthSession(data.user, data.accessToken);
-      router.replace("/");
+      router.replace("/dashboard");
       router.refresh();
     },
   });

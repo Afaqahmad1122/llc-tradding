@@ -3,7 +3,7 @@
 import { useAdminLogoutMutation } from "@/hooks/use-admin-logout-mutation";
 import { Button } from "@/components/ui/button";
 
-export default function AdminHomePage() {
+export default function AdminDashboardPage() {
   const logout = useAdminLogoutMutation();
 
   return (
