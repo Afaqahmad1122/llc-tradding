@@ -11,7 +11,15 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/cars",
 });
 
-export default function CarsPage() {
+export default async function CarsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ brand?: string }>;
+}) {
+  const sp = await searchParams;
+  const initialBrand =
+    typeof sp.brand === "string" ? sp.brand.trim() : "";
+
   return (
     <LandingPageShell mainClassName="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
       <div className="space-y-8">
@@ -25,7 +33,7 @@ export default function CarsPage() {
             the admin catalogue in near real-time.
           </p>
         </header>
-        <PublicCarsInventory />
+        <PublicCarsInventory initialBrand={initialBrand} />
       </div>
     </LandingPageShell>
   );

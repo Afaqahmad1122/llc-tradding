@@ -62,8 +62,15 @@ function listReducer(state: ListState, action: ListAction): ListState {
   }
 }
 
-export function PublicCarsInventory() {
-  const [list, dispatch] = useReducer(listReducer, initialState);
+export function PublicCarsInventory({
+  initialBrand = "",
+}: {
+  initialBrand?: string;
+}) {
+  const [list, dispatch] = useReducer(listReducer, {
+    ...initialState,
+    brand: initialBrand,
+  });
 
   useEffect(() => {
     const t = window.setTimeout(() => {

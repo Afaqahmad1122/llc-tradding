@@ -121,3 +121,35 @@ export function fetchPublicCars(params: PublicCarsQuery = {}) {
 export function fetchCarsMeta() {
   return http.get<CarsMetaResponse>("/cars/meta");
 }
+
+export type PublicCarDetailResponse = {
+  car: PublicCar;
+  similarCars: PublicCar[];
+};
+
+export function fetchPublicCarByReference(referenceNo: string) {
+  const ref = referenceNo.trim().toUpperCase();
+  return http.get<PublicCarDetailResponse>(
+    `/cars/${encodeURIComponent(ref)}`,
+  );
+}
+
+export type CarInquiryPayload = {
+  name: string;
+  email: string;
+  phone: string;
+  destinationCountry?: string;
+  destinationPort?: string;
+  message?: string;
+};
+
+export function submitCarInquiry(
+  referenceNo: string,
+  body: CarInquiryPayload,
+) {
+  const ref = referenceNo.trim().toUpperCase();
+  return http.post<{ message: string }>(
+    `/cars/${encodeURIComponent(ref)}/inquire`,
+    body,
+  );
+}

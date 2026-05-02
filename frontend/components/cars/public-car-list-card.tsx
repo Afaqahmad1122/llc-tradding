@@ -18,64 +18,21 @@ import {
   ZapIcon,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PublicCar } from "@/lib/api/cars";
-import { CONTACT_EMAIL_MAILTO, WHATSAPP_URL } from "@/lib/contact-info";
-
-function formatUsd(price: string | null): string {
-  const n = price == null ? NaN : Number(price);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function formatPkr(price: string | null): string | null {
-  if (price == null || price === "") return null;
-  const n = Number(price);
-  if (!Number.isFinite(n)) return null;
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "PKR",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function inventoryTitle(car: PublicCar): string {
-  return car.title?.trim()
-    ? car.title.trim()
-    : `${car.model.brand} ${car.model.name}`;
-}
-
-function displayStr(value: string | null | undefined): string {
-  const s = value?.trim();
-  return s ? s : "—";
-}
-
-function buildInquiryWhatsAppUrl(car: PublicCar): string {
-  const title = inventoryTitle(car);
-  const text = `Hi, I'm interested in ${car.referenceNo} — ${title}`;
-  const params = new URLSearchParams();
-  params.set("text", text);
-  const base = WHATSAPP_URL.replace(/\/$/, "");
-  const sep = base.includes("?") ? "&" : "?";
-  return `${base}${sep}${params.toString()}`;
-}
-
-function buildInquireMailto(car: PublicCar): string {
-  const title = inventoryTitle(car);
-  const subject = encodeURIComponent(`Inquiry: ${car.referenceNo} — ${title}`);
-  const body = encodeURIComponent(
-    `Hello,\n\nI'm interested in this vehicle:\nReference: ${car.referenceNo}\n${title}\nYear: ${car.year}\n\nPlease share details.\n`,
-  );
-  return `${CONTACT_EMAIL_MAILTO}?subject=${subject}&body=${body}`;
-}
+import {
+  buildInquireMailto,
+  buildInquiryWhatsAppUrl,
+  displayStr,
+  formatPkr,
+  formatUsd,
+  inventoryTitle,
+} from "@/lib/car-display";
 
 function SpecCell({
   icon: Icon,
@@ -108,6 +65,8 @@ function SpecCell({
 
 export function PublicCarListCard({ car }: { car: PublicCar }) {
   const [favorited, setFavorited] = useState(false);
+
+  const detailHref = `/cars/${encodeURIComponent(car.referenceNo)}`;
 
   const imageUrl =
     car.images.find((i) => i.isPrimary)?.url ?? car.images[0]?.url ?? null;
@@ -154,6 +113,7 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
 
   const usd = formatUsd(car.priceUsd);
   const pkrLine = formatPkr(car.pricePkr);
+  const title = inventoryTitle(car);
 
   return (
     <article
@@ -165,11 +125,14 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
     >
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         {/* Media */}
-        <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-muted lg:aspect-auto lg:w-[min(38%,320px)] lg:max-w-[320px]">
+        <Link
+          href={detailHref}
+          className="relative aspect-[16/10] w-full shrink-0 overflow-hidden bg-muted lg:aspect-auto lg:w-[min(38%,320px)] lg:max-w-[320px]"
+        >
           {imageUrl ? (
             <Image
               src={imageUrl}
-              alt={inventoryTitle(car)}
+              alt={title}
               fill
               className="object-cover transition duration-500 group-hover:scale-[1.02]"
               sizes="(min-width: 1024px) 320px, 100vw"
@@ -189,10 +152,14 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
             aria-hidden
           />
 
-          <div className="absolute left-3 top-3 z-10 flex gap-2 pointer-events-auto">
+          <div className="pointer-events-auto absolute left-3 top-3 z-10 flex gap-2">
             <button
               type="button"
-              onClick={() => setFavorited((v) => !v)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setFavorited((v) => !v);
+              }}
               className={cn(
                 "flex size-10 items-center justify-center rounded-full border border-white/20 bg-background/85 text-foreground shadow-md backdrop-blur-md transition hover:bg-background",
                 favorited && "text-red-500",
@@ -212,19 +179,25 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
               href={imageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full border border-white/20 bg-background/85 text-foreground shadow-md backdrop-blur-md transition hover:bg-background"
+              onClick={(e) => e.stopPropagation()}
+              className="pointer-events-auto absolute right-3 top-3 z-10 flex size-10 items-center justify-center rounded-full border border-white/20 bg-background/85 text-foreground shadow-md backdrop-blur-md transition hover:bg-background"
               aria-label="Open vehicle photo in a new tab"
             >
               <EyeIcon className="size-4" aria-hidden />
             </a>
           ) : null}
-        </div>
+        </Link>
 
         {/* Details */}
         <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-            <h3 className="font-heading text-base font-bold uppercase leading-snug tracking-wide text-foreground sm:text-lg">
-              {inventoryTitle(car)}
+            <h3 className="min-w-0 font-heading text-base font-bold uppercase leading-snug tracking-wide text-foreground sm:text-lg">
+              <Link
+                href={detailHref}
+                className="hover:text-primary transition-colors hover:underline"
+              >
+                {title}
+              </Link>
             </h3>
             {originLabel ? (
               <p className="text-accent flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] sm:text-sm">
@@ -282,6 +255,9 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
                   <MailIcon className="size-4" aria-hidden />
                   Inquire now
                 </a>
+              </Button>
+              <Button variant="outline" size="sm" className="h-11" asChild>
+                <Link href={detailHref}>Full details</Link>
               </Button>
             </div>
 
