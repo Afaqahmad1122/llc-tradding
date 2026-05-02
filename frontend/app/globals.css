@@ -139,6 +139,11 @@
 }
 
 @layer utilities {
+  /** Full-page vertical gradient for marketing routes; pairs with theme tokens in light/dark. */
+  .bg-marketing-page-gradient {
+    @apply bg-linear-to-b from-[#f8f5ff] via-[#f3ecff] to-[#fff7ef] dark:from-[#0c0720] dark:via-[#120932] dark:to-[#1a0e3d];
+  }
+
   .brand-gradient-main {
     background-image: linear-gradient(135deg, #1e104e 0%, #452e5a 100%);
   }

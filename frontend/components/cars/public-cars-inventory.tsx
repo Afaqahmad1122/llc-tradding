@@ -138,18 +138,18 @@ export function PublicCarsInventory() {
     <div className="space-y-10">
       {errorBanner ? (
         <div
-          className="rounded-2xl border border-red-400/35 bg-red-500/12 px-4 py-3 text-sm text-[#58130c]"
+          className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive dark:bg-destructive/15"
           role="alert"
         >
           {errorBanner}
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#452E5A]/12 bg-white/90 p-5 shadow-inner sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card/90 p-5 shadow-inner backdrop-blur-sm sm:flex-row sm:flex-wrap sm:items-end dark:bg-card/80">
         <div className="min-w-[14rem] flex-1 space-y-2">
           <label
             htmlFor="inventory-search"
-            className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#452E5A]/80"
+            className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]"
           >
             Search
           </label>
@@ -166,11 +166,12 @@ export function PublicCarsInventory() {
             />
           </div>
         </div>
-        <div className="flex min-w-[10rem] flex-col gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#452E5A]/80">
+        <div className="flex min-w-[10rem] flex-1 flex-col gap-2 sm:max-w-[14rem]">
+          <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]">
             Brand
           </span>
           <NativeSelect
+            className="w-full min-w-0"
             aria-label="Filter by brand"
             value={list.brand}
             onChange={(e) =>
@@ -185,11 +186,12 @@ export function PublicCarsInventory() {
             ))}
           </NativeSelect>
         </div>
-        <div className="flex min-w-[10rem] flex-col gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#452E5A]/80">
+        <div className="flex min-w-[10rem] flex-1 flex-col gap-2 sm:max-w-[14rem]">
+          <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]">
             Sort
           </span>
           <NativeSelect
+            className="w-full min-w-0"
             aria-label="Sort inventory"
             value={list.sort}
             onChange={(e) =>
@@ -216,10 +218,10 @@ export function PublicCarsInventory() {
       <div className="relative min-h-[12rem]">
         {isLoading ? (
           <div className="flex flex-col items-center gap-4 py-24">
-            <Spinner className="size-10 text-[#452E5A]" />
+            <Spinner className="text-primary size-10" />
           </div>
         ) : rows.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#452E5A]/20 bg-white/85 py-14">
+          <div className="rounded-3xl border border-dashed border-border bg-card/90 py-14 dark:bg-card/80">
             <Empty>
               <EmptyTitle>No vehicles listed yet</EmptyTitle>
               <EmptyDescription>
@@ -237,8 +239,8 @@ export function PublicCarsInventory() {
                 null;
               return (
                 <li key={car.id}>
-                  <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-[#452E5A]/12 bg-white/95 shadow-[0_18px_48px_-32px_rgba(30,16,78,0.55)] ring-1 ring-[#ece4ff]/40 transition hover:border-[#5a3aad]/28 hover:shadow-[0_22px_56px_-30px_rgba(30,16,78,0.65)]">
-                    <div className="bg-muted relative aspect-[16/11] overflow-hidden border-b border-[#452E5A]/10">
+                  <article className="group text-card-foreground flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-lg shadow-foreground/5 ring-1 ring-border/50 transition hover:border-primary/30 hover:shadow-xl hover:shadow-foreground/10 dark:shadow-black/35 dark:ring-border/80 dark:hover:border-primary/40 dark:hover:shadow-black/45">
+                    <div className="bg-muted relative aspect-[16/11] overflow-hidden border-b border-border">
                       {src ? (
                         <Image
                           src={src}
@@ -249,7 +251,7 @@ export function PublicCarsInventory() {
                           unoptimized
                         />
                       ) : (
-                        <div className="flex h-full flex-col items-center justify-center gap-2 text-[#452E5A]/45">
+                        <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
                           <CarFront className="size-12" aria-hidden />
                           <span className="text-xs font-semibold uppercase tracking-wide">
                             No photo yet
@@ -262,10 +264,10 @@ export function PublicCarsInventory() {
                     </div>
                     <div className="flex flex-1 flex-col gap-3 px-5 py-5">
                       <div>
-                        <p className="text-lg font-semibold tracking-tight text-[#1E104E]">
+                        <p className="text-lg font-semibold tracking-tight text-foreground">
                           {inventoryTitle(car)}
                         </p>
-                        <p className="text-[#452E5A]/75 mt-1 text-sm">
+                        <p className="text-muted-foreground mt-1 text-sm">
                           {car.model.brand} {car.model.name} ·{" "}
                           <span className="tabular-nums">{car.year}</span>
                           {car.mileage != null ? (
@@ -277,7 +279,7 @@ export function PublicCarsInventory() {
                           ) : null}
                         </p>
                       </div>
-                      <p className="text-foreground mt-auto text-xl font-semibold tabular-nums">
+                      <p className="mt-auto text-xl font-semibold tabular-nums text-foreground">
                         {formatUsd(car.priceUsd)}
                       </p>
                     </div>
@@ -288,15 +290,15 @@ export function PublicCarsInventory() {
           </ul>
         )}
         {carsQuery.isFetching && rows.length > 0 ? (
-          <div className="bg-background/65 pointer-events-none absolute inset-0 flex items-start justify-center pt-20">
-            <Spinner className="size-8 text-[#452E5A]" />
+          <div className="bg-background/65 pointer-events-none absolute inset-0 flex items-start justify-center pt-20 backdrop-blur-[1px]">
+            <Spinner className="text-primary size-8" />
           </div>
         ) : null}
       </div>
 
       {totalPages > 1 ? (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-center text-sm text-[#452E5A]/80 sm:text-left">
+          <p className="text-muted-foreground text-center text-sm sm:text-left">
             Page{" "}
             <span className="text-foreground font-semibold tabular-nums">
               {list.page}
