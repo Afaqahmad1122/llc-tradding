@@ -1,5 +1,8 @@
 "use client";
 
+import { Plus, Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +13,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { CarModelSummary } from "@/lib/api/cars";
 
-import type { CarFormDraft } from "../_lib/draft-utils";
+import {
+  newCarKvRow,
+  type CarFormDraft,
+  type CarKvRow,
+} from "../_lib/draft-utils";
 import {
   FUEL_OPTIONS,
   STEERING_OPTIONS,
@@ -33,7 +40,7 @@ export function CarFormFields({
   referenceReadOnly,
 }: CarFormFieldsProps) {
   return (
-    <div className="grid max-h-[min(65vh,calc(100vh-14rem))] gap-4 overflow-y-auto sm:grid-cols-2">
+    <div className="grid w-full grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ref`}>Reference #</Label>
         <Input
@@ -255,32 +262,24 @@ export function CarFormFields({
         />
       </div>
 
-      <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor={`${idPrefix}-specs`}>
-          Specifications JSON (optional)
-        </Label>
-        <Textarea
-          id={`${idPrefix}-specs`}
-          value={draft.specsJson}
-          onChange={(e) => onChange({ specsJson: e.target.value })}
-          rows={4}
-          className="resize-y font-mono text-xs"
-          spellCheck={false}
-          placeholder={`{\n  "trim": "G"\n}`}
-        />
-      </div>
-      <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor={`${idPrefix}-feat`}>Features JSON (optional)</Label>
-        <Textarea
-          id={`${idPrefix}-feat`}
-          value={draft.featuresJson}
-          onChange={(e) => onChange({ featuresJson: e.target.value })}
-          rows={4}
-          className="resize-y font-mono text-xs"
-          spellCheck={false}
-          placeholder={`{\n  "sunroof": true\n}`}
-        />
-      </div>
+      <CarKvRecordSection
+        idPrefix={idPrefix}
+        section="specs"
+        title="Specifications (optional)"
+        hint='Add labels such as trim or engine notes. Pick Text, Number, Yes / No, or JSON only if you need nested data.'
+        addLabel="Add specification"
+        rows={draft.specsRows}
+        onRowsChange={(specsRows) => onChange({ specsRows })}
+      />
+      <CarKvRecordSection
+        idPrefix={idPrefix}
+        section="features"
+        title="Features (optional)"
+        hint="Use Yes / No for equipment like sunroof or navigation. Use Text or Number for other details."
+        addLabel="Add feature"
+        rows={draft.featuresRows}
+        onRowsChange={(featuresRows) => onChange({ featuresRows })}
+      />
 
       <div className="flex items-center gap-2 sm:col-span-2">
         <Checkbox
@@ -292,6 +291,165 @@ export function CarFormFields({
           Published on public inventory
         </Label>
       </div>
+    </div>
+  );
+}
+
+function CarKvRecordSection({
+  idPrefix,
+  section,
+  title,
+  hint,
+  addLabel,
+  rows,
+  onRowsChange,
+}: {
+  idPrefix: string;
+  section: string;
+  title: string;
+  hint: string;
+  addLabel: string;
+  rows: CarKvRow[];
+  onRowsChange: (next: CarKvRow[]) => void;
+}) {
+  const updateRow = (id: string, patch: Partial<CarKvRow>) => {
+    onRowsChange(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  };
+
+  const removeRow = (id: string) => {
+    onRowsChange(rows.filter((r) => r.id !== id));
+  };
+
+  return (
+    <div className="space-y-3 sm:col-span-2">
+      <div className="space-y-1">
+        <Label className="text-base">{title}</Label>
+        <p className="text-muted-foreground text-sm">{hint}</p>
+      </div>
+      <div className="space-y-2">
+        {rows.length === 0 ? (
+          <p className="text-muted-foreground text-sm italic">None added yet.</p>
+        ) : (
+          rows.map((row, index) => (
+            <div
+              key={row.id}
+              className="flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)_auto] sm:items-end sm:gap-3"
+            >
+              <div className="space-y-1.5">
+                <Label
+                  className="text-muted-foreground text-xs"
+                  htmlFor={`${idPrefix}-${section}-key-${row.id}`}
+                >
+                  Name
+                </Label>
+                <Input
+                  id={`${idPrefix}-${section}-key-${row.id}`}
+                  value={row.key}
+                  onChange={(e) => updateRow(row.id, { key: e.target.value })}
+                  placeholder="e.g. trim"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label
+                  className="text-muted-foreground text-xs"
+                  htmlFor={`${idPrefix}-${section}-kind-${row.id}`}
+                >
+                  Type
+                </Label>
+                <NativeSelect
+                  id={`${idPrefix}-${section}-kind-${row.id}`}
+                  value={row.kind}
+                  onChange={(e) =>
+                    updateRow(row.id, {
+                      kind: e.target.value as CarKvRow["kind"],
+                    })
+                  }
+                >
+                  <NativeSelectOption value="text">Text</NativeSelectOption>
+                  <NativeSelectOption value="number">Number</NativeSelectOption>
+                  <NativeSelectOption value="yesNo">Yes / No</NativeSelectOption>
+                  <NativeSelectOption value="json">
+                    JSON (advanced)
+                  </NativeSelectOption>
+                </NativeSelect>
+              </div>
+              <div className="space-y-1.5 sm:min-w-0">
+                <Label
+                  className="text-muted-foreground text-xs"
+                  htmlFor={`${idPrefix}-${section}-val-${row.id}`}
+                >
+                  Value
+                </Label>
+                {row.kind === "yesNo" ? (
+                  <div className="flex h-9 items-center gap-2 px-1">
+                    <Checkbox
+                      id={`${idPrefix}-${section}-val-${row.id}`}
+                      checked={row.yesNo}
+                      onCheckedChange={(c) =>
+                        updateRow(row.id, { yesNo: c === true })
+                      }
+                    />
+                    <Label
+                      htmlFor={`${idPrefix}-${section}-val-${row.id}`}
+                      className="cursor-pointer font-normal text-sm"
+                    >
+                      Yes
+                    </Label>
+                  </div>
+                ) : row.kind === "json" ? (
+                  <Textarea
+                    id={`${idPrefix}-${section}-val-${row.id}`}
+                    value={row.text}
+                    onChange={(e) =>
+                      updateRow(row.id, { text: e.target.value })
+                    }
+                    rows={2}
+                    className="resize-y font-mono text-xs min-h-[60px]"
+                    spellCheck={false}
+                    placeholder='{"nested": true}'
+                    aria-label={`Value row ${index + 1}`}
+                  />
+                ) : (
+                  <Input
+                    id={`${idPrefix}-${section}-val-${row.id}`}
+                    value={row.text}
+                    onChange={(e) =>
+                      updateRow(row.id, { text: e.target.value })
+                    }
+                    inputMode={row.kind === "number" ? "decimal" : "text"}
+                    placeholder={row.kind === "number" ? "e.g. 2.5" : "Value"}
+                    autoComplete="off"
+                  />
+                )}
+              </div>
+              <div className="flex shrink-0 justify-end pb-0.5 sm:justify-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => removeRow(row.id)}
+                  aria-label="Remove row"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="gap-1.5"
+        onClick={() => onRowsChange([...rows, newCarKvRow()])}
+      >
+        <Plus className="size-4" />
+        {addLabel}
+      </Button>
     </div>
   );
 }

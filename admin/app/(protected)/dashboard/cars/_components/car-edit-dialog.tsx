@@ -55,9 +55,9 @@ export function CarEditDialog({
     >
       <DialogContent
         showCloseButton
-        className="gap-5 sm:max-w-lg md:max-w-xl lg:max-w-3xl"
+        className="flex max-h-[min(92dvh,52rem)] flex-col gap-0 overflow-hidden p-6 sm:max-w-lg md:max-w-xl lg:max-w-3xl"
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0 pr-10 sm:pr-12">
           <DialogTitle>
             Edit {editCar ? editCar.referenceNo : "car"}
           </DialogTitle>
@@ -66,28 +66,30 @@ export function CarEditDialog({
             the entire ordered set.
           </DialogDescription>
         </DialogHeader>
-        {draft ? (
-          <CarFormFields
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-1">
+          {draft ? (
+            <CarFormFields
+              idPrefix="edit"
+              draft={draft}
+              models={models}
+              referenceReadOnly
+              onChange={onDraftChange}
+            />
+          ) : null}
+          <ImageDraftSection
             idPrefix="edit"
-            draft={draft}
-            models={models}
-            referenceReadOnly
-            onChange={onDraftChange}
+            images={images}
+            onChange={onImagesChange}
+            uploadHint={null}
           />
-        ) : null}
-        <ImageDraftSection
-          idPrefix="edit"
-          images={images}
-          onChange={onImagesChange}
-          uploadHint={null}
-        />
-        {editError ? (
-          <Alert variant="destructive">
-            <AlertTitle>Update failed</AlertTitle>
-            <AlertDescription>{editError}</AlertDescription>
-          </Alert>
-        ) : null}
-        <DialogFooter className="flex-wrap gap-2">
+          {editError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Update failed</AlertTitle>
+              <AlertDescription>{editError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+        <DialogFooter className="mt-4 shrink-0 flex-wrap gap-2 border-border/60 border-t pt-4">
           <Button variant="outline" type="button" onClick={onDismiss}>
             Cancel
           </Button>

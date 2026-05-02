@@ -13,6 +13,111 @@ export type ImageDraftRow = {
   isPrimary: boolean;
 };
 
+/** One row in the specifications / features editors (flat key → value). */
+export type CarKvRow = {
+  id: string;
+  key: string;
+  kind: "text" | "number" | "yesNo" | "json";
+  text: string;
+  yesNo: boolean;
+};
+
+export function newCarKvRow(): CarKvRow {
+  return {
+    id: crypto.randomUUID(),
+    key: "",
+    kind: "text",
+    text: "",
+    yesNo: false,
+  };
+}
+
+export function recordToKvRows(
+  record: Record<string, unknown> | null | undefined,
+): CarKvRow[] {
+  if (!record || typeof record !== "object") return [];
+  return Object.entries(record).map(([key, value]) => {
+    const id = crypto.randomUUID();
+    if (value === null || value === undefined) {
+      return { id, key, kind: "text" as const, text: "", yesNo: false };
+    }
+    if (typeof value === "boolean") {
+      return { id, key, kind: "yesNo" as const, text: "", yesNo: value };
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return { id, key, kind: "number" as const, text: String(value), yesNo: false };
+    }
+    if (typeof value === "string") {
+      return { id, key, kind: "text" as const, text: value, yesNo: false };
+    }
+    return {
+      id,
+      key,
+      kind: "json" as const,
+      text: JSON.stringify(value),
+      yesNo: false,
+    };
+  });
+}
+
+export function kvRowsToRecord(
+  rows: CarKvRow[],
+  label: string,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const row of rows) {
+    const k = row.key.trim();
+    if (!k) continue;
+    switch (row.kind) {
+      case "text":
+        out[k] = row.text;
+        break;
+      case "number": {
+        const n = Number.parseFloat(row.text.trim());
+        if (!Number.isFinite(n)) {
+          throw new Error(`${label}: "${k}" must be a valid number.`);
+        }
+        out[k] = n;
+        break;
+      }
+      case "yesNo":
+        out[k] = row.yesNo;
+        break;
+      case "json": {
+        const raw = row.text.trim();
+        if (!raw) {
+          throw new Error(`${label}: "${k}" needs valid JSON.`);
+        }
+        try {
+          out[k] = JSON.parse(raw) as unknown;
+        } catch {
+          throw new Error(`${label}: "${k}" has invalid JSON.`);
+        }
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+function validateKvRows(rows: CarKvRow[], label: string): string | null {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const k = row.key.trim();
+    if (!k) continue;
+    if (seen.has(k)) {
+      return `${label}: duplicate name "${k}".`;
+    }
+    seen.add(k);
+  }
+  try {
+    kvRowsToRecord(rows, label);
+  } catch (e) {
+    return formatErrorMessage(e);
+  }
+  return null;
+}
+
 export type CarFormDraft = {
   referenceNo: string;
   title: string;
@@ -35,8 +140,8 @@ export type CarFormDraft = {
   drive: string;
   country: string;
   city: string;
-  specsJson: string;
-  featuresJson: string;
+  specsRows: CarKvRow[];
+  featuresRows: CarKvRow[];
   isPublished: boolean;
 };
 
@@ -92,8 +197,8 @@ export function emptyCarDraft(modelId = ""): CarFormDraft {
     drive: "",
     country: "",
     city: "",
-    specsJson: "",
-    featuresJson: "",
+    specsRows: [],
+    featuresRows: [],
     isPublished: true,
   };
 }
@@ -121,10 +226,8 @@ export function carToDraft(car: AdminCar): CarFormDraft {
     drive: car.drive ?? "",
     country: car.country ?? "",
     city: car.city ?? "",
-    specsJson: car.specifications
-      ? JSON.stringify(car.specifications, null, 2)
-      : "",
-    featuresJson: car.features ? JSON.stringify(car.features, null, 2) : "",
+    specsRows: recordToKvRows(car.specifications ?? undefined),
+    featuresRows: recordToKvRows(car.features ?? undefined),
     isPublished: car.isPublished,
   };
 }
@@ -146,27 +249,6 @@ export function parseRequiredUsd(raw: string): number | null {
   const n = Number.parseFloat(raw.trim());
   if (!Number.isFinite(n) || n <= 0 || n > 10_000_000) return null;
   return n;
-}
-
-function parseOptionalJsonRecord(
-  raw: string,
-  label: string,
-): Record<string, unknown> | undefined {
-  const trimmed = raw.trim();
-  if (!trimmed) return undefined;
-  try {
-    const parsed = JSON.parse(trimmed) as unknown;
-    if (
-      parsed !== null &&
-      typeof parsed === "object" &&
-      !Array.isArray(parsed)
-    ) {
-      return parsed as Record<string, unknown>;
-    }
-    throw new Error(`${label} must be a JSON object`);
-  } catch {
-    throw new Error(`Invalid JSON for ${label}`);
-  }
 }
 
 export function draftToImageInputs(images: ImageDraftRow[]): CarImageInput[] {
@@ -203,12 +285,10 @@ export function validateCarDraft(
     }
   }
 
-  try {
-    parseOptionalJsonRecord(draft.specsJson, "specifications");
-    parseOptionalJsonRecord(draft.featuresJson, "features");
-  } catch (e) {
-    return formatErrorMessage(e);
-  }
+  const specsErr = validateKvRows(draft.specsRows, "Specifications");
+  if (specsErr) return specsErr;
+  const featuresErr = validateKvRows(draft.featuresRows, "Features");
+  if (featuresErr) return featuresErr;
 
   const primaries = images.filter((i) => i.isPrimary);
   if (primaries.length > 1) return "Choose at most one primary image.";
@@ -263,10 +343,14 @@ export function buildMutationBodyBase(
     ...(draft.country.trim() ? { country: draft.country.trim() } : {}),
     ...(draft.city.trim() ? { city: draft.city.trim() } : {}),
     isPublished: draft.isPublished,
-    specifications:
-      parseOptionalJsonRecord(draft.specsJson, "specifications") ?? undefined,
-    features:
-      parseOptionalJsonRecord(draft.featuresJson, "features") ?? undefined,
+    ...(() => {
+      const specifications = kvRowsToRecord(draft.specsRows, "Specifications");
+      const features = kvRowsToRecord(draft.featuresRows, "Features");
+      return {
+        ...(Object.keys(specifications).length ? { specifications } : {}),
+        ...(Object.keys(features).length ? { features } : {}),
+      };
+    })(),
   };
 
   Object.keys(body).forEach((k) => {
