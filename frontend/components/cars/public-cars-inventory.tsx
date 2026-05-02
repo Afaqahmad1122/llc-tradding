@@ -1,10 +1,10 @@
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { CarFront, ChevronLeft, ChevronRight, SearchIcon } from "lucide-react";
-import Image from "next/image";
+import { ChevronLeft, ChevronRight, SearchIcon } from "lucide-react";
 import { useEffect, useReducer } from "react";
 
+import { PublicCarListCard } from "@/components/cars/public-car-list-card";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import {
   NativeSelect,
@@ -14,11 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api/client";
-import {
-  fetchCarsMeta,
-  fetchPublicCars,
-  type PublicCar,
-} from "@/lib/api/cars";
+import { fetchCarsMeta, fetchPublicCars } from "@/lib/api/cars";
 
 const PAGE_SIZE = 12;
 
@@ -66,22 +62,6 @@ function listReducer(state: ListState, action: ListAction): ListState {
   }
 }
 
-function formatUsd(price: string | null): string {
-  const n = price == null ? NaN : Number(price);
-  if (!Number.isFinite(n)) return "—";
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
-
-function inventoryTitle(car: PublicCar): string {
-  return car.title?.trim()
-    ? car.title.trim()
-    : `${car.model.brand} ${car.model.name}`;
-}
-
 export function PublicCarsInventory() {
   const [list, dispatch] = useReducer(listReducer, initialState);
 
@@ -127,6 +107,7 @@ export function PublicCarsInventory() {
 
   const rows = carsQuery.data?.data ?? [];
   const totalPages = carsQuery.data?.pagination.totalPages ?? 0;
+  const totalVehicles = carsQuery.data?.pagination.total;
 
   const brands = metaQuery.data?.brands ?? [];
   const isLoading =
@@ -231,63 +212,25 @@ export function PublicCarsInventory() {
             </Empty>
           </div>
         ) : (
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((car) => {
-              const src =
-                car.images.find((i) => i.isPrimary)?.url ??
-                car.images[0]?.url ??
-                null;
-              return (
+          <div className="space-y-6">
+            {totalVehicles != null ? (
+              <div className="flex flex-col gap-1 border-b border-border pb-4 sm:flex-row sm:items-baseline sm:justify-between">
+                <h2 className="font-heading text-xl font-semibold tracking-tight text-foreground">
+                  Stock list
+                </h2>
+                <p className="text-muted-foreground text-sm tabular-nums">
+                  {totalVehicles.toLocaleString()} vehicles
+                </p>
+              </div>
+            ) : null}
+            <ul className="flex flex-col gap-6">
+              {rows.map((car) => (
                 <li key={car.id}>
-                  <article className="group text-card-foreground flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-lg shadow-foreground/5 ring-1 ring-border/50 transition hover:border-primary/30 hover:shadow-xl hover:shadow-foreground/10 dark:shadow-black/35 dark:ring-border/80 dark:hover:border-primary/40 dark:hover:shadow-black/45">
-                    <div className="bg-muted relative aspect-[16/11] overflow-hidden border-b border-border">
-                      {src ? (
-                        <Image
-                          src={src}
-                          alt={car.referenceNo}
-                          fill
-                          sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
-                          className="object-cover transition duration-500 group-hover:scale-[1.02]"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
-                          <CarFront className="size-12" aria-hidden />
-                          <span className="text-xs font-semibold uppercase tracking-wide">
-                            No photo yet
-                          </span>
-                        </div>
-                      )}
-                      <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 font-mono text-[11px] font-semibold text-white backdrop-blur-sm">
-                        {car.referenceNo}
-                      </span>
-                    </div>
-                    <div className="flex flex-1 flex-col gap-3 px-5 py-5">
-                      <div>
-                        <p className="text-lg font-semibold tracking-tight text-foreground">
-                          {inventoryTitle(car)}
-                        </p>
-                        <p className="text-muted-foreground mt-1 text-sm">
-                          {car.model.brand} {car.model.name} ·{" "}
-                          <span className="tabular-nums">{car.year}</span>
-                          {car.mileage != null ? (
-                            <>
-                              {" "}
-                              · {car.mileage.toLocaleString()}{" "}
-                              {car.mileageUnit}
-                            </>
-                          ) : null}
-                        </p>
-                      </div>
-                      <p className="mt-auto text-xl font-semibold tabular-nums text-foreground">
-                        {formatUsd(car.priceUsd)}
-                      </p>
-                    </div>
-                  </article>
+                  <PublicCarListCard car={car} />
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          </div>
         )}
         {carsQuery.isFetching && rows.length > 0 ? (
           <div className="bg-background/65 pointer-events-none absolute inset-0 flex items-start justify-center pt-20 backdrop-blur-[1px]">
