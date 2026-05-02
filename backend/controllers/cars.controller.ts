@@ -500,6 +500,20 @@ export const submitCarInquiry = async (
   res.status(201).json({ message: "inquiry submitted successfully" });
 };
 
+export const getAdminModels = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) return;
+
+  const models = await prisma.model.findMany({
+    select: { id: true, name: true, brand: true, slug: true, bodyType: true },
+    orderBy: [{ brand: "asc" }, { name: "asc" }],
+  });
+
+  res.status(200).json({ models });
+};
+
 export const getAdminCars = async (
   req: Request,
   res: Response,

@@ -4,6 +4,7 @@ import {
   deleteAdminCar,
   getAdminCarById,
   getAdminCars,
+  getAdminModels,
   getCarByReference,
   getCarsMeta,
   getCars,
@@ -40,6 +41,7 @@ carsRouter.post(
   validateRequestBody(presignCarImageSchema),
   presignCarImageUpload,
 );
+carsRouter.get("/admin/models", requireAuth, getAdminModels);
 carsRouter.get("/admin/:id", requireAuth, getAdminCarById);
 carsRouter.patch(
   "/admin/:id",
