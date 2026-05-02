@@ -1,9 +1,20 @@
 /**
- * Builds ~6 evenly spaced USD price range labels from API meta min/max.
+ * Price buckets for home sidebar: labels + numeric bounds for /cars query params.
+ */
+export type PriceBucket = {
+  label: string;
+  priceMin: number;
+  priceMax: number;
+};
+
+const BUCKET_COUNT = 6;
+
+/**
+ * Builds ~6 evenly spaced USD price buckets from API meta min/max.
  */
 export function buildPriceBuckets(priceRange:
   | { min: string | null; max: string | null }
-  | undefined): string[] {
+  | undefined): PriceBucket[] {
   if (!priceRange?.min || !priceRange?.max) return [];
 
   const min = Number(priceRange.min);
@@ -18,17 +29,28 @@ export function buildPriceBuckets(priceRange:
   });
 
   if (max === min) {
-    return [`${formatter.format(min)} - ${formatter.format(max)}`];
+    return [
+      {
+        label: formatter.format(min),
+        priceMin: Math.floor(min),
+        priceMax: Math.ceil(max),
+      },
+    ];
   }
 
-  const bucketCount = 6;
-  const step = (max - min) / bucketCount;
-  const out: string[] = [];
+  const step = (max - min) / BUCKET_COUNT;
+  const out: PriceBucket[] = [];
 
-  for (let i = 0; i < bucketCount; i++) {
+  for (let i = 0; i < BUCKET_COUNT; i++) {
     const lo = min + step * i;
-    const hi = i === bucketCount - 1 ? max : min + step * (i + 1);
-    out.push(`${formatter.format(lo)} - ${formatter.format(hi)}`);
+    const hi = i === BUCKET_COUNT - 1 ? max : min + step * (i + 1);
+    const priceMin = Math.floor(lo);
+    const priceMax = Math.ceil(hi);
+    const label =
+      formatter.format(priceMin) === formatter.format(priceMax)
+        ? formatter.format(priceMin)
+        : `${formatter.format(priceMin)} - ${formatter.format(priceMax)}`;
+    out.push({ label, priceMin, priceMax });
   }
 
   return out;

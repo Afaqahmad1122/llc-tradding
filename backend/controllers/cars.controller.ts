@@ -310,6 +310,10 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
     typeof req.query.search === "string" ? req.query.search.trim() : "";
   const brand =
     typeof req.query.brand === "string" ? req.query.brand.trim() : undefined;
+  const bodyType =
+    typeof req.query.bodyType === "string"
+      ? req.query.bodyType.trim()
+      : undefined;
   const modelId =
     typeof req.query.modelId === "string"
       ? req.query.modelId.trim()
@@ -322,16 +326,27 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
   const transmission = parseEnum(req.query.transmission, TransmissionType);
   const sort = typeof req.query.sort === "string" ? req.query.sort : "latest";
 
+  const modelFilter: Prisma.ModelWhereInput | undefined =
+    brand || bodyType
+      ? {
+          ...(brand
+            ? { brand: { equals: brand, mode: Prisma.QueryMode.insensitive } }
+            : {}),
+          ...(bodyType
+            ? {
+                bodyType: {
+                  equals: bodyType,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              }
+            : {}),
+        }
+      : undefined;
+
   const where: Prisma.CarWhereInput = {
     isPublished: true,
     ...(modelId ? { modelId } : {}),
-    ...(brand
-      ? {
-          model: {
-            brand: { equals: brand, mode: Prisma.QueryMode.insensitive },
-          },
-        }
-      : {}),
+    ...(modelFilter ? { model: modelFilter } : {}),
     ...(fuel ? { fuel } : {}),
     ...(transmission ? { transmission } : {}),
     ...(yearMin !== undefined || yearMax !== undefined

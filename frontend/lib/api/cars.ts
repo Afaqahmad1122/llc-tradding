@@ -69,6 +69,7 @@ export type PublicCarsQuery = {
   page?: number;
   pageSize?: number;
   brand?: string;
+  bodyType?: string;
   modelId?: string;
   search?: string;
   sort?: "latest" | "oldest" | "priceAsc" | "priceDesc";
@@ -90,6 +91,8 @@ export function fetchPublicCars(params: PublicCarsQuery = {}) {
   if (params.pageSize != null)
     searchParams.set("pageSize", String(params.pageSize));
   if (params.brand?.trim()) searchParams.set("brand", params.brand.trim());
+  if (params.bodyType?.trim())
+    searchParams.set("bodyType", params.bodyType.trim());
   if (params.modelId?.trim())
     searchParams.set("modelId", params.modelId.trim());
   if (params.search?.trim()) searchParams.set("search", params.search.trim());

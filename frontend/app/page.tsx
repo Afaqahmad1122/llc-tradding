@@ -28,6 +28,7 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { fetchCarsMeta, fetchPublicCars } from "@/lib/api/cars";
 import { getPublicReviews } from "@/lib/api/reviews";
 import { buildPriceBuckets } from "@/lib/home-price-buckets";
+import { buildCarsInventoryUrl } from "@/lib/inventory-search-url";
 
 export default function Home() {
   const { data: carsResponse, isLoading: carsLoading } = useApiQuery({
@@ -59,9 +60,39 @@ export default function Home() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [meta]);
 
-  const priceRanges = useMemo(
+  const priceBuckets = useMemo(
     () => buildPriceBuckets(meta?.priceRange),
     [meta],
+  );
+
+  const makeLinks = useMemo(
+    () =>
+      makes.map((name) => ({
+        label: name,
+        href: buildCarsInventoryUrl({ brand: name }),
+      })),
+    [makes],
+  );
+
+  const priceLinks = useMemo(
+    () =>
+      priceBuckets.map((b) => ({
+        label: b.label,
+        href: buildCarsInventoryUrl({
+          priceMin: b.priceMin,
+          priceMax: b.priceMax,
+        }),
+      })),
+    [priceBuckets],
+  );
+
+  const bodyTypeLinks = useMemo(
+    () =>
+      bodyTypes.map((bt) => ({
+        label: bt,
+        href: buildCarsInventoryUrl({ bodyType: bt }),
+      })),
+    [bodyTypes],
   );
 
   const stats = useMemo(
@@ -87,11 +118,11 @@ export default function Home() {
       mainClassName="relative z-10 pb-6 pt-2 sm:pt-3"
     >
       <MarketplaceWithSidebars
-        makes={makes}
-        priceRanges={priceRanges}
+        makeLinks={makeLinks}
+        priceLinks={priceLinks}
         currencies={currencyItems}
         filters={rightSidebarFilters}
-        bodyTypes={bodyTypes}
+        bodyTypeLinks={bodyTypeLinks}
       >
         <HeroSection filters={heroFilters} stats={stats} />
         <PromoBannerStrip items={promoBanners} />

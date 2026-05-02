@@ -2,7 +2,9 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, SearchIcon } from "lucide-react";
-import { useEffect, useReducer } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useReducer } from "react";
 
 import { PublicCarListCard } from "@/components/cars/public-car-list-card";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
@@ -14,15 +16,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError } from "@/lib/api/client";
+import { formatUsd } from "@/lib/car-display";
 import { fetchCarsMeta, fetchPublicCars } from "@/lib/api/cars";
 
 const PAGE_SIZE = 12;
+
+function parseQueryInt(s: string | null): number | undefined {
+  if (s == null || s === "") return undefined;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 type ListState = {
   page: number;
   searchInput: string;
   debouncedSearch: string;
   brand: string;
+  bodyType: string;
+  priceMin: number | undefined;
+  priceMax: number | undefined;
   sort: "latest" | "oldest" | "priceAsc" | "priceDesc";
 };
 
@@ -31,9 +43,19 @@ type ListAction =
   | { type: "DEBOUNCE_SEARCH"; payload: string }
   | { type: "SET_PAGE"; payload: number }
   | { type: "SET_BRAND"; payload: string }
+  | { type: "SET_BODY_TYPE"; payload: string }
   | {
       type: "SET_SORT";
       payload: "latest" | "oldest" | "priceAsc" | "priceDesc";
+    }
+  | {
+      type: "SYNC_FROM_URL";
+      payload: {
+        brand: string;
+        bodyType: string;
+        priceMin: number | undefined;
+        priceMax: number | undefined;
+      };
     };
 
 const initialState: ListState = {
@@ -41,6 +63,9 @@ const initialState: ListState = {
   searchInput: "",
   debouncedSearch: "",
   brand: "",
+  bodyType: "",
+  priceMin: undefined,
+  priceMax: undefined,
   sort: "latest",
 };
 
@@ -55,8 +80,19 @@ function listReducer(state: ListState, action: ListAction): ListState {
       return { ...state, page: action.payload };
     case "SET_BRAND":
       return { ...state, brand: action.payload, page: 1 };
+    case "SET_BODY_TYPE":
+      return { ...state, bodyType: action.payload, page: 1 };
     case "SET_SORT":
       return { ...state, sort: action.payload, page: 1 };
+    case "SYNC_FROM_URL":
+      return {
+        ...state,
+        brand: action.payload.brand,
+        bodyType: action.payload.bodyType,
+        priceMin: action.payload.priceMin,
+        priceMax: action.payload.priceMax,
+        page: 1,
+      };
     default:
       return state;
   }
@@ -64,13 +100,35 @@ function listReducer(state: ListState, action: ListAction): ListState {
 
 export function PublicCarsInventory({
   initialBrand = "",
+  initialBodyType = "",
+  initialPriceMin,
+  initialPriceMax,
 }: {
   initialBrand?: string;
+  initialBodyType?: string;
+  initialPriceMin?: number;
+  initialPriceMax?: number;
 }) {
+  const searchParams = useSearchParams();
+
   const [list, dispatch] = useReducer(listReducer, {
     ...initialState,
     brand: initialBrand,
+    bodyType: initialBodyType,
+    priceMin: initialPriceMin,
+    priceMax: initialPriceMax,
   });
+
+  useEffect(() => {
+    const brand = searchParams.get("brand") ?? "";
+    const bodyType = searchParams.get("bodyType") ?? "";
+    const priceMin = parseQueryInt(searchParams.get("priceMin"));
+    const priceMax = parseQueryInt(searchParams.get("priceMax"));
+    dispatch({
+      type: "SYNC_FROM_URL",
+      payload: { brand, bodyType, priceMin, priceMax },
+    });
+  }, [searchParams]);
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -91,6 +149,9 @@ export function PublicCarsInventory({
       list.page,
       list.debouncedSearch,
       list.brand,
+      list.bodyType,
+      list.priceMin,
+      list.priceMax,
       list.sort,
     ],
     queryFn: () =>
@@ -99,6 +160,9 @@ export function PublicCarsInventory({
         pageSize: PAGE_SIZE,
         ...(list.debouncedSearch ? { search: list.debouncedSearch } : {}),
         ...(list.brand ? { brand: list.brand } : {}),
+        ...(list.bodyType ? { bodyType: list.bodyType } : {}),
+        ...(list.priceMin != null ? { priceMin: list.priceMin } : {}),
+        ...(list.priceMax != null ? { priceMax: list.priceMax } : {}),
         ...(list.sort !== "latest" ? { sort: list.sort } : {}),
       }),
     placeholderData: keepPreviousData,
@@ -117,10 +181,30 @@ export function PublicCarsInventory({
   const totalVehicles = carsQuery.data?.pagination.total;
 
   const brands = metaQuery.data?.brands ?? [];
+  const bodyTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of metaQuery.data?.models ?? []) {
+      const bt = m.bodyType?.trim();
+      if (bt) set.add(bt);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [metaQuery.data?.models]);
+
   const isLoading =
     (carsQuery.isPending && rows.length === 0) ||
     metaQuery.isPending ||
     metaQuery.isLoading;
+
+  const hasFilters =
+    Boolean(list.brand) ||
+    Boolean(list.bodyType) ||
+    list.priceMin != null ||
+    list.priceMax != null;
+
+  const priceFilterLabel =
+    list.priceMin != null && list.priceMax != null
+      ? `${formatUsd(String(list.priceMin))} – ${formatUsd(String(list.priceMax))}`
+      : null;
 
   return (
     <div className="space-y-10">
@@ -176,6 +260,26 @@ export function PublicCarsInventory({
         </div>
         <div className="flex min-w-[10rem] flex-1 flex-col gap-2 sm:max-w-[14rem]">
           <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]">
+            Body type
+          </span>
+          <NativeSelect
+            className="w-full min-w-0"
+            aria-label="Filter by body type"
+            value={list.bodyType}
+            onChange={(e) =>
+              dispatch({ type: "SET_BODY_TYPE", payload: e.target.value })
+            }
+          >
+            <NativeSelectOption value="">All body types</NativeSelectOption>
+            {bodyTypes.map((bt) => (
+              <NativeSelectOption key={bt} value={bt}>
+                {bt}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="flex min-w-[10rem] flex-1 flex-col gap-2 sm:max-w-[14rem]">
+          <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]">
             Sort
           </span>
           <NativeSelect
@@ -201,6 +305,26 @@ export function PublicCarsInventory({
             </NativeSelectOption>
           </NativeSelect>
         </div>
+        {hasFilters ? (
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[12rem]">
+            <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.12em]">
+              Active filters
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {priceFilterLabel ? (
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {priceFilterLabel}
+                </span>
+              ) : null}
+              <Link
+                href="/cars"
+                className="text-primary text-sm font-semibold underline underline-offset-2"
+              >
+                Clear filters
+              </Link>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="relative min-h-[12rem]">
@@ -211,10 +335,13 @@ export function PublicCarsInventory({
         ) : rows.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-border bg-card/90 py-14 dark:bg-card/80">
             <Empty>
-              <EmptyTitle>No vehicles listed yet</EmptyTitle>
+              <EmptyTitle>
+                {hasFilters ? "No matching vehicles" : "No vehicles listed yet"}
+              </EmptyTitle>
               <EmptyDescription>
-                Check back soon — new export-ready listings appear here once
-                they are published in admin.
+                {hasFilters
+                  ? "Try widening your filters or clear them to see all stock."
+                  : "Check back soon — new export-ready listings appear here once they are published in admin."}
               </EmptyDescription>
             </Empty>
           </div>

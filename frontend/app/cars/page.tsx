@@ -11,14 +11,33 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/cars",
 });
 
+function parseOptionalInt(value: string | undefined): number | undefined {
+  if (value == null || value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 export default async function CarsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ brand?: string }>;
+  searchParams: Promise<{
+    brand?: string;
+    bodyType?: string;
+    priceMin?: string;
+    priceMax?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const initialBrand =
     typeof sp.brand === "string" ? sp.brand.trim() : "";
+  const initialBodyType =
+    typeof sp.bodyType === "string" ? sp.bodyType.trim() : "";
+  const initialPriceMin = parseOptionalInt(
+    typeof sp.priceMin === "string" ? sp.priceMin : undefined,
+  );
+  const initialPriceMax = parseOptionalInt(
+    typeof sp.priceMax === "string" ? sp.priceMax : undefined,
+  );
 
   return (
     <LandingPageShell mainClassName="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
@@ -33,7 +52,12 @@ export default async function CarsPage({
             the admin catalogue in near real-time.
           </p>
         </header>
-        <PublicCarsInventory initialBrand={initialBrand} />
+        <PublicCarsInventory
+          initialBrand={initialBrand}
+          initialBodyType={initialBodyType}
+          initialPriceMin={initialPriceMin}
+          initialPriceMax={initialPriceMax}
+        />
       </div>
     </LandingPageShell>
   );

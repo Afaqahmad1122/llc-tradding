@@ -1,16 +1,22 @@
 import { ChevronDown, Search } from "lucide-react";
+import Link from "next/link";
 
 import { CurrencyItem } from "@/components/landing/home-data";
 import { Button } from "@/components/ui/button";
 
+export type SidebarFilterLink = {
+  label: string;
+  href: string;
+};
+
 function LeftSidebar({
-  makes,
-  priceRanges,
-  bodyTypes,
+  makeLinks,
+  priceLinks,
+  bodyTypeLinks,
 }: {
-  makes: string[];
-  priceRanges: string[];
-  bodyTypes: string[];
+  makeLinks: SidebarFilterLink[];
+  priceLinks: SidebarFilterLink[];
+  bodyTypeLinks: SidebarFilterLink[];
 }) {
   return (
     <aside className="hidden xl:block">
@@ -20,14 +26,14 @@ function LeftSidebar({
             Shop By Make
           </div>
           <div className="max-h-[420px] space-y-0.5 overflow-auto p-2">
-            {makes.map((make) => (
-              <button
-                key={make}
-                type="button"
+            {makeLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
                 className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#4A4A4A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
               >
-                <span>{make.toUpperCase()}</span>
-              </button>
+                <span>{item.label.toUpperCase()}</span>
+              </Link>
             ))}
           </div>
         </div>
@@ -37,17 +43,17 @@ function LeftSidebar({
             Shop by Price
           </div>
           <div className="max-h-[360px] space-y-0.5 overflow-auto p-2">
-            {priceRanges.map((rangeLabel) => (
-              <button
-                key={rangeLabel}
-                type="button"
+            {priceLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#4A4A4A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
               >
                 <span className="inline-flex size-5 items-center justify-center rounded-full border border-[#888] text-[10px] font-bold dark:border-white/30">
                   $
                 </span>
-                {rangeLabel}
-              </button>
+                {item.label}
+              </Link>
             ))}
           </div>
         </div>
@@ -57,14 +63,14 @@ function LeftSidebar({
             Shop By Body Type
           </div>
           <div className="space-y-0.5 p-2">
-            {bodyTypes.map((item) => (
-              <button
-                key={item}
-                type="button"
+            {bodyTypeLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
                 className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#5A5A5A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
               >
-                {item.toUpperCase()}
-              </button>
+                {item.label.toUpperCase()}
+              </Link>
             ))}
           </div>
         </div>
@@ -155,26 +161,26 @@ function RightSidebar({
 
 export function MarketplaceWithSidebars({
   children,
-  makes,
-  priceRanges,
+  makeLinks,
+  priceLinks,
   currencies,
   filters,
-  bodyTypes,
+  bodyTypeLinks,
 }: {
   children: React.ReactNode;
-  makes: string[];
-  priceRanges: string[];
+  makeLinks: SidebarFilterLink[];
+  priceLinks: SidebarFilterLink[];
   currencies: CurrencyItem[];
   filters: string[];
-  bodyTypes: string[];
+  bodyTypeLinks: SidebarFilterLink[];
 }) {
   return (
     <section className="mx-auto w-full max-w-[1500px] px-4 pb-4 sm:px-6 lg:px-8">
       <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_240px]">
         <LeftSidebar
-          makes={makes}
-          priceRanges={priceRanges}
-          bodyTypes={bodyTypes}
+          makeLinks={makeLinks}
+          priceLinks={priceLinks}
+          bodyTypeLinks={bodyTypeLinks}
         />
 
         <div className="min-w-0">
