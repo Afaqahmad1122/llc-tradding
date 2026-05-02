@@ -1,9 +1,15 @@
 "use client";
 
-import { CheckIcon, ChevronLeft, ChevronRight, HomeIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  HomeIcon,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -21,6 +27,13 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -37,32 +50,74 @@ import {
 import type { PublicCar } from "@/lib/api/cars";
 import { submitCarInquiry } from "@/lib/api/cars";
 import { ApiError } from "@/lib/api/client";
+import {
+  useDestinationCountriesQuery,
+  useDestinationPortsQuery,
+  useFxRatesQuery,
+} from "@/hooks/use-calculator-reference";
 import { cn } from "@/lib/utils";
-
-const CALC_COUNTRIES = [
-  "Pakistan",
-  "Bangladesh",
-  "UAE",
-  "Kenya",
-  "Tanzania",
-  "South Africa",
-  "Other",
-] as const;
-
-const PORTS_BY_COUNTRY: Record<string, string[]> = {
-  Pakistan: ["Karachi", "Gwadar", "Port Qasim"],
-  Bangladesh: ["Chattogram", "Mongla"],
-  UAE: ["Jebel Ali", "Abu Dhabi", "Sharjah"],
-  Kenya: ["Mombasa"],
-  Tanzania: ["Dar es Salaam"],
-  "South Africa": ["Durban", "Cape Town"],
-  Other: ["Nearest major port"],
-};
 
 const SHIPMENT_MODES = ["Roro", "Container"] as const;
 
+const DEFAULT_CALC_COUNTRY_CODE = "PK";
+const FALLBACK_DESTINATION_PORTS = ["Nearest major port"] as const;
+
+function formatIntForeignCurrency(amount: number, currencyCode: string): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currencyCode,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${currencyCode} ${amount.toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    })}`;
+  }
+}
+
 function sortedGallery(car: PublicCar) {
   return [...car.images].sort((a, b) => a.position - b.position);
+}
+
+function extensionFromUrl(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const dot = pathname.lastIndexOf(".");
+    if (dot === -1 || dot === pathname.length - 1) return ".jpg";
+    const ext = pathname.slice(dot).toLowerCase();
+    if (/^\.[a-z0-9]{1,8}$/.test(ext)) return ext;
+  } catch {
+    /* ignore invalid URL */
+  }
+  return ".jpg";
+}
+
+function safeReferenceSegment(ref: string): string {
+  const s = ref.replace(/[^\w.-]+/g, "_").trim();
+  return s.slice(0, 80) || "vehicle";
+}
+
+async function saveBlobAsFile(blob: Blob, filename: string): Promise<void> {
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function downloadImageFile(url: string, filename: string): Promise<void> {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  await saveBlobAsFile(blob, filename);
 }
 
 function calculatorNote(opts: {
@@ -197,10 +252,90 @@ export function PublicCarDetailView({
   const [activeIndex, setActiveIndex] = useState(0);
   const active = gallery[activeIndex] ?? null;
 
-  const [currency, setCurrency] = useState<"USD" | "PKR">("USD");
-  const [country, setCountry] = useState<string>(CALC_COUNTRIES[0]);
-  const portOptions = PORTS_BY_COUNTRY[country] ?? PORTS_BY_COUNTRY.Other;
-  const [port, setPort] = useState(() => portOptions[0] ?? "");
+  const countriesQuery = useDestinationCountriesQuery();
+  const fxQuery = useFxRatesQuery();
+
+  const countries = countriesQuery.data?.data ?? [];
+  const [countryCode, setCountryCode] = useState(DEFAULT_CALC_COUNTRY_CODE);
+
+  useEffect(() => {
+    if (countries.length === 0) return;
+    const exists = countries.some((c) => c.code === countryCode);
+    if (!exists) {
+      const pak =
+        countries.find((c) => c.code === DEFAULT_CALC_COUNTRY_CODE)?.code ??
+        countries[0]?.code;
+      if (pak) setCountryCode(pak);
+    }
+  }, [countries, countryCode]);
+
+  const portsQuery = useDestinationPortsQuery(countryCode);
+
+  /** Ports for the selected country (empty only while waiting for first response). */
+  const resolvedPorts = useMemo(() => {
+    const q = portsQuery;
+    if (q.fetchStatus === "fetching" && q.data === undefined) {
+      return [];
+    }
+    const list = q.data?.data;
+    if (Array.isArray(list) && list.length > 0) return list;
+    return [...FALLBACK_DESTINATION_PORTS];
+  }, [portsQuery.data, portsQuery.fetchStatus]);
+
+  const selectedCountry = useMemo(
+    () => countries.find((c) => c.code === countryCode),
+    [countries, countryCode],
+  );
+
+  const currencyOptions = useMemo(() => {
+    const fromCountry = selectedCountry?.currencyCodes ?? [];
+    const set = new Set<string>(["USD", ...fromCountry]);
+    const rest = [...set].filter((c) => c !== "USD").sort();
+    return ["USD", ...rest] as string[];
+  }, [selectedCountry]);
+
+  const [currency, setCurrency] = useState("USD");
+  const lastCurrencyCountryRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedCountry) return;
+    if (lastCurrencyCountryRef.current === countryCode) return;
+    lastCurrencyCountryRef.current = countryCode;
+    const next =
+      selectedCountry.currencyCodes.find((c) => c !== "USD") ??
+      selectedCountry.currencyCodes[0] ??
+      "USD";
+    setCurrency(next);
+  }, [countryCode, selectedCountry]);
+
+  useEffect(() => {
+    if (currencyOptions.includes(currency)) return;
+    const fallback =
+      (selectedCountry &&
+        (selectedCountry.currencyCodes.find((c) => c !== "USD") ??
+          selectedCountry.currencyCodes[0])) ??
+      currencyOptions[0] ??
+      "USD";
+    setCurrency(fallback);
+  }, [currency, currencyOptions, selectedCountry]);
+
+  const [portOverride, setPortOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPortOverride(null);
+  }, [countryCode]);
+
+  const effectivePort = useMemo(() => {
+    if (resolvedPorts.length === 0) return "";
+    if (
+      portOverride !== null &&
+      resolvedPorts.includes(portOverride)
+    ) {
+      return portOverride;
+    }
+    return resolvedPorts[0] ?? "";
+  }, [portOverride, resolvedPorts]);
+
   const [shipment, setShipment] = useState<string>(SHIPMENT_MODES[0]);
   const [freight, setFreight] = useState("prepaid");
   const [inspection, setInspection] = useState("yes");
@@ -215,6 +350,7 @@ export function PublicCarDetailView({
     message: "",
   });
   const [inquirySending, setInquirySending] = useState(false);
+  const [galleryDownloading, setGalleryDownloading] = useState(false);
 
   const title = inventoryTitle(car);
   const usd = formatUsd(car.priceUsd);
@@ -222,6 +358,41 @@ export function PublicCarDetailView({
   const originLabel = car.country?.trim()
     ? car.country.trim().toUpperCase()
     : null;
+
+  const countryDisplayName =
+    selectedCountry?.name ??
+    countries.find((c) => c.code === countryCode)?.name ??
+    countryCode;
+
+  const priceUsdNum = Number.parseFloat(car.priceUsd);
+  const fxRates = fxQuery.data?.rates;
+  const fxMultiplier =
+    currency === "USD" ? 1 : (fxRates?.[currency] ?? null);
+
+  const vehiclePricePrimary = useMemo(() => {
+    if (currency === "USD") {
+      return { label: usd, hint: null as string | null };
+    }
+    if (
+      typeof fxMultiplier === "number" &&
+      Number.isFinite(fxMultiplier) &&
+      fxMultiplier > 0 &&
+      Number.isFinite(priceUsdNum)
+    ) {
+      return {
+        label: formatIntForeignCurrency(priceUsdNum * fxMultiplier, currency),
+        hint: null,
+      };
+    }
+    if (currency === "PKR") {
+      const line = formatPkr(car.pricePkr);
+      if (line) return { label: line, hint: null };
+    }
+    return {
+      label: usd,
+      hint: `Approximate (${currency}); USD shown — FX unavailable.`,
+    };
+  }, [car.pricePkr, currency, fxMultiplier, priceUsdNum, usd]);
 
   const mileageDisplay =
     car.mileage != null
@@ -280,8 +451,8 @@ export function PublicCarDetailView({
   }, [car.features]);
 
   const calcLines = calculatorNote({
-    country,
-    port,
+    country: countryDisplayName,
+    port: effectivePort,
     shipment,
     freight: freight === "prepaid" ? "Prepaid" : "Collect",
     inspection: inspection === "yes" ? "Yes" : "No",
@@ -297,6 +468,43 @@ export function PublicCarDetailView({
     setActiveIndex((i) => (i <= 0 ? gallery.length - 1 : i - 1));
   const goNext = () =>
     setActiveIndex((i) => (i >= gallery.length - 1 ? 0 : i + 1));
+
+  const downloadAllGalleryImages = useCallback(async () => {
+    if (gallery.length === 0) return;
+    setGalleryDownloading(true);
+    const refSeg = safeReferenceSegment(car.referenceNo);
+    let ok = 0;
+    let failed = 0;
+    try {
+      for (let i = 0; i < gallery.length; i++) {
+        const img = gallery[i]!;
+        const ext = extensionFromUrl(img.url);
+        const filename = `${refSeg}-photo-${i + 1}${ext}`;
+        try {
+          await downloadImageFile(img.url, filename);
+          ok++;
+          if (i < gallery.length - 1) {
+            await new Promise((r) => setTimeout(r, 250));
+          }
+        } catch {
+          failed++;
+        }
+      }
+      if (ok === 0 && failed > 0) {
+        toast.error(
+          "Could not download photos automatically (blocked by the image host). Use the links below to open each image and save it.",
+        );
+      } else if (failed > 0) {
+        toast.warning(
+          `Saved ${ok} of ${gallery.length} photos. For any that failed, use the links below.`,
+        );
+      } else if (ok > 0) {
+        toast.success(`Saved ${ok} photo${ok === 1 ? "" : "s"}.`);
+      }
+    } finally {
+      setGalleryDownloading(false);
+    }
+  }, [car.referenceNo, gallery]);
 
   async function onInquirySubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -492,48 +700,69 @@ export function PublicCarDetailView({
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-3">
-            <details className="rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-sm">
-              <summary className="cursor-pointer font-semibold">
-                Download images
-              </summary>
-              <ul className="mt-3 space-y-2">
-                {gallery.map((img, i) => (
-                  <li key={img.id}>
-                    <a
-                      href={img.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary font-medium underline-offset-4 hover:underline"
-                    >
-                      Photo {i + 1}
-                      {img.isPrimary ? " (primary)" : ""}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-muted-foreground mt-2 text-xs">
-                Open each link and save from your browser if downloads are
-                blocked for external URLs.
-              </p>
-            </details>
-          </div>
+          {gallery.length > 0 ? (
+            <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 font-semibold"
+                  disabled={galleryDownloading}
+                  onClick={() => void downloadAllGalleryImages()}
+                >
+                  <Download className="size-4 shrink-0" aria-hidden />
+                  {galleryDownloading ? "Downloading…" : "Download all photos"}
+                </Button>
+              </div>
+              <details className="mt-3 border-t border-border pt-3">
+                <summary className="cursor-pointer font-semibold text-foreground">
+                  Open individual photo links
+                </summary>
+                <ul className="mt-3 space-y-2">
+                  {gallery.map((img, i) => (
+                    <li key={img.id}>
+                      <a
+                        href={img.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary font-medium underline-offset-4 hover:underline"
+                      >
+                        Photo {i + 1}
+                        {img.isPrimary ? " (primary)" : ""}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  If your browser blocks automatic downloads from the photo
+                  host, open a link and save the image manually.
+                </p>
+              </details>
+            </div>
+          ) : null}
         </div>
 
-        <aside className="brand-gradient-main sticky top-24 space-y-4 rounded-2xl p-5 text-white shadow-xl ring-1 ring-black/15 dark:ring-white/10">
+        <aside className="brand-gradient-main relative z-0 space-y-4 overflow-visible rounded-2xl p-5 text-white shadow-xl ring-1 ring-black/15 lg:sticky lg:top-24 dark:ring-white/10">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-lg font-bold tracking-tight">
               Total price calculator
             </h2>
-            <NativeSelect
-              aria-label="Currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as "USD" | "PKR")}
-              className="h-9 max-w-[5.5rem] border-white/25 bg-white text-xs font-semibold text-primary"
-            >
-              <NativeSelectOption value="USD">USD</NativeSelectOption>
-              <NativeSelectOption value="PKR">PKR</NativeSelectOption>
-            </NativeSelect>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger
+                aria-label="Currency"
+                className="min-h-[44px] max-w-[8rem] rounded-lg border-white/25 bg-white pr-8 font-semibold text-[16px] text-primary leading-tight lg:h-9 lg:min-h-0 lg:max-w-[6.5rem] lg:py-1 lg:text-xs"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent side="bottom" position="popper">
+                {currencyOptions.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -541,8 +770,13 @@ export function PublicCarDetailView({
               Vehicle price
             </p>
             <p className="mt-2 inline-block min-w-[8rem] rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
-              {currency === "USD" ? usd : (pkrLine ?? usd)}
+              {vehiclePricePrimary.label}
             </p>
+            {vehiclePricePrimary.hint ? (
+              <p className="mt-2 text-[10px] font-medium leading-snug text-white/80">
+                {vehiclePricePrimary.hint}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-3">
@@ -551,45 +785,80 @@ export function PublicCarDetailView({
                 Destination country
               </Label>
               <NativeSelect
-                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-primary"
-                value={country}
+                className={cn(
+                  "mt-1 w-full border-white/25 bg-white font-medium text-primary lg:h-10",
+                  "[&>select]:min-h-[44px] [&>select]:w-full [&>select]:rounded-lg [&>select]:py-2.5 [&>select]:pr-10 [&>select]:text-[16px] [&>select]:leading-snug lg:[&>select]:min-h-0 lg:[&>select]:h-10 lg:[&>select]:py-1 lg:[&>select]:pr-8 lg:[&>select]:text-sm",
+                )}
+                value={countryCode}
+                disabled={countriesQuery.isPending && countries.length === 0}
                 onChange={(e) => {
-                  const next = e.target.value;
-                  setCountry(next);
-                  const ports =
-                    PORTS_BY_COUNTRY[next] ?? PORTS_BY_COUNTRY.Other;
-                  setPort(ports[0] ?? "");
+                  setCountryCode(e.target.value);
                 }}
               >
-                {CALC_COUNTRIES.map((c) => (
-                  <NativeSelectOption key={c} value={c}>
-                    {c}
+                {countries.length === 0 && countriesQuery.isLoading ? (
+                  <NativeSelectOption value={countryCode}>
+                    Loading countries…
                   </NativeSelectOption>
-                ))}
+                ) : countries.length === 0 ? (
+                  <NativeSelectOption value={countryCode}>
+                    {countriesQuery.isError ? "Could not load countries" : countryCode}
+                  </NativeSelectOption>
+                ) : (
+                  countries.map((c) => (
+                    <NativeSelectOption key={c.code} value={c.code}>
+                      {c.name}
+                    </NativeSelectOption>
+                  ))
+                )}
               </NativeSelect>
+              {countriesQuery.isError ? (
+                <p className="mt-1 text-[10px] text-amber-200">
+                  Could not load country list. Check your connection and try
+                  again.
+                </p>
+              ) : null}
             </div>
             <div>
               <Label className="text-[10px] font-bold uppercase text-white/90">
                 Ports
               </Label>
               <NativeSelect
-                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-primary"
-                value={port}
-                onChange={(e) => setPort(e.target.value)}
+                className={cn(
+                  "mt-1 w-full border-white/25 bg-white font-medium text-primary lg:h-10",
+                  "[&>select]:min-h-[44px] [&>select]:w-full [&>select]:rounded-lg [&>select]:py-2.5 [&>select]:pr-10 [&>select]:text-[16px] [&>select]:leading-snug lg:[&>select]:min-h-0 lg:[&>select]:h-10 lg:[&>select]:py-1 lg:[&>select]:pr-8 lg:[&>select]:text-sm",
+                )}
+                value={effectivePort}
+                disabled={resolvedPorts.length === 0}
+                onChange={(e) => setPortOverride(e.target.value)}
               >
-                {portOptions.map((p) => (
-                  <NativeSelectOption key={p} value={p}>
-                    {p}
+                {resolvedPorts.length === 0 ? (
+                  <NativeSelectOption value="">
+                    Loading ports…
                   </NativeSelectOption>
-                ))}
+                ) : (
+                  resolvedPorts.map((pName) => (
+                    <NativeSelectOption key={pName} value={pName}>
+                      {pName}
+                    </NativeSelectOption>
+                  ))
+                )}
               </NativeSelect>
+              {portsQuery.isError &&
+              resolvedPorts[0] === FALLBACK_DESTINATION_PORTS[0] ? (
+                <p className="mt-1 text-[10px] text-white/70">
+                  Port list unavailable — default option shown.
+                </p>
+              ) : null}
             </div>
             <div>
               <Label className="text-[10px] font-bold uppercase text-white/90">
                 Shipment
               </Label>
               <NativeSelect
-                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-primary"
+                className={cn(
+                  "mt-1 w-full border-white/25 bg-white font-medium text-primary lg:h-10",
+                  "[&>select]:min-h-[44px] [&>select]:w-full [&>select]:rounded-lg [&>select]:py-2.5 [&>select]:pr-10 [&>select]:text-[16px] [&>select]:leading-snug lg:[&>select]:min-h-0 lg:[&>select]:h-10 lg:[&>select]:py-1 lg:[&>select]:pr-8 lg:[&>select]:text-sm",
+                )}
                 value={shipment}
                 onChange={(e) => setShipment(e.target.value)}
               >

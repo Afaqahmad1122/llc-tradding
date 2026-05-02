@@ -44,6 +44,11 @@ const envSchema = z.object({
     .string()
     .email()
     .default("icctradingjp@gmail.com"),
+  /**
+   * Optional Open Exchange Rates app id. When unset, FX for the storefront calculator
+   * falls back to the free Frankfurter API (EUR-centered; common pairs still covered).
+   */
+  OPEN_EXCHANGE_RATES_APP_ID: z.string().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);

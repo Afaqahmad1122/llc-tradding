@@ -13,6 +13,7 @@ import { carsRouter } from "./routes/cars.route.js";
 import { contactMessagesRouter } from "./routes/contact-messages.route.js";
 import { healthRouter } from "./routes/health.route.js";
 import { jobsRouter } from "./routes/jobs.route.js";
+import { referenceRouter } from "./routes/reference.route.js";
 import { reviewsRouter } from "./routes/reviews.route.js";
 import { shippingRouter } from "./routes/shipping.route.js";
 
@@ -50,6 +51,7 @@ app.use("/cars", carsRouter);
 app.use("/reviews", reviewsRouter);
 app.use("/jobs", jobsRouter);
 app.use("/contact-messages", contactMessagesRouter);
+app.use("/reference", referenceRouter);
 app.use("/shipping", shippingRouter);
 
 app.use((req: Request, res: Response) => {

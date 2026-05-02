@@ -1,0 +1,9 @@
+{
+  "*": ["Nearest major port"],
+  "AE": ["Jebel Ali", "Abu Dhabi", "Sharjah"],
+  "BD": ["Chattogram", "Mongla"],
+  "KE": ["Mombasa"],
+  "PK": ["Karachi", "Gwadar", "Port Qasim"],
+  "TZ": ["Dar es Salaam"],
+  "ZA": ["Durban", "Cape Town"]
+}
