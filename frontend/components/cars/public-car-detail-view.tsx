@@ -34,6 +34,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -784,33 +792,43 @@ export function PublicCarDetailView({
               <Label className="text-[10px] font-bold uppercase text-white/90">
                 Destination country
               </Label>
-              <NativeSelect
-                className={cn(
-                  "mt-1 w-full border-white/25 bg-white font-medium text-primary lg:h-10",
-                  "[&>select]:min-h-[44px] [&>select]:w-full [&>select]:rounded-lg [&>select]:py-2.5 [&>select]:pr-10 [&>select]:text-[16px] [&>select]:leading-snug lg:[&>select]:min-h-0 lg:[&>select]:h-10 lg:[&>select]:py-1 lg:[&>select]:pr-8 lg:[&>select]:text-sm",
-                )}
+              <Combobox
+                items={countries.map((c) => c.code)}
                 value={countryCode}
-                disabled={countriesQuery.isPending && countries.length === 0}
-                onChange={(e) => {
-                  setCountryCode(e.target.value);
+                onValueChange={(v) => {
+                  if (v != null) setCountryCode(v);
+                }}
+                itemToStringLabel={(code) =>
+                  countries.find((c) => c.code === code)?.name ??
+                  String(code ?? "")
+                }
+                filter={(itemValue, query) => {
+                  const label =
+                    countries.find((c) => c.code === itemValue)?.name ??
+                    String(itemValue);
+                  return label.toLowerCase().includes(query.toLowerCase());
                 }}
               >
-                {countries.length === 0 && countriesQuery.isLoading ? (
-                  <NativeSelectOption value={countryCode}>
-                    Loading countries…
-                  </NativeSelectOption>
-                ) : countries.length === 0 ? (
-                  <NativeSelectOption value={countryCode}>
-                    {countriesQuery.isError ? "Could not load countries" : countryCode}
-                  </NativeSelectOption>
-                ) : (
-                  countries.map((c) => (
-                    <NativeSelectOption key={c.code} value={c.code}>
-                      {c.name}
-                    </NativeSelectOption>
-                  ))
-                )}
-              </NativeSelect>
+                <ComboboxInput
+                  className="mt-1 h-auto min-h-[44px] w-full border-white/25 bg-white font-medium text-primary lg:h-10 lg:min-h-0"
+                  placeholder={
+                    countriesQuery.isLoading && countries.length === 0
+                      ? "Loading countries…"
+                      : "Search country…"
+                  }
+                  disabled={countriesQuery.isPending && countries.length === 0}
+                />
+                <ComboboxContent side="bottom">
+                  <ComboboxList className="max-h-52">
+                    {(code: string) => (
+                      <ComboboxItem key={code} value={code}>
+                        {countries.find((c) => c.code === code)?.name ?? code}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                  <ComboboxEmpty>No countries found</ComboboxEmpty>
+                </ComboboxContent>
+              </Combobox>
               {countriesQuery.isError ? (
                 <p className="mt-1 text-[10px] text-amber-200">
                   Could not load country list. Check your connection and try
