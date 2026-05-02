@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { CarFrontIcon } from "lucide-react";
 
 import {
   Carousel,
@@ -9,16 +10,15 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { PublicCar } from "@/lib/api/cars";
+import { buildInquiryWhatsAppUrl } from "@/lib/car-display";
 
-const staticTopCars = [
-  { id: "323", make: "Mazda", model: "Demio", image: "/download.jpeg" },
-  { id: "107", make: "Mazda", model: "Axela", image: "/download (1).jpeg" },
-  { id: "139", make: "Mazda", model: "CX5", image: "/download (2).jpeg" },
-  { id: "24", make: "Volkswagen", model: "Polo", image: "/download (3).jpeg" },
-  { id: "59", make: "BMW", model: "X1", image: "/download (4).jpeg" },
-  { id: "86", make: "Toyota", model: "Aqua", image: "/download.jpeg" },
-];
-const WHATSAPP_URL = "https://wa.me/817064362003";
+function primaryImageUrl(car: PublicCar): string | null {
+  const primary = car.images.find((i) => i.isPrimary)?.url;
+  if (primary) return primary;
+  return car.images[0]?.url ?? null;
+}
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -33,7 +33,48 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function TopCarsStrip() {
+function TopCarsStripSkeleton() {
+  return (
+    <section className="mx-auto w-full max-w-6xl px-4 pb-6 sm:px-6 lg:px-8">
+      <div className="relative rounded-3xl border border-[#452E5A]/12 bg-white/85 p-4 shadow-[0_12px_38px_-20px_rgba(30,16,78,0.55)] sm:p-5 dark:border-white/10 dark:bg-[#150e2e]/80">
+        <div className="flex gap-3 overflow-hidden">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="min-w-[72%] shrink-0 overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white dark:border-white/10 dark:bg-[#1c1438] min-[480px]:min-w-[64%] sm:min-w-[50%] md:min-w-[36%] lg:min-w-[32%]"
+            >
+              <Skeleton className="h-28 w-full rounded-none" />
+              <div className="space-y-2 p-3">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-20" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-9 flex-1" />
+                  <Skeleton className="size-9 shrink-0" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type TopCarsStripProps = {
+  cars: PublicCar[];
+  isLoading?: boolean;
+};
+
+export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
+  if (isLoading && cars.length === 0) {
+    return <TopCarsStripSkeleton />;
+  }
+
+  if (!isLoading && cars.length === 0) {
+    return null;
+  }
+
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pb-6 sm:px-6 lg:px-8">
       <div className="relative rounded-3xl border border-[#452E5A]/12 bg-white/85 p-4 shadow-[0_12px_38px_-20px_rgba(30,16,78,0.55)] sm:p-5 dark:border-white/10 dark:bg-[#150e2e]/80">
@@ -46,63 +87,77 @@ export function TopCarsStrip() {
           className="w-full"
         >
           <CarouselContent className="-ml-3">
-            {staticTopCars.map((car) => (
-              <CarouselItem
-                key={car.id}
-                className="basis-[88%] pl-3 min-[480px]:basis-[64%] sm:basis-[50%] md:basis-[36%] lg:basis-[32%]"
-              >
-                <article className="overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white shadow-[0_10px_28px_-20px_rgba(30,16,78,0.6)] dark:border-white/10 dark:bg-[#1c1438]">
-                  <div className="relative h-28 w-full border-b border-[#452E5A]/10 bg-[#F7F4FF] dark:border-white/10 dark:bg-white/5">
-                    <Image
-                      src={encodeURI(car.image)}
-                      alt={`${car.make} ${car.model}`}
-                      fill
-                      className="object-contain p-2"
-                      sizes="(max-width: 1280px) 50vw, 20vw"
-                    />
-                    <span className="absolute top-2 right-2 rounded-full bg-[#1E104E] px-2 py-0.5 text-[10px] font-semibold text-white">
-                      {car.id}
-                    </span>
-                  </div>
-                  <div className="space-y-2 p-3">
-                    <p className="text-xl leading-none font-bold text-[#1E104E] dark:text-white">
-                      {car.make.toUpperCase()}
-                    </p>
-                    <p className="text-sm font-semibold tracking-wide text-[#0F8A66] uppercase dark:text-[#3DD598]">
-                      {car.model}
-                    </p>
-                    <p className="text-[11px] font-medium tracking-wide text-[#5C4A76] uppercase dark:text-white/55">
-                      Best Price
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        asChild
-                        size="sm"
-                        className="h-9 flex-1 border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
-                      >
-                        <Link href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-                          Inquire Now
-                        </Link>
-                      </Button>
-                      <Button
-                        asChild
-                        size="icon-sm"
-                        className="size-9 shrink-0 border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
-                      >
-                        <Link
-                          href={WHATSAPP_URL}
-                          target="_blank"
-                          rel="noreferrer"
-                          aria-label={`Open WhatsApp chat for ${car.make} ${car.model}`}
-                        >
-                          <WhatsAppIcon className="size-4" />
-                        </Link>
-                      </Button>
+            {cars.map((car) => {
+              const imageUrl = primaryImageUrl(car);
+              const waUrl = buildInquiryWhatsAppUrl(car);
+              const make = car.model.brand;
+              const modelName = car.model.name;
+
+              return (
+                <CarouselItem
+                  key={car.id}
+                  className="basis-[88%] pl-3 min-[480px]:basis-[64%] sm:basis-[50%] md:basis-[36%] lg:basis-[32%]"
+                >
+                  <article className="overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white shadow-[0_10px_28px_-20px_rgba(30,16,78,0.6)] dark:border-white/10 dark:bg-[#1c1438]">
+                    <div className="relative h-28 w-full border-b border-[#452E5A]/10 bg-[#F7F4FF] dark:border-white/10 dark:bg-white/5">
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={`${make} ${modelName}`}
+                          fill
+                          className="object-contain p-2"
+                          sizes="(max-width: 1280px) 50vw, 20vw"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="text-muted-foreground flex h-full items-center justify-center">
+                          <CarFrontIcon className="size-10 opacity-40" aria-hidden />
+                        </div>
+                      )}
+                      <span className="absolute top-2 right-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-[#1E104E] px-2 py-0.5 text-[10px] font-semibold text-white">
+                        {car.referenceNo}
+                      </span>
                     </div>
-                  </div>
-                </article>
-              </CarouselItem>
-            ))}
+                    <div className="space-y-2 p-3">
+                      <p className="text-xl leading-none font-bold text-[#1E104E] dark:text-white">
+                        {make.toUpperCase()}
+                      </p>
+                      <p className="text-sm font-semibold tracking-wide text-[#0F8A66] uppercase dark:text-[#3DD598]">
+                        {modelName}
+                      </p>
+                      <p className="text-[11px] font-medium tracking-wide text-[#5C4A76] uppercase dark:text-white/55">
+                        Best Price
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          asChild
+                          size="sm"
+                          className="h-9 flex-1 border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
+                        >
+                          <Link href={waUrl} target="_blank" rel="noreferrer">
+                            Inquire Now
+                          </Link>
+                        </Button>
+                        <Button
+                          asChild
+                          size="icon-sm"
+                          className="size-9 shrink-0 border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
+                        >
+                          <Link
+                            href={waUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Open WhatsApp chat for ${make} ${modelName}`}
+                          >
+                            <WhatsAppIcon className="size-4" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </article>
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
           <CarouselPrevious className="left-2 size-9 border-[#452E5A]/20 bg-white/95 text-[#452E5A] hover:bg-white dark:border-white/15 dark:bg-[#150e2e]/95 dark:text-white dark:hover:bg-[#1c1438]" />
           <CarouselNext className="right-2 size-9 border-[#452E5A]/20 bg-white/95 text-[#452E5A] hover:bg-white dark:border-white/15 dark:bg-[#150e2e]/95 dark:text-white dark:hover:bg-[#1c1438]" />

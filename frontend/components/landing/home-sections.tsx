@@ -5,7 +5,10 @@ export { PromoBannerStrip } from "@/components/landing/sections/promo-banner-str
 export { MarketplaceWithSidebars } from "@/components/landing/sections/marketplace-with-sidebars";
 export { SectionBlock } from "@/components/landing/sections/section-block";
 export { CategoryGrid } from "@/components/landing/sections/category-grid";
-export { VehicleGrid } from "@/components/landing/sections/vehicle-grid";
+export {
+  VehicleGrid,
+  VehicleGridSkeleton,
+} from "@/components/landing/sections/vehicle-grid";
 export { TrustFeatures } from "@/components/landing/sections/trust-features";
 export { TestimonialGrid } from "@/components/landing/sections/testimonial-grid";
 export { ContactCta } from "@/components/landing/sections/contact-cta";

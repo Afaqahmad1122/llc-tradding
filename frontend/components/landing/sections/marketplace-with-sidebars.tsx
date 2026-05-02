@@ -1,6 +1,6 @@
 import { ChevronDown, Search } from "lucide-react";
 
-import { CurrencyItem, SidebarItem } from "@/components/landing/home-data";
+import { CurrencyItem } from "@/components/landing/home-data";
 import { Button } from "@/components/ui/button";
 
 function LeftSidebar({
@@ -8,8 +8,8 @@ function LeftSidebar({
   priceRanges,
   bodyTypes,
 }: {
-  makes: SidebarItem[];
-  priceRanges: SidebarItem[];
+  makes: string[];
+  priceRanges: string[];
   bodyTypes: string[];
 }) {
   return (
@@ -20,15 +20,13 @@ function LeftSidebar({
             Shop By Make
           </div>
           <div className="max-h-[420px] space-y-0.5 overflow-auto p-2">
-            {makes.map((item) => (
+            {makes.map((make) => (
               <button
-                key={item.name}
-                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#4A4A4A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
+                key={make}
+                type="button"
+                className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#4A4A4A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
               >
-                <span>{item.name.toUpperCase()}</span>
-                <span className="text-xs font-medium text-[#666] dark:text-white/55">
-                  ({item.count})
-                </span>
+                <span>{make.toUpperCase()}</span>
               </button>
             ))}
           </div>
@@ -39,15 +37,16 @@ function LeftSidebar({
             Shop by Price
           </div>
           <div className="max-h-[360px] space-y-0.5 overflow-auto p-2">
-            {priceRanges.map((item) => (
+            {priceRanges.map((rangeLabel) => (
               <button
-                key={item.name}
+                key={rangeLabel}
+                type="button"
                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#4A4A4A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
               >
                 <span className="inline-flex size-5 items-center justify-center rounded-full border border-[#888] text-[10px] font-bold dark:border-white/30">
                   $
                 </span>
-                {item.name}
+                {rangeLabel}
               </button>
             ))}
           </div>
@@ -61,6 +60,7 @@ function LeftSidebar({
             {bodyTypes.map((item) => (
               <button
                 key={item}
+                type="button"
                 className="flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm font-semibold text-[#5A5A5A] transition-colors hover:bg-white dark:text-white/80 dark:hover:bg-white/10"
               >
                 {item.toUpperCase()}
@@ -162,8 +162,8 @@ export function MarketplaceWithSidebars({
   bodyTypes,
 }: {
   children: React.ReactNode;
-  makes: SidebarItem[];
-  priceRanges: SidebarItem[];
+  makes: string[];
+  priceRanges: string[];
   currencies: CurrencyItem[];
   filters: string[];
   bodyTypes: string[];

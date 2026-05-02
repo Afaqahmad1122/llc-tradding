@@ -1,17 +1,13 @@
 "use client";
+
 import Link from "next/link";
+import { useMemo } from "react";
 import {
-  bodyTypeSidebarItems,
   categories,
   currencyItems,
-  featuredVehicles,
   heroFilters,
-  latestVehicles,
-  makeSidebarItems,
-  priceSidebarItems,
   promoBanners,
   rightSidebarFilters,
-  stats,
 } from "@/components/landing/home-data";
 import {
   CategoryGrid,
@@ -25,18 +21,65 @@ import {
   TopCarsStrip,
   TrustFeatures,
   VehicleGrid,
+  VehicleGridSkeleton,
 } from "@/components/landing/home-sections";
 import { Button } from "@/components/ui/button";
 import { useApiQuery } from "@/hooks/use-api-query";
+import { fetchCarsMeta, fetchPublicCars } from "@/lib/api/cars";
 import { getPublicReviews } from "@/lib/api/reviews";
+import { buildPriceBuckets } from "@/lib/home-price-buckets";
 
 export default function Home() {
+  const { data: carsResponse, isLoading: carsLoading } = useApiQuery({
+    queryKey: ["public-cars", "home", { pageSize: 8, sort: "latest" }],
+    queryFn: () => fetchPublicCars({ page: 1, pageSize: 8, sort: "latest" }),
+  });
+
+  const { data: meta } = useApiQuery({
+    queryKey: ["cars-meta"],
+    queryFn: fetchCarsMeta,
+  });
+
   const { data: reviewsResponse } = useApiQuery({
     queryKey: ["public-reviews", { page: 1, pageSize: 2, sort: "latest" }],
     queryFn: () => getPublicReviews({ page: 1, pageSize: 2, sort: "latest" }),
   });
 
+  const cars = carsResponse?.data ?? [];
+  const totalCars = carsResponse?.pagination.total ?? null;
+
+  const makes = useMemo(() => meta?.brands ?? [], [meta]);
+
+  const bodyTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of meta?.models ?? []) {
+      const bt = m.bodyType?.trim();
+      if (bt) set.add(bt);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [meta]);
+
+  const priceRanges = useMemo(
+    () => buildPriceBuckets(meta?.priceRange),
+    [meta],
+  );
+
+  const stats = useMemo(
+    () => [
+      {
+        label: "Total Cars in Stock",
+        value: totalCars != null ? totalCars.toLocaleString() : "…",
+      },
+      { label: "Insured Global Shipping", value: "120+ Countries" },
+      { label: "Customer Satisfaction", value: "99%" },
+    ],
+    [totalCars],
+  );
+
   const reviews = reviewsResponse?.data ?? [];
+
+  const featuredCars = cars.slice(0, 4);
+  const latestCars = cars.slice(0, 6);
 
   return (
     <LandingPageShell
@@ -44,21 +87,25 @@ export default function Home() {
       mainClassName="relative z-10 pb-6 pt-2 sm:pt-3"
     >
       <MarketplaceWithSidebars
-        makes={makeSidebarItems}
-        priceRanges={priceSidebarItems}
+        makes={makes}
+        priceRanges={priceRanges}
         currencies={currencyItems}
         filters={rightSidebarFilters}
-        bodyTypes={bodyTypeSidebarItems}
+        bodyTypes={bodyTypes}
       >
         <HeroSection filters={heroFilters} stats={stats} />
         <PromoBannerStrip items={promoBanners} />
-        <TopCarsStrip />
+        <TopCarsStrip cars={cars} isLoading={carsLoading} />
         <SectionBlock
           id="featured"
           title="Featured Collection"
           description="A curated selection based on demand, quality checks, and export readiness."
         >
-          <VehicleGrid vehicles={featuredVehicles} />
+          {carsLoading && cars.length === 0 ? (
+            <VehicleGridSkeleton count={4} />
+          ) : (
+            <VehicleGrid vehicles={featuredCars} />
+          )}
         </SectionBlock>
         <SectionBlock
           title="Inventory Categories"
@@ -71,7 +118,11 @@ export default function Home() {
           title="Latest Arrivals"
           description="Freshly listed vehicles with reference IDs and target pricing for quick decisions."
         >
-          <VehicleGrid vehicles={latestVehicles} />
+          {carsLoading && cars.length === 0 ? (
+            <VehicleGridSkeleton count={6} />
+          ) : (
+            <VehicleGrid vehicles={latestCars} />
+          )}
         </SectionBlock>
         <SectionBlock
           id="about"
