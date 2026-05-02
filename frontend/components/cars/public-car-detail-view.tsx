@@ -180,7 +180,7 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
 
 function SectionTab({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex rounded-t-lg rounded-br-lg bg-[#003366] px-5 py-2 text-sm font-bold tracking-wide text-white dark:bg-[#002244]">
+    <div className="brand-gradient-main inline-flex rounded-t-lg rounded-br-lg px-5 py-2.5 text-sm font-bold tracking-wide text-white shadow-sm">
       {children}
     </div>
   );
@@ -359,17 +359,60 @@ export function PublicCarDetailView({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage className="font-semibold text-destructive">
+            <BreadcrumbPage className="max-w-[min(100%,12rem)] truncate font-semibold sm:max-w-none">
               {title.toUpperCase()}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
+      <header className="flex flex-col gap-6 border-b border-border pb-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-4">
+            <span className="inline-flex items-center rounded-md bg-destructive px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+              FOB price
+            </span>
+            <h1 className="font-heading max-w-4xl text-2xl font-bold leading-tight tracking-tight text-primary sm:text-3xl lg:text-4xl">
+              {title.toUpperCase()}
+            </h1>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
+                {car.year}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
+                {mileageDisplay}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
+                {engineDisplay}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-dashed border-border bg-muted/60 px-3 py-1 font-mono text-[11px] font-semibold text-muted-foreground">
+                {car.referenceNo}
+              </span>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+            <p className="inline-flex min-w-[10rem] items-center justify-center rounded-xl bg-destructive px-5 py-3 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl">
+              {usd}
+            </p>
+            {pkrLine ? (
+              <p className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                {pkrLine}
+              </p>
+            ) : null}
+            {originLabel ? (
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">
+                <span className="bg-accent inline-block size-2 rounded-full shadow-sm" />
+                Origin · {originLabel}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </header>
+
       <div className="grid gap-8 lg:grid-cols-[1fr_min(100%,380px)] lg:items-start">
         <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-muted shadow-inner">
-            <div className="relative aspect-[16/10] w-full">
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/80 shadow-inner ring-1 ring-border/50">
+            <div className="relative aspect-[16/10] w-full bg-linear-to-b from-muted/50 to-muted">
               {active?.url ? (
                 <Image
                   src={active.url}
@@ -423,14 +466,14 @@ export function PublicCarDetailView({
           </div>
 
           {gallery.length > 1 ? (
-            <div className="flex gap-2 overflow-x-auto pb-1 pt-1">
+            <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 pt-1 [scrollbar-gutter:stable]">
               {gallery.map((img, i) => (
                 <button
                   key={img.id}
                   type="button"
                   onClick={() => setActiveIndex(i)}
                   className={cn(
-                    "relative size-16 shrink-0 overflow-hidden rounded-lg border-2 transition sm:size-20",
+                    "relative size-16 shrink-0 snap-start overflow-hidden rounded-lg border-2 transition sm:size-20",
                     i === activeIndex
                       ? "border-foreground ring-2 ring-primary/30"
                       : "border-transparent opacity-80 hover:opacity-100",
@@ -477,7 +520,7 @@ export function PublicCarDetailView({
           </div>
         </div>
 
-        <aside className="sticky top-24 space-y-4 rounded-2xl bg-[#003366] p-5 text-white shadow-xl ring-1 ring-black/10 dark:bg-[#001a2e] dark:ring-white/10">
+        <aside className="brand-gradient-main sticky top-24 space-y-4 rounded-2xl p-5 text-white shadow-xl ring-1 ring-black/15 dark:ring-white/10">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-lg font-bold tracking-tight">
               Total price calculator
@@ -486,7 +529,7 @@ export function PublicCarDetailView({
               aria-label="Currency"
               value={currency}
               onChange={(e) => setCurrency(e.target.value as "USD" | "PKR")}
-              className="h-9 max-w-[5.5rem] border-white/20 bg-white text-xs font-semibold text-[#003366]"
+              className="h-9 max-w-[5.5rem] border-white/25 bg-white text-xs font-semibold text-primary"
             >
               <NativeSelectOption value="USD">USD</NativeSelectOption>
               <NativeSelectOption value="PKR">PKR</NativeSelectOption>
@@ -497,7 +540,7 @@ export function PublicCarDetailView({
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">
               Vehicle price
             </p>
-            <p className="mt-2 inline-block min-w-[8rem] bg-[#E60012] px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
+            <p className="mt-2 inline-block min-w-[8rem] rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
               {currency === "USD" ? usd : (pkrLine ?? usd)}
             </p>
           </div>
@@ -508,7 +551,7 @@ export function PublicCarDetailView({
                 Destination country
               </Label>
               <NativeSelect
-                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-[#003366]"
+                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-primary"
                 value={country}
                 onChange={(e) => {
                   const next = e.target.value;
@@ -530,7 +573,7 @@ export function PublicCarDetailView({
                 Ports
               </Label>
               <NativeSelect
-                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-[#003366]"
+                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-primary"
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
               >
@@ -546,7 +589,7 @@ export function PublicCarDetailView({
                 Shipment
               </Label>
               <NativeSelect
-                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-[#003366]"
+                className="mt-1 h-10 w-full border-white/25 bg-white text-sm font-medium text-primary"
                 value={shipment}
                 onChange={(e) => setShipment(e.target.value)}
               >
@@ -595,10 +638,10 @@ export function PublicCarDetailView({
             </p>
             <Button
               asChild
-              className="h-11 w-full bg-[#E60012] text-sm font-bold uppercase tracking-wide text-white hover:bg-[#cc0010]"
+              className="h-11 w-full bg-destructive text-sm font-bold uppercase tracking-wide text-white hover:bg-destructive/90"
             >
               <a href={askWa} target="_blank" rel="noopener noreferrer">
-                Ask
+                Ask on WhatsApp
               </a>
             </Button>
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/90">
@@ -606,54 +649,27 @@ export function PublicCarDetailView({
             </p>
             <Button
               asChild
-              className="h-11 w-full bg-[#FFD54A] text-sm font-bold uppercase tracking-wide text-black hover:bg-[#ffcc22]"
+              className="h-11 w-full bg-amber-300 text-sm font-bold uppercase tracking-wide text-primary hover:bg-amber-200 dark:bg-amber-400 dark:text-primary dark:hover:bg-amber-300"
             >
-              <a href={askMail}>Ask</a>
+              <a href={askMail}>Ask by email</a>
             </Button>
           </div>
         </aside>
       </div>
 
-      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3">
-          <span className="inline-block bg-[#E60012] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-            FOB price
-          </span>
-          <h1 className="font-heading max-w-3xl text-2xl font-bold tracking-tight text-[#003366] dark:text-[#7eb8ff] sm:text-3xl">
-            {title.toUpperCase()}
-          </h1>
-        </div>
-        <div className="flex flex-col items-start gap-2 sm:items-end">
-          <p className="bg-[#E60012] px-4 py-2 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl">
-            {usd}
-          </p>
-          {pkrLine ? (
-            <p className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-              {pkrLine}
-            </p>
-          ) : null}
-          {originLabel ? (
-            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-foreground">
-              <span className="bg-destructive inline-block size-1.5 rounded-full" />
-              {originLabel}
-            </p>
-          ) : null}
-        </div>
-      </header>
-
       <section className="space-y-0">
         <SectionTab>Specifications</SectionTab>
-        <div className="overflow-hidden rounded-b-xl rounded-tr-xl border border-border bg-card">
+        <div className="overflow-hidden rounded-b-xl rounded-tr-xl border border-border bg-card shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {allSpecRows.map(([label, val], idx) => (
               <div
                 key={`${idx}-${label}`}
                 className="border-border flex min-h-[3rem] border-b border-r text-sm lg:[&:nth-child(3n)]:border-r-0"
               >
-                <div className="bg-muted/80 flex w-[42%] shrink-0 items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:w-[40%]">
+                <div className="flex w-[42%] shrink-0 items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:w-[38%]">
                   {label}
                 </div>
-                <div className="bg-background flex flex-1 items-center px-3 py-2.5 font-semibold">
+                <div className="bg-background/80 flex flex-1 items-center px-3 py-2.5 font-semibold">
                   {val}
                 </div>
               </div>
@@ -665,14 +681,16 @@ export function PublicCarDetailView({
       {featureEntries.length > 0 ? (
         <section className="space-y-0">
           <SectionTab>Features</SectionTab>
-          <div className="overflow-hidden rounded-b-xl rounded-tr-xl border border-border bg-card p-4">
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="overflow-hidden rounded-b-xl rounded-tr-xl border border-border bg-card p-4 shadow-sm">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {featureEntries.map((f) => (
                 <div
                   key={f.key}
                   className={cn(
-                    "flex items-center justify-between gap-2 border-b border-border/60 py-2 text-xs font-medium sm:text-sm",
-                    !f.active && "text-muted-foreground",
+                    "flex items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium sm:text-sm",
+                    f.active
+                      ? "border-emerald-500/25 bg-emerald-500/5"
+                      : "border-border/60 bg-muted/20 text-muted-foreground",
                   )}
                 >
                   <span className={cn(f.active && "font-semibold")}>
@@ -680,10 +698,14 @@ export function PublicCarDetailView({
                   </span>
                   {f.active ? (
                     <CheckIcon
-                      className="size-4 shrink-0 text-emerald-600"
+                      className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
                       aria-label="Included"
                     />
-                  ) : null}
+                  ) : (
+                    <span className="text-[10px] uppercase text-muted-foreground/70">
+                      —
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -695,7 +717,7 @@ export function PublicCarDetailView({
         <SectionTab>Inquiry</SectionTab>
         <form
           onSubmit={onInquirySubmit}
-          className="space-y-4 rounded-b-2xl rounded-tr-2xl border border-border bg-muted/50 p-5 shadow-inner dark:bg-muted/20"
+          className="space-y-4 rounded-b-2xl rounded-tr-2xl border border-border bg-card p-5 shadow-sm ring-1 ring-border/40 dark:bg-card/80"
         >
           <div className="grid gap-4 sm:grid-cols-3">
             <fieldset className="rounded-lg border border-border bg-background px-3 pb-3 pt-1">
@@ -789,7 +811,7 @@ export function PublicCarDetailView({
             <Button
               type="submit"
               disabled={inquirySending}
-              className="h-12 min-w-[200px] bg-[#EE2B2B] px-8 text-sm font-bold uppercase tracking-wide text-white hover:bg-[#d42424]"
+              className="h-12 min-w-[200px] bg-accent px-8 text-sm font-bold uppercase tracking-wide text-accent-foreground shadow-sm hover:bg-accent/90"
             >
               {inquirySending ? "Sending…" : "Submit inquiry"}
             </Button>
@@ -798,8 +820,8 @@ export function PublicCarDetailView({
       </section>
 
       {similarCars.length > 0 ? (
-        <section className="space-y-4">
-          <h2 className="font-heading text-xl font-bold tracking-tight">
+        <section className="space-y-4 border-t border-border pt-10">
+          <h2 className="font-heading text-xl font-bold tracking-tight text-primary">
             Similar cars
           </h2>
           <div className="flex gap-4 overflow-x-auto pb-2 pt-1">
@@ -841,7 +863,7 @@ function CalcRadioRow({
           >
             <RadioGroupItem
               value={o.value}
-              className="border-white/60 data-checked:border-[#E60012] data-checked:bg-[#E60012]"
+              className="border-white/60 data-checked:border-destructive data-checked:bg-destructive"
             />
             {o.label}
           </label>
