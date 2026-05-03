@@ -72,7 +72,7 @@ export function AdminSignInView() {
     <div
       className={cn(
         "relative flex min-h-svh flex-col items-center justify-center overflow-hidden p-6",
-        "bg-[radial-gradient(at_75%_-12%,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_55%),radial-gradient(at_-8%_92%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_52%),linear-gradient(to_bottom_right,color-mix(in_oklch,var(--muted)_45%,transparent),var(--background)_40%,color-mix(in_oklch,var(--muted)_32%,transparent)))]",
+        "bg-[radial-gradient(at_75%_-12%,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_55%),radial-gradient(at_-8%_92%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_52%),linear-gradient(to_bottom_right,color-mix(in_oklch,var(--muted)_45%,transparent),var(--background)_40%,color-mix(in_oklch,var(--muted)_32%,transparent))]",
       )}
     >
       <div className="absolute inset-e-4 top-4 z-10">

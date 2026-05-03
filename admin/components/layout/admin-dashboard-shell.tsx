@@ -19,7 +19,6 @@ import { useAdminLogoutMutation } from "@/hooks/use-admin-logout-mutation";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -30,10 +29,10 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarRail,
-  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -95,28 +94,26 @@ function AdminSidebarNav() {
   );
 }
 
-function AdminSidebarFooter() {
+function AdminNavbarSignOut() {
   const logout = useAdminLogoutMutation();
 
   return (
-    <SidebarFooter className="gap-2">
-      <SidebarSeparator />
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            disabled={logout.isPending}
-            onClick={() => logout.mutate(undefined)}
-          >
-            {logout.isPending ? (
-              <Spinner className="size-4 text-sidebar-foreground/70" />
-            ) : (
-              <LogOut />
-            )}
-            <span>Sign out</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarFooter>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={logout.isPending}
+      onClick={() => logout.mutate(undefined)}
+      className="h-9 gap-2 border-border/80 bg-background/80 shadow-xs backdrop-blur-sm sm:px-3"
+      aria-label={logout.isPending ? "Signing out" : "Sign out"}
+    >
+      {logout.isPending ? (
+        <Spinner className="size-4" aria-hidden />
+      ) : (
+        <LogOut className="size-4" aria-hidden />
+      )}
+      <span className="hidden sm:inline">Sign out</span>
+    </Button>
   );
 }
 
@@ -146,7 +143,6 @@ export function AdminDashboardShell({
         <SidebarContent>
           <AdminSidebarNav />
         </SidebarContent>
-        <AdminSidebarFooter />
         <SidebarRail />
       </Sidebar>
       <SidebarInset
@@ -159,6 +155,7 @@ export function AdminDashboardShell({
           <SidebarTrigger className="-ml-1" />
           <div className="ms-auto flex items-center gap-2">
             <ThemeToggle />
+            <AdminNavbarSignOut />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
