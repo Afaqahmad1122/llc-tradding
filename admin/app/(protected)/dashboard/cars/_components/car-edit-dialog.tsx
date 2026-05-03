@@ -63,7 +63,7 @@ export function CarEditDialog({
           </DialogTitle>
           <DialogDescription>
             Reference numbers stay fixed for auditing. Updating images replaces
-            the entire ordered set.
+            the entire ordered set, with live preview before save.
           </DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-1">

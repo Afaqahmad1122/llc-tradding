@@ -266,7 +266,7 @@ export function CarFormFields({
         idPrefix={idPrefix}
         section="specs"
         title="Specifications (optional)"
-        hint='Add labels such as trim or engine notes. Pick Text, Number, Yes / No, or JSON only if you need nested data.'
+        hint="Add simple details like trim, engine notes, or package info."
         addLabel="Add specification"
         rows={draft.specsRows}
         onRowsChange={(specsRows) => onChange({ specsRows })}
@@ -275,7 +275,7 @@ export function CarFormFields({
         idPrefix={idPrefix}
         section="features"
         title="Features (optional)"
-        hint="Use Yes / No for equipment like sunroof or navigation. Use Text or Number for other details."
+        hint="Add equipment details such as sunroof, navigation, or safety options."
         addLabel="Add feature"
         rows={draft.featuresRows}
         onRowsChange={(featuresRows) => onChange({ featuresRows })}

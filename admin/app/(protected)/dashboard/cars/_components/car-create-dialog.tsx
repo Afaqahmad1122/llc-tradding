@@ -61,7 +61,7 @@ export function CarCreateDialog({
           <DialogTitle>Create listing</DialogTitle>
           <DialogDescription>
             Required fields: reference number, vehicle model, year, and USD
-            price. Unpublished cars stay invisible on the public site.
+            price. Uploaded images show live previews below before you save.
           </DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-1">
