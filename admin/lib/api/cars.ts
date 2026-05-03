@@ -130,7 +130,7 @@ export type CreateAdminCarResponse = {
 
 export type UpdateAdminCarResponse = CreateAdminCarResponse;
 
-export type UnpublishCarResponse = {
+export type DeleteCarResponse = {
   message: string;
 };
 
@@ -194,8 +194,8 @@ export function updateAdminCar(id: string, body: UpdateAdminCarBody) {
   );
 }
 
-export function unpublishAdminCar(id: string) {
-  return http.delete<UnpublishCarResponse>(
+export function deleteAdminCar(id: string) {
+  return http.delete<DeleteCarResponse>(
     `/cars/admin/${encodeURIComponent(id)}`,
   );
 }

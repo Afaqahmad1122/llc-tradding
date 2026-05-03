@@ -35,8 +35,8 @@ type CarsListContentProps = {
   totalPages: number;
   totalItems: number;
   onEdit: (car: AdminCar) => void;
-  onUnpublishRequest: (car: AdminCar) => void;
-  unpublishMutation: UseMutationResult<void, unknown, string>;
+  onDeleteRequest: (car: AdminCar) => void;
+  deleteMutation: UseMutationResult<void, unknown, string>;
 };
 
 export function CarsListContent({
@@ -51,8 +51,8 @@ export function CarsListContent({
   totalPages,
   totalItems,
   onEdit,
-  onUnpublishRequest,
-  unpublishMutation,
+  onDeleteRequest,
+  deleteMutation,
 }: CarsListContentProps) {
   const canPrev = list.page > 1;
   const canNext = totalPages > 0 && list.page < totalPages;
@@ -154,14 +154,12 @@ export function CarsListContent({
                             type="button"
                             variant="outline"
                             size="sm"
-                            disabled={
-                              unpublishMutation.isPending || !car.isPublished
-                            }
+                            disabled={deleteMutation.isPending}
                             className="text-destructive border-destructive/35 hover:bg-destructive/10 hover:text-destructive shadow-xs"
-                            onClick={() => onUnpublishRequest(car)}
+                            onClick={() => onDeleteRequest(car)}
                           >
                             <Trash2 className="size-3.5 shrink-0" aria-hidden />
-                            Unpublish
+                            Delete
                           </Button>
                         </div>
                       </div>

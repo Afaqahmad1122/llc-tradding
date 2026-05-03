@@ -17,17 +17,17 @@ import type { AdminCar } from "@/lib/api/cars";
 
 import { formatErrorMessage } from "../_lib/draft-utils";
 
-type CarUnpublishDialogProps = {
+type CarDeleteDialogProps = {
   car: AdminCar | null;
   onOpenChange: (open: boolean) => void;
   mutation: UseMutationResult<void, unknown, string>;
 };
 
-export function CarUnpublishDialog({
+export function CarDeleteDialog({
   car,
   onOpenChange,
   mutation,
-}: CarUnpublishDialogProps) {
+}: CarDeleteDialogProps) {
   const open = Boolean(car);
 
   return (
@@ -42,10 +42,10 @@ export function CarUnpublishDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Unpublish listing?</AlertDialogTitle>
+          <AlertDialogTitle>Delete listing permanently?</AlertDialogTitle>
           <AlertDialogDescription>
-            {car?.referenceNo} will disappear from public inventory until you
-            publish it again.
+            {car?.referenceNo} will be removed permanently. Any uploaded AWS
+            images tied to removed keys are deleted as part of cleanup.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {mutation.error ? (
@@ -67,7 +67,7 @@ export function CarUnpublishDialog({
               mutation.mutate(id);
             }}
           >
-            {mutation.isPending ? "Working…" : "Unpublish"}
+            {mutation.isPending ? "Deleting…" : "Delete permanently"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

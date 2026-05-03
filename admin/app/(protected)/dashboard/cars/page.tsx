@@ -16,9 +16,9 @@ import {
   createAdminCar,
   fetchAdminCars,
   fetchAdminModels,
+  deleteAdminCar,
   presignCarImageUpload,
   replaceAdminCarImages,
-  unpublishAdminCar,
   updateAdminCar,
   type AdminCar,
   type CreateAdminCarBody,
@@ -27,7 +27,7 @@ import {
 
 import { CarCreateDialog } from "./_components/car-create-dialog";
 import { CarEditDialog } from "./_components/car-edit-dialog";
-import { CarUnpublishDialog } from "./_components/car-unpublish-dialog";
+import { CarDeleteDialog } from "./_components/car-unpublish-dialog";
 import { CarsListContent } from "./_components/cars-list-content";
 import { CarsListToolbar } from "./_components/cars-list-toolbar";
 import {
@@ -62,7 +62,9 @@ export default function AdminCarsPage() {
   const [editImages, setEditImages] = useState<ImageDraftRow[]>([]);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const [dangerCar, setDangerCar] = useState<AdminCar | null>(null);
+  const [deleteCarCandidate, setDeleteCarCandidate] = useState<AdminCar | null>(
+    null,
+  );
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -164,12 +166,12 @@ export default function AdminCarsPage() {
     onError: (e: unknown) => setEditError(formatErrorMessage(e)),
   });
 
-  const unpublishMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await unpublishAdminCar(id);
+      await deleteAdminCar(id);
     },
     onSuccess: () => {
-      setDangerCar(null);
+      setDeleteCarCandidate(null);
       void invalidateCars();
     },
   });
@@ -272,8 +274,8 @@ export default function AdminCarsPage() {
           totalPages={totalPages}
           totalItems={totalItems}
           onEdit={openEdit}
-          onUnpublishRequest={setDangerCar}
-          unpublishMutation={unpublishMutation}
+          onDeleteRequest={setDeleteCarCandidate}
+          deleteMutation={deleteMutation}
         />
       </div>
 
@@ -319,15 +321,15 @@ export default function AdminCarsPage() {
         }}
       />
 
-      <CarUnpublishDialog
-        car={dangerCar}
+      <CarDeleteDialog
+        car={deleteCarCandidate}
         onOpenChange={(open) => {
           if (!open) {
-            unpublishMutation.reset();
-            setDangerCar(null);
+            deleteMutation.reset();
+            setDeleteCarCandidate(null);
           }
         }}
-        mutation={unpublishMutation}
+        mutation={deleteMutation}
       />
     </div>
   );

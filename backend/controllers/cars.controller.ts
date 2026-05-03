@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FuelType, Prisma, TransmissionType, UserRole } from "@prisma/client";
 import type { SteeringType } from "@prisma/client";
@@ -56,6 +56,8 @@ const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
 const PRESIGN_EXPIRES_IN_SEC = 300;
 const SIMILAR_CARS_LIMIT = 5;
+const S3_DELETE_BATCH_SIZE = 1_000;
+const S3_IMAGE_KEY_PREFIX = "cars/";
 
 const PUBLIC_CAR_SELECT = {
   id: true,
@@ -182,6 +184,88 @@ const toCarImageCreateMany = (
     isPrimary: Boolean(image.isPrimary),
     carId: "",
   }));
+
+type StoredCarImage = {
+  key: string | null;
+  url: string;
+};
+
+const normalizeS3Key = (rawKey: string): string | null => {
+  const key = rawKey.trim().replace(/^\/+/, "");
+  if (!key.startsWith(S3_IMAGE_KEY_PREFIX)) return null;
+  if (key.includes("..")) return null;
+  return key;
+};
+
+const parseS3KeyFromPublicUrl = (url: string): string | null => {
+  if (!s3Bucket) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const validHost =
+      host === `${s3Bucket}.s3.amazonaws.com` ||
+      host === `${s3Bucket}.s3.${env.AWS_REGION}.amazonaws.com` ||
+      (host.startsWith(`${s3Bucket}.s3.`) && host.endsWith(".amazonaws.com"));
+    if (!validHost) {
+      return null;
+    }
+    const decodedPath = decodeURIComponent(parsed.pathname);
+    return normalizeS3Key(decodedPath);
+  } catch {
+    return null;
+  }
+};
+
+const extractS3KeyFromImage = (image: StoredCarImage): string | null => {
+  if (image.key) {
+    const directKey = normalizeS3Key(image.key);
+    if (directKey) return directKey;
+  }
+  return parseS3KeyFromPublicUrl(image.url);
+};
+
+const collectS3KeysFromImages = (images: StoredCarImage[]): string[] => {
+  const keys = new Set<string>();
+  for (const image of images) {
+    const key = extractS3KeyFromImage(image);
+    if (key) keys.add(key);
+  }
+  return [...keys];
+};
+
+const deleteS3Objects = async (keys: string[]): Promise<void> => {
+  if (!s3Bucket || keys.length === 0) return;
+  for (let index = 0; index < keys.length; index += S3_DELETE_BATCH_SIZE) {
+    const batch = keys.slice(index, index + S3_DELETE_BATCH_SIZE);
+    await s3Client.send(
+      new DeleteObjectsCommand({
+        Bucket: s3Bucket,
+        Delete: {
+          Objects: batch.map((Key) => ({ Key })),
+          Quiet: true,
+        },
+      }),
+    );
+  }
+};
+
+const deleteS3ObjectsSafely = async (
+  keys: string[],
+  context: string,
+): Promise<void> => {
+  if (keys.length === 0) return;
+  try {
+    await deleteS3Objects(keys);
+  } catch (error) {
+    console.error(`[cars] s3 cleanup failed (${context})`, error);
+  }
+};
+
+const imageIdentity = (image: { key?: string | null; url: string }): string => {
+  const validKey = image.key ? normalizeS3Key(image.key) : null;
+  if (validKey) return `key:${validKey}`;
+  return `url:${image.url.trim()}`;
+};
 
 const buildCreateData = (
   body: CreateCarBody,
@@ -737,12 +821,22 @@ export const deleteAdminCar = async (
     return;
   }
 
+  const car = await prisma.car.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      images: { select: { key: true, url: true } },
+    },
+  });
+  if (!car) {
+    res.status(404).json({ message: "car not found" });
+    return;
+  }
+
+  const s3Keys = collectS3KeysFromImages(car.images);
+
   try {
-    await prisma.car.update({
-      where: { id },
-      data: { isPublished: false },
-    });
-    res.status(200).json({ message: "car unpublished successfully" });
+    await prisma.car.delete({ where: { id } });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -753,6 +847,9 @@ export const deleteAdminCar = async (
     }
     throw error;
   }
+
+  await deleteS3ObjectsSafely(s3Keys, `delete car ${id}`);
+  res.status(200).json({ message: "car deleted successfully" });
 };
 
 export const replaceAdminCarImages = async (
@@ -772,12 +869,26 @@ export const replaceAdminCarImages = async (
 
   const existing = await prisma.car.findUnique({
     where: { id },
-    select: { id: true },
+    select: {
+      id: true,
+      images: {
+        select: {
+          key: true,
+          url: true,
+        },
+      },
+    },
   });
   if (!existing) {
     res.status(404).json({ message: "car not found" });
     return;
   }
+
+  const incomingIdentities = new Set(images.map((image) => imageIdentity(image)));
+  const removedImages = existing.images.filter(
+    (image) => !incomingIdentities.has(imageIdentity(image)),
+  );
+  const removedS3Keys = collectS3KeysFromImages(removedImages);
 
   await prisma.$transaction(async (tx) => {
     await tx.carImage.deleteMany({ where: { carId: id } });
@@ -795,6 +906,7 @@ export const replaceAdminCarImages = async (
     where: { id },
     select: ADMIN_CAR_SELECT,
   });
+  await deleteS3ObjectsSafely(removedS3Keys, `replace images for car ${id}`);
   res.status(200).json({ car });
 };
 
