@@ -34,6 +34,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -129,9 +130,9 @@ export function AdminDashboardShell({
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
-        <SidebarHeader className="border-b border-sidebar-border">
+        <SidebarHeader className="border-b border-sidebar-border bg-sidebar/50">
           <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-primary to-sidebar-primary/85 text-sidebar-primary-foreground shadow-sm ring-1 ring-sidebar-primary/25">
               <Shield className="size-4" aria-hidden />
             </div>
             <div className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
@@ -148,9 +149,17 @@ export function AdminDashboardShell({
         <AdminSidebarFooter />
         <SidebarRail />
       </Sidebar>
-      <SidebarInset className={cn("min-h-svh", className)}>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 md:px-6">
+      <SidebarInset
+        className={cn(
+          "min-h-svh bg-[linear-gradient(160deg,color-mix(in_oklch,var(--muted)_56%,transparent)_0%,transparent_42%),linear-gradient(to_bottom,var(--background),color-mix(in_oklch,var(--muted)_22%,var(--background))))]",
+          className,
+        )}
+      >
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border/70 bg-background/80 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:px-6">
           <SidebarTrigger className="-ml-1" />
+          <div className="ms-auto flex items-center gap-2">
+            <ThemeToggle />
+          </div>
         </header>
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
       </SidebarInset>

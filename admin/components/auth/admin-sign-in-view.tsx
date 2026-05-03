@@ -21,6 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { useAdminAuthStore } from "@/stores/auth-store";
@@ -74,10 +75,17 @@ export function AdminSignInView() {
         "bg-[radial-gradient(at_75%_-12%,color-mix(in_oklch,var(--primary)_12%,transparent),transparent_55%),radial-gradient(at_-8%_92%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_52%),linear-gradient(to_bottom_right,color-mix(in_oklch,var(--muted)_45%,transparent),var(--background)_40%,color-mix(in_oklch,var(--muted)_32%,transparent)))]",
       )}
     >
+      <div className="absolute inset-e-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
       <Card className="relative w-full max-w-md shadow-lg ring-foreground/10">
         <CardHeader className="space-y-4 pb-2">
           <div className="flex size-11 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 dark:bg-primary/15">
-            <ShieldCheckIcon className="size-6" aria-hidden strokeWidth={1.75} />
+            <ShieldCheckIcon
+              className="size-6"
+              aria-hidden
+              strokeWidth={1.75}
+            />
           </div>
           <div className="space-y-2">
             <CardTitle className="text-xl font-semibold tracking-tight">
@@ -136,7 +144,9 @@ export function AdminSignInView() {
                     variant="ghost"
                     size="icon-sm"
                     disabled={loginMutation.isPending}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     aria-pressed={showPassword}
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute inset-e-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"

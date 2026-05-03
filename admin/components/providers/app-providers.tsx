@@ -14,6 +14,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
+        storageKey="admin-theme"
         disableTransitionOnChange
       >
         <AdminSessionProvider>{children}</AdminSessionProvider>
