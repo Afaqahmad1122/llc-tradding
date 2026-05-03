@@ -305,7 +305,7 @@ export function ImageDraftSection({
                       id={`${idPrefix}-img-url-${row.uid}`}
                       value={row.url}
                       onChange={(e) => updateImage(row.uid, { url: e.target.value })}
-                      placeholder="https://…"
+                      placeholder="https://cdn.example.com/vehicles/front.jpg"
                     />
                     {row.key ? (
                       <p className="text-muted-foreground font-mono text-xs">

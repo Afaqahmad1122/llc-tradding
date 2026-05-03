@@ -23,6 +23,7 @@ import {
   STEERING_OPTIONS,
   TRANSMISSION_OPTIONS,
 } from "../_lib/constants";
+import { CarModelCombobox } from "./car-model-combobox";
 
 type CarFormFieldsProps = {
   draft: CarFormDraft;
@@ -46,6 +47,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-ref`}
           value={draft.referenceNo}
+          placeholder="e.g. LC-2024-001"
           onBlur={() =>
             onChange({
               referenceNo: draft.referenceNo.trim().toUpperCase(),
@@ -63,24 +65,19 @@ export function CarFormFields({
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-model`}>Model</Label>
-        <NativeSelect
+        <CarModelCombobox
           id={`${idPrefix}-model`}
+          models={models}
           value={draft.modelId}
-          onChange={(e) => onChange({ modelId: e.target.value })}
-        >
-          <NativeSelectOption value="">Select a model…</NativeSelectOption>
-          {models.map((m) => (
-            <NativeSelectOption key={m.id} value={m.id}>
-              {m.brand} — {m.name}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+          onChange={(modelId) => onChange({ modelId })}
+        />
       </div>
       <div className="space-y-2 sm:col-span-2">
         <Label htmlFor={`${idPrefix}-title`}>Title (optional)</Label>
         <Input
           id={`${idPrefix}-title`}
           value={draft.title}
+          placeholder="Short headline for the listing (optional)"
           onChange={(e) => onChange({ title: e.target.value })}
           maxLength={200}
         />
@@ -91,6 +88,7 @@ export function CarFormFields({
           id={`${idPrefix}-year`}
           inputMode="numeric"
           value={draft.year}
+          placeholder="e.g. 2022"
           onChange={(e) => onChange({ year: e.target.value })}
         />
       </div>
@@ -100,6 +98,7 @@ export function CarFormFields({
           id={`${idPrefix}-usd`}
           inputMode="decimal"
           value={draft.priceUsd}
+          placeholder="e.g. 18500"
           onChange={(e) => onChange({ priceUsd: e.target.value })}
         />
       </div>
@@ -109,6 +108,7 @@ export function CarFormFields({
           id={`${idPrefix}-pkr`}
           inputMode="decimal"
           value={draft.pricePkr}
+          placeholder="e.g. 5200000"
           onChange={(e) => onChange({ pricePkr: e.target.value })}
         />
       </div>
@@ -118,6 +118,7 @@ export function CarFormFields({
           id={`${idPrefix}-mile`}
           inputMode="numeric"
           value={draft.mileage}
+          placeholder="e.g. 45000"
           onChange={(e) => onChange({ mileage: e.target.value })}
         />
       </div>
@@ -128,7 +129,7 @@ export function CarFormFields({
           value={draft.mileageUnit}
           onChange={(e) => onChange({ mileageUnit: e.target.value })}
           maxLength={8}
-          placeholder="km"
+          placeholder="km or mi"
         />
       </div>
 
@@ -138,8 +139,9 @@ export function CarFormFields({
           id={`${idPrefix}-fuel`}
           value={draft.fuel}
           onChange={(e) => onChange({ fuel: e.target.value })}
+          className="bg-background border-border/70 shadow-none"
         >
-          <NativeSelectOption value="">—</NativeSelectOption>
+          <NativeSelectOption value="">Select fuel type</NativeSelectOption>
           {FUEL_OPTIONS.map((f) => (
             <NativeSelectOption key={f} value={f}>
               {f}
@@ -153,8 +155,9 @@ export function CarFormFields({
           id={`${idPrefix}-trans`}
           value={draft.transmission}
           onChange={(e) => onChange({ transmission: e.target.value })}
+          className="bg-background border-border/70 shadow-none"
         >
-          <NativeSelectOption value="">—</NativeSelectOption>
+          <NativeSelectOption value="">Select transmission</NativeSelectOption>
           {TRANSMISSION_OPTIONS.map((f) => (
             <NativeSelectOption key={f} value={f}>
               {f}
@@ -168,8 +171,9 @@ export function CarFormFields({
           id={`${idPrefix}-steer`}
           value={draft.steering}
           onChange={(e) => onChange({ steering: e.target.value })}
+          className="bg-background border-border/70 shadow-none"
         >
-          <NativeSelectOption value="">—</NativeSelectOption>
+          <NativeSelectOption value="">Select steering</NativeSelectOption>
           {STEERING_OPTIONS.map((f) => (
             <NativeSelectOption key={f} value={f}>
               {f}
@@ -183,6 +187,7 @@ export function CarFormFields({
           id={`${idPrefix}-seats`}
           inputMode="numeric"
           value={draft.seats}
+          placeholder="e.g. 5"
           onChange={(e) => onChange({ seats: e.target.value })}
         />
       </div>
@@ -192,6 +197,7 @@ export function CarFormFields({
           id={`${idPrefix}-doors`}
           inputMode="numeric"
           value={draft.doors}
+          placeholder="e.g. 4"
           onChange={(e) => onChange({ doors: e.target.value })}
         />
       </div>
@@ -202,6 +208,7 @@ export function CarFormFields({
           id={`${idPrefix}-ecc`}
           inputMode="numeric"
           value={draft.engineCc}
+          placeholder="e.g. 2000"
           onChange={(e) => onChange({ engineCc: e.target.value })}
         />
       </div>
@@ -210,6 +217,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-ecode`}
           value={draft.engineCode}
+          placeholder="e.g. B48"
           onChange={(e) => onChange({ engineCode: e.target.value })}
         />
       </div>
@@ -218,6 +226,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-mcode`}
           value={draft.modelCode}
+          placeholder="Factory / option code"
           onChange={(e) => onChange({ modelCode: e.target.value })}
         />
       </div>
@@ -226,6 +235,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-chassis`}
           value={draft.chassisNo}
+          placeholder="VIN or chassis number"
           onChange={(e) => onChange({ chassisNo: e.target.value })}
         />
       </div>
@@ -234,6 +244,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-color`}
           value={draft.color}
+          placeholder="e.g. Pearl White"
           onChange={(e) => onChange({ color: e.target.value })}
         />
       </div>
@@ -242,6 +253,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-drive`}
           value={draft.drive}
+          placeholder="e.g. AWD, FWD, RWD"
           onChange={(e) => onChange({ drive: e.target.value })}
         />
       </div>
@@ -250,6 +262,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-country`}
           value={draft.country}
+          placeholder="e.g. Japan"
           onChange={(e) => onChange({ country: e.target.value })}
         />
       </div>
@@ -258,6 +271,7 @@ export function CarFormFields({
         <Input
           id={`${idPrefix}-city`}
           value={draft.city}
+          placeholder="e.g. Tokyo"
           onChange={(e) => onChange({ city: e.target.value })}
         />
       </div>
@@ -269,6 +283,8 @@ export function CarFormFields({
           title="Specifications (optional)"
           hint="Add simple details like trim, engine notes, or package info."
           addLabel="Add specification"
+          keyPlaceholder="e.g. Trim package"
+          valueTextPlaceholder="e.g. Sport grade"
           rows={draft.specsRows}
           onRowsChange={(specsRows) => onChange({ specsRows })}
         />
@@ -278,6 +294,8 @@ export function CarFormFields({
           title="Features (optional)"
           hint="Add equipment details such as sunroof, navigation, or safety options."
           addLabel="Add feature"
+          keyPlaceholder="e.g. Sunroof"
+          valueTextPlaceholder="e.g. Panoramic glass"
           rows={draft.featuresRows}
           onRowsChange={(featuresRows) => onChange({ featuresRows })}
         />
@@ -303,6 +321,8 @@ function CarKvRecordSection({
   title,
   hint,
   addLabel,
+  keyPlaceholder = "e.g. Package name",
+  valueTextPlaceholder = "Enter value",
   rows,
   onRowsChange,
 }: {
@@ -311,6 +331,8 @@ function CarKvRecordSection({
   title: string;
   hint: string;
   addLabel: string;
+  keyPlaceholder?: string;
+  valueTextPlaceholder?: string;
   rows: CarKvRow[];
   onRowsChange: (next: CarKvRow[]) => void;
 }) {
@@ -337,7 +359,7 @@ function CarKvRecordSection({
           rows.map((row, index) => (
             <div
               key={row.id}
-              className="flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)_auto] sm:items-end sm:gap-3"
+              className="flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end sm:gap-3"
             >
               <div className="space-y-1.5">
                 <Label
@@ -350,34 +372,10 @@ function CarKvRecordSection({
                   id={`${idPrefix}-${section}-key-${row.id}`}
                   value={row.key}
                   onChange={(e) => updateRow(row.id, { key: e.target.value })}
-                  placeholder="e.g. trim"
+                  placeholder={keyPlaceholder}
                   autoComplete="off"
                   spellCheck={false}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label
-                  className="text-muted-foreground text-xs"
-                  htmlFor={`${idPrefix}-${section}-kind-${row.id}`}
-                >
-                  Type
-                </Label>
-                <NativeSelect
-                  id={`${idPrefix}-${section}-kind-${row.id}`}
-                  value={row.kind}
-                  onChange={(e) =>
-                    updateRow(row.id, {
-                      kind: e.target.value as CarKvRow["kind"],
-                    })
-                  }
-                >
-                  <NativeSelectOption value="text">Text</NativeSelectOption>
-                  <NativeSelectOption value="number">Number</NativeSelectOption>
-                  <NativeSelectOption value="yesNo">Yes / No</NativeSelectOption>
-                  <NativeSelectOption value="json">
-                    JSON (advanced)
-                  </NativeSelectOption>
-                </NativeSelect>
               </div>
               <div className="space-y-1.5 sm:min-w-0">
                 <Label
@@ -423,7 +421,11 @@ function CarKvRecordSection({
                       updateRow(row.id, { text: e.target.value })
                     }
                     inputMode={row.kind === "number" ? "decimal" : "text"}
-                    placeholder={row.kind === "number" ? "e.g. 2.5" : "Value"}
+                    placeholder={
+                      row.kind === "number"
+                        ? "e.g. 2.5"
+                        : valueTextPlaceholder
+                    }
                     autoComplete="off"
                   />
                 )}
