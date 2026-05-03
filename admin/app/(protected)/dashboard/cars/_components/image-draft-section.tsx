@@ -109,11 +109,18 @@ export function ImageDraftSection({
   }
 
   return (
-    <div className="space-y-3 sm:col-span-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-1">
-          <Label id={`${idPrefix}-imgs-label`}>Images</Label>
-          <p className="text-muted-foreground text-xs">
+    <div className="space-y-4 rounded-xl border border-border/50 bg-muted/15 p-4 ring-1 ring-border/30 sm:p-5 dark:bg-muted/10">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <Label id={`${idPrefix}-imgs-label`} className="text-base font-semibold">
+              Images
+            </Label>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {images.length.toLocaleString()} / 30
+            </span>
+          </div>
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Uploads show a live preview. Use URL fields only when needed.
           </p>
         </div>
@@ -124,12 +131,12 @@ export function ImageDraftSection({
           className="hidden"
           onChange={onUploadError}
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="gap-1"
+            className="gap-1 border-border/70 shadow-none active:translate-y-0"
             disabled={uploadBusy || images.length >= 30}
             onClick={() => inputRef.current?.click()}
           >
@@ -144,7 +151,7 @@ export function ImageDraftSection({
             type="button"
             variant="outline"
             size="sm"
-            className="gap-1"
+            className="gap-1 border-border/70 shadow-none active:translate-y-0"
             disabled={images.length >= 30}
             onClick={() =>
               onChange([
@@ -164,16 +171,13 @@ export function ImageDraftSection({
           </Button>
         </div>
       </div>
-      <div className="text-muted-foreground flex items-center gap-2 text-xs">
-        <span>
-          {images.length.toLocaleString()} / 30 images
-        </span>
-      </div>
       {uploadHint ? (
-        <Alert>
-          <AlertTitle>Uploads</AlertTitle>
-          <AlertDescription>{uploadHint}</AlertDescription>
-        </Alert>
+        <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2.5 dark:bg-background/40">
+          <p className="text-sm font-medium">Uploads</p>
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+            {uploadHint}
+          </p>
+        </div>
       ) : null}
       {uploadError ? (
         <Alert variant="destructive">
@@ -187,9 +191,11 @@ export function ImageDraftSection({
         aria-labelledby={`${idPrefix}-imgs-label`}
       >
         {images.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No images yet. Use upload (if configured) or add public image URLs.
-          </p>
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/10 px-4 py-10 text-center dark:bg-muted/5">
+            <p className="text-muted-foreground mx-auto max-w-md text-sm text-pretty leading-relaxed">
+              No images yet. Use upload (if configured) or add public image URLs.
+            </p>
+          </div>
         ) : (
           images.map((row, index) => (
             <div
@@ -233,7 +239,7 @@ export function ImageDraftSection({
                     asChild
                     variant="outline"
                     size="sm"
-                    className="w-full gap-1"
+                    className="w-full gap-1 border-border/70 shadow-none active:translate-y-0"
                   >
                     <a href={row.url} target="_blank" rel="noopener noreferrer">
                       Open image

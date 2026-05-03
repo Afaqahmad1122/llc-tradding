@@ -262,34 +262,36 @@ export function CarFormFields({
         />
       </div>
 
-      <CarKvRecordSection
-        idPrefix={idPrefix}
-        section="specs"
-        title="Specifications (optional)"
-        hint="Add simple details like trim, engine notes, or package info."
-        addLabel="Add specification"
-        rows={draft.specsRows}
-        onRowsChange={(specsRows) => onChange({ specsRows })}
-      />
-      <CarKvRecordSection
-        idPrefix={idPrefix}
-        section="features"
-        title="Features (optional)"
-        hint="Add equipment details such as sunroof, navigation, or safety options."
-        addLabel="Add feature"
-        rows={draft.featuresRows}
-        onRowsChange={(featuresRows) => onChange({ featuresRows })}
-      />
-
-      <div className="flex items-center gap-2 sm:col-span-2">
-        <Checkbox
-          id={`${idPrefix}-pub`}
-          checked={draft.isPublished}
-          onCheckedChange={(c) => onChange({ isPublished: c === true })}
+      <div className="space-y-8 sm:col-span-2 rounded-xl border border-border/50 bg-muted/15 p-4 ring-1 ring-border/30 sm:p-5 dark:bg-muted/10">
+        <CarKvRecordSection
+          idPrefix={idPrefix}
+          section="specs"
+          title="Specifications (optional)"
+          hint="Add simple details like trim, engine notes, or package info."
+          addLabel="Add specification"
+          rows={draft.specsRows}
+          onRowsChange={(specsRows) => onChange({ specsRows })}
         />
-        <Label htmlFor={`${idPrefix}-pub`} className="font-normal">
-          Published on public inventory
-        </Label>
+        <CarKvRecordSection
+          idPrefix={idPrefix}
+          section="features"
+          title="Features (optional)"
+          hint="Add equipment details such as sunroof, navigation, or safety options."
+          addLabel="Add feature"
+          rows={draft.featuresRows}
+          onRowsChange={(featuresRows) => onChange({ featuresRows })}
+        />
+
+        <div className="border-border/40 flex items-center gap-2 border-t pt-6">
+          <Checkbox
+            id={`${idPrefix}-pub`}
+            checked={draft.isPublished}
+            onCheckedChange={(c) => onChange({ isPublished: c === true })}
+          />
+          <Label htmlFor={`${idPrefix}-pub`} className="font-normal">
+            Published on public inventory
+          </Label>
+        </div>
       </div>
     </div>
   );
@@ -321,14 +323,16 @@ function CarKvRecordSection({
   };
 
   return (
-    <div className="space-y-3 sm:col-span-2">
+    <div className="space-y-3">
       <div className="space-y-1">
-        <Label className="text-base">{title}</Label>
-        <p className="text-muted-foreground text-sm">{hint}</p>
+        <Label className="text-base font-semibold">{title}</Label>
+        <p className="text-muted-foreground text-sm leading-relaxed">{hint}</p>
       </div>
       <div className="space-y-2">
         {rows.length === 0 ? (
-          <p className="text-muted-foreground text-sm italic">None added yet.</p>
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center dark:bg-muted/5">
+            <p className="text-muted-foreground text-sm">None added yet.</p>
+          </div>
         ) : (
           rows.map((row, index) => (
             <div
@@ -444,7 +448,7 @@ function CarKvRecordSection({
         type="button"
         variant="outline"
         size="sm"
-        className="gap-1.5"
+        className="gap-1.5 border-border/70 shadow-none active:translate-y-0"
         onClick={() => onRowsChange([...rows, newCarKvRow()])}
       >
         <Plus className="size-4" />
