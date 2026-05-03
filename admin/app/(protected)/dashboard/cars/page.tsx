@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { CarFront, Plus } from "lucide-react";
 import { useEffect, useReducer, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -176,6 +176,7 @@ export default function AdminCarsPage() {
 
   const rows = data?.data ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
+  const totalItems = data?.pagination.total ?? 0;
   const editOpen = Boolean(editCar && editDraft);
 
   async function probePresignHint() {
@@ -213,19 +214,27 @@ export default function AdminCarsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 pb-10 pt-10 sm:px-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Cars</h1>
-          <p className="text-muted-foreground text-sm">
-            Create inventory listings. Only admins can mutate records; buyers
-            see published cars only.
-          </p>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 pb-12 pt-8 sm:px-7 sm:pt-10">
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-4">
+          <div
+            className="bg-primary/12 text-primary ring-primary/15 flex size-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1"
+            aria-hidden
+          >
+            <CarFront className="size-6" />
+          </div>
+          <div className="min-w-0 space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Inventory</h1>
+            <p className="text-muted-foreground max-w-xl text-pretty text-sm leading-relaxed">
+              Manage vehicle listings. Edits here stay in admin until you
+              publish — buyers only see live listings.
+            </p>
+          </div>
         </div>
         <Button
           type="button"
-          size="sm"
-          className="gap-2"
+          size="default"
+          className="gap-2 self-start sm:self-center"
           onClick={() => {
             setCreateOpen(true);
             setCreateDraft(emptyCarDraft(models[0]?.id ?? ""));
@@ -237,7 +246,7 @@ export default function AdminCarsPage() {
           <Plus className="size-4" aria-hidden />
           New listing
         </Button>
-      </div>
+      </header>
 
       {models.length === 0 ? (
         <Alert variant="destructive">
@@ -249,7 +258,7 @@ export default function AdminCarsPage() {
         </Alert>
       ) : null}
 
-      <div className="rounded-xl border shadow-xs ring-1 ring-foreground/10">
+      <div className="bg-card overflow-hidden rounded-2xl border shadow-sm ring-1 ring-border/60">
         <CarsListToolbar list={list} dispatch={dispatch} />
         <CarsListContent
           list={list}
@@ -261,6 +270,7 @@ export default function AdminCarsPage() {
           hasStaleData={Boolean(data)}
           rows={rows}
           totalPages={totalPages}
+          totalItems={totalItems}
           onEdit={openEdit}
           onUnpublishRequest={setDangerCar}
           unpublishMutation={unpublishMutation}
@@ -277,9 +287,7 @@ export default function AdminCarsPage() {
           }
         }}
         draft={createDraft}
-        onDraftChange={(p) =>
-          setCreateDraft((prev) => ({ ...prev, ...p }))
-        }
+        onDraftChange={(p) => setCreateDraft((prev) => ({ ...prev, ...p }))}
         models={models}
         images={createImages}
         onImagesChange={setCreateImages}

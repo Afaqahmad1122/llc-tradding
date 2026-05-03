@@ -70,7 +70,10 @@ const SHIPMENT_MODES = ["Roro", "Container"] as const;
 const DEFAULT_CALC_COUNTRY_CODE = "PK";
 const FALLBACK_DESTINATION_PORTS = ["Nearest major port"] as const;
 
-function formatIntForeignCurrency(amount: number, currencyCode: string): string {
+function formatIntForeignCurrency(
+  amount: number,
+  currencyCode: string,
+): string {
   try {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
@@ -167,7 +170,7 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
     <article className="bg-card text-card-foreground flex w-[min(100%,280px)] shrink-0 flex-col overflow-hidden rounded-2xl border border-border shadow-md ring-1 ring-border/40">
       <Link
         href={`/cars/${encodeURIComponent(car.referenceNo)}`}
-        className="relative block aspect-[16/11] bg-muted"
+        className="relative block aspect-16/11 bg-muted"
       >
         {imageUrl ? (
           <Image
@@ -335,10 +338,7 @@ export function PublicCarDetailView({
 
   const effectivePort = useMemo(() => {
     if (resolvedPorts.length === 0) return "";
-    if (
-      portOverride !== null &&
-      resolvedPorts.includes(portOverride)
-    ) {
+    if (portOverride !== null && resolvedPorts.includes(portOverride)) {
       return portOverride;
     }
     return resolvedPorts[0] ?? "";
@@ -374,8 +374,7 @@ export function PublicCarDetailView({
 
   const priceUsdNum = Number.parseFloat(car.priceUsd);
   const fxRates = fxQuery.data?.rates;
-  const fxMultiplier =
-    currency === "USD" ? 1 : (fxRates?.[currency] ?? null);
+  const fxMultiplier = currency === "USD" ? 1 : (fxRates?.[currency] ?? null);
 
   const vehiclePricePrimary = useMemo(() => {
     if (currency === "USD") {
@@ -607,7 +606,7 @@ export function PublicCarDetailView({
             </div>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-            <p className="inline-flex min-w-[10rem] items-center justify-center rounded-xl bg-destructive px-5 py-3 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl">
+            <p className="inline-flex min-w-40 items-center justify-center rounded-xl bg-destructive px-5 py-3 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl">
               {usd}
             </p>
             {pkrLine ? (
@@ -628,7 +627,7 @@ export function PublicCarDetailView({
       <div className="grid gap-8 lg:grid-cols-[1fr_min(100%,380px)] lg:items-start">
         <div className="space-y-4">
           <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/80 shadow-inner ring-1 ring-border/50">
-            <div className="relative aspect-[16/10] w-full bg-linear-to-b from-muted/50 to-muted">
+            <div className="relative aspect-16/10 w-full bg-linear-to-b from-muted/50 to-muted">
               {active?.url ? (
                 <Image
                   src={active.url}
@@ -759,7 +758,7 @@ export function PublicCarDetailView({
             <Select value={currency} onValueChange={setCurrency}>
               <SelectTrigger
                 aria-label="Currency"
-                className="min-h-[44px] max-w-[8rem] rounded-lg border-white/25 bg-white pr-8 font-semibold text-[16px] text-primary leading-tight lg:h-9 lg:min-h-0 lg:max-w-[6.5rem] lg:py-1 lg:text-xs"
+                className="min-h-[44px] max-w-32 rounded-lg border-white/25 bg-white pr-8 font-semibold text-[16px] text-primary leading-tight lg:h-9 lg:min-h-0 lg:max-w-26 lg:py-1 lg:text-xs"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -777,7 +776,7 @@ export function PublicCarDetailView({
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">
               Vehicle price
             </p>
-            <p className="mt-2 inline-block min-w-[8rem] rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
+            <p className="mt-2 inline-block min-w-32 rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
               {vehiclePricePrimary.label}
             </p>
             {vehiclePricePrimary.hint ? (
@@ -951,7 +950,7 @@ export function PublicCarDetailView({
             {allSpecRows.map(([label, val], idx) => (
               <div
                 key={`${idx}-${label}`}
-                className="border-border flex min-h-[3rem] border-b border-r text-sm lg:[&:nth-child(3n)]:border-r-0"
+                className="border-border flex min-h-12 border-b border-r text-sm lg:nth-[3n]:border-r-0"
               >
                 <div className="flex w-[42%] shrink-0 items-center px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:w-[38%]">
                   {label}

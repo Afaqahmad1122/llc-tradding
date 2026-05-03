@@ -8,14 +8,14 @@ export function CarCardThumb({ car }: { car: AdminCar }) {
     car.images.find((x) => x.isPrimary)?.url ?? car.images[0]?.url ?? null;
   if (!primary) {
     return (
-      <div className="bg-muted text-muted-foreground flex size-[7.25rem] shrink-0 items-center justify-center rounded-lg border md:size-36">
-        <CarFront className="size-10 opacity-50" aria-hidden />
+      <div className="bg-muted text-muted-foreground ring-border/60 flex size-29 shrink-0 items-center justify-center rounded-xl border shadow-inner ring-1 md:size-36">
+        <CarFront className="size-10 opacity-45" aria-hidden />
       </div>
     );
   }
 
   return (
-    <div className="relative size-[7.25rem] shrink-0 overflow-hidden rounded-lg border md:size-36">
+    <div className="border-border/70 relative size-29 shrink-0 overflow-hidden rounded-xl border shadow-sm ring-1 ring-black/4 md:size-36 dark:ring-white/6">
       <Image
         src={primary}
         alt={car.referenceNo}
