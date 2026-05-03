@@ -25,7 +25,7 @@ type CarsListToolbarProps = {
 
 export function CarsListToolbar({ list, dispatch }: CarsListToolbarProps) {
   return (
-    <div className="border-border/80 bg-muted/25 border-b">
+    <div className="bg-muted/25">
       <div className="flex flex-col gap-4 p-4 sm:p-5">
         <div className="space-y-2">
           <Label
@@ -67,7 +67,7 @@ export function CarsListToolbar({ list, dispatch }: CarsListToolbarProps) {
                   payload: e.target.value as ListState["sort"],
                 })
               }
-              className="bg-background min-h-10 min-w-0 border-border/80 shadow-sm"
+              className="bg-background min-w-0 border-border/80"
             >
               <NativeSelectOption value="latest">Latest first</NativeSelectOption>
               <NativeSelectOption value="oldest">Oldest first</NativeSelectOption>
@@ -95,7 +95,7 @@ export function CarsListToolbar({ list, dispatch }: CarsListToolbarProps) {
                   payload: e.target.value as PublishedFilter,
                 })
               }
-              className="bg-background min-h-10 min-w-0 border-border/80 shadow-sm"
+              className="bg-background min-w-0 border-border/80"
             >
               <NativeSelectOption value="all">All listings</NativeSelectOption>
               <NativeSelectOption value="published">Live only</NativeSelectOption>
@@ -121,7 +121,7 @@ export function CarsListToolbar({ list, dispatch }: CarsListToolbarProps) {
                   ) as (typeof PAGE_SIZE_OPTIONS)[number],
                 })
               }
-              className="bg-background min-h-10 border-border/80 shadow-sm"
+              className="bg-background min-w-0 border-border/80"
             >
               {PAGE_SIZE_OPTIONS.map((n) => (
                 <NativeSelectOption key={n} value={String(n)}>
