@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -40,10 +41,19 @@ export function SiteFooter() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr_1fr_1fr]">
           <div className="space-y-4">
             <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
-              <p className="text-xl font-bold tracking-tight">
+              <div className="relative mx-auto h-20 w-20 overflow-hidden rounded-2xl bg-white shadow">
+                <Image
+                  src="/logo.png"
+                  alt="ICC Trading Japan logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <p className="mt-3 text-center text-xl font-bold tracking-tight">
                 Icc Trading Japan
               </p>
-              <p className="mt-1 text-sm text-white/75">
+              <p className="mt-0.5 text-center text-xs text-white/75">Car Import &amp; Export</p>
+              <p className="mt-2 text-center text-sm text-white/75">
                 Trusted Japanese vehicle exporter with transparent process.
               </p>
             </div>

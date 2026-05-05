@@ -1,7 +1,6 @@
 import { ChevronDown, Search } from "lucide-react";
 import Link from "next/link";
 
-import { CurrencyItem } from "@/components/landing/home-data";
 import { Button } from "@/components/ui/button";
 
 export type SidebarFilterLink = {
@@ -80,10 +79,8 @@ function LeftSidebar({
 }
 
 function RightSidebar({
-  currencies,
   filters,
 }: {
-  currencies: CurrencyItem[];
   filters: string[];
 }) {
   const countries = [
@@ -102,26 +99,6 @@ function RightSidebar({
   return (
     <aside className="hidden xl:block">
       <div className="sticky top-24 space-y-4">
-        <div className="rounded-2xl border border-[#452E5A]/15 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#150e2e]">
-          <p className="mb-3 text-sm font-semibold text-[#1E104E] dark:text-white">
-            Currency
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {currencies.map((currency) => (
-              <button
-                key={currency.code}
-                className={`rounded-md border px-3 py-2 text-sm font-semibold transition-colors ${
-                  currency.active
-                    ? "border-transparent bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E]"
-                    : "border-[#452E5A]/15 bg-white text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:bg-white/10"
-                }`}
-              >
-                {currency.code}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="rounded-2xl border border-[#452E5A]/15 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#150e2e]">
           <div className="space-y-2">
             {filters.map((filter) => (
@@ -163,14 +140,12 @@ export function MarketplaceWithSidebars({
   children,
   makeLinks,
   priceLinks,
-  currencies,
   filters,
   bodyTypeLinks,
 }: {
   children: React.ReactNode;
   makeLinks: SidebarFilterLink[];
   priceLinks: SidebarFilterLink[];
-  currencies: CurrencyItem[];
   filters: string[];
   bodyTypeLinks: SidebarFilterLink[];
 }) {
@@ -205,7 +180,7 @@ export function MarketplaceWithSidebars({
           {children}
         </div>
 
-        <RightSidebar currencies={currencies} filters={filters} />
+        <RightSidebar filters={filters} />
       </div>
     </section>
   );

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo } from "react";
 import {
   categories,
-  currencyItems,
   heroFilters,
   promoBanners,
   rightSidebarFilters,
@@ -120,7 +119,6 @@ export default function Home() {
       <MarketplaceWithSidebars
         makeLinks={makeLinks}
         priceLinks={priceLinks}
-        currencies={currencyItems}
         filters={rightSidebarFilters}
         bodyTypeLinks={bodyTypeLinks}
       >
