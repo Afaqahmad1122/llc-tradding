@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import { AboutPageShell } from "@/components/landing/about-page-shell";
-import { BadgeCheck, Clock3, Globe2, Handshake, Shield, Users } from "lucide-react";
+import {
+  BadgeCheck,
+  CarFront,
+  Clock3,
+  FilePenLine,
+  Globe2,
+  Handshake,
+  Shield,
+  Users,
+} from "lucide-react";
 import { buildPageMetadata } from "@/app/seo";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -36,6 +45,32 @@ const highlights = [
       "We focus on reliable vehicle sourcing and transparent details to help clients make confident decisions.",
   },
 ];
+
+const auctionAndDocs = [
+  {
+    icon: CarFront,
+    title: "Auction & Port Access",
+    subtitle: "All Major Japanese Auctions & Ports",
+    description:
+      "Direct procurement from Japan's leading auctions, shipping from all major ports.",
+    bullets: [
+      "USS, TAA, JAA & More",
+      "Yokohama, Nagoya, Osaka, Kobe",
+      "Professional Bidding & Logistics",
+    ],
+  },
+  {
+    icon: FilePenLine,
+    title: "Export Documentation",
+    subtitle: "Complete Paperwork Handling",
+    description: "We handle all export documentation from Japan.",
+    bullets: [
+      "Export Certificates",
+      "Bill of Lading",
+      "Customs Clearance Support",
+    ],
+  },
+] as const;
 
 export default function WhyChooseUsPage() {
   return (
@@ -89,6 +124,55 @@ export default function WhyChooseUsPage() {
             </p>
           </article>
         ))}
+      </div>
+
+      <div className="mt-8 space-y-4">
+        <div className="max-w-2xl">
+          <h2 className="text-2xl font-bold tracking-tight text-[#1E104E] dark:text-white">
+            Japan auctions & export readiness
+          </h2>
+          <p className="mt-2 text-sm text-[#452E5A]/85 sm:text-base dark:text-white/75">
+            End-to-end access and paperwork support aligned with how we actually
+            move vehicles from auction halls to your port.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {auctionAndDocs.map((block) => (
+            <article
+              key={block.title}
+              className="rounded-2xl border border-[#452E5A]/15 bg-white/90 p-6 shadow-[0_16px_40px_-30px_rgba(30,16,78,0.75)] backdrop-blur-sm dark:border-white/10 dark:bg-white/5"
+            >
+              <block.icon
+                className="size-8 text-[#1E104E] dark:text-white"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <h3 className="mt-4 text-xl font-bold text-[#1E104E] dark:text-white">
+                {block.title}
+              </h3>
+              <p className="mt-1 text-base font-semibold text-[#d14041]">
+                {block.subtitle}
+              </p>
+              <p className="mt-3 text-sm text-[#452E5A]/80 dark:text-white/70">
+                {block.description}
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {block.bullets.map((line) => (
+                  <li
+                    key={line}
+                    className="flex gap-3 text-sm text-[#452E5A]/85 dark:text-white/75"
+                  >
+                    <span
+                      className="mt-2 size-1.5 shrink-0 rounded-[2px] bg-[#452E5A]/35 dark:bg-white/35"
+                      aria-hidden
+                    />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
       </div>
 
       <section className="mt-6 rounded-3xl border border-[#452E5A]/15 bg-linear-to-r from-white to-[#f7f1ff] p-6 shadow-[0_16px_40px_-30px_rgba(30,16,78,0.75)] dark:border-white/10 dark:from-white/5 dark:to-white/10">
