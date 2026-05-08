@@ -39,14 +39,6 @@ export const heroFilters: FilterItem[] = [
   { label: "Transmission" },
 ];
 
-export const categories: CategoryItem[] = [
-  { name: "New Arrivals", count: 2566 },
-  { name: "Clearance", count: 9028 },
-  { name: "Third Party", count: 27457 },
-  { name: "Machinery", count: 1416 },
-  { name: "UAE Stock", count: 1009 },
-  { name: "Thailand Stock", count: 103 },
-];
 
 export const currencyItems: CurrencyItem[] = [
   { code: "USD" },

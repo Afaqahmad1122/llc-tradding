@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import {
-  categories,
   heroFilters,
   promoBanners,
   rightSidebarFilters,
@@ -107,6 +106,19 @@ export default function Home() {
   );
 
   const reviews = reviewsResponse?.data ?? [];
+
+  const categoryCounts = meta?.categoryCounts;
+  const categories = useMemo(() => {
+    if (!categoryCounts) return null;
+    return [
+      { name: "New Arrivals", count: categoryCounts.newArrivals },
+      { name: "Clearance", count: categoryCounts.clearance },
+      { name: "Third Party", count: categoryCounts.thirdParty },
+      { name: "Machinery", count: categoryCounts.machinery },
+      { name: "UAE Stock", count: categoryCounts.uaeStock },
+      { name: "Thailand Stock", count: categoryCounts.thailandStock },
+    ];
+  }, [categoryCounts]);
 
   const featuredCars = cars.slice(0, 4);
   const latestCars = cars.slice(0, 6);

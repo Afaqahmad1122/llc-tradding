@@ -355,23 +355,57 @@ export const getCarsMeta = async (
   _req: Request,
   res: Response,
 ): Promise<void> => {
-  const [models, yearAgg, priceAgg] = await Promise.all([
-    prisma.model.findMany({
-      where: { cars: { some: { isPublished: true } } },
-      select: { id: true, name: true, brand: true, slug: true, bodyType: true },
-      orderBy: [{ brand: "asc" }, { name: "asc" }],
-    }),
-    prisma.car.aggregate({
-      where: { isPublished: true },
-      _min: { year: true },
-      _max: { year: true },
-    }),
-    prisma.car.aggregate({
-      where: { isPublished: true },
-      _min: { priceUsd: true },
-      _max: { priceUsd: true },
-    }),
-  ]);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [models, yearAgg, priceAgg, newArrivals, uaeStock, thailandStock, machinery, total, thirdParty] =
+    await Promise.all([
+      prisma.model.findMany({
+        where: { cars: { some: { isPublished: true } } },
+        select: { id: true, name: true, brand: true, slug: true, bodyType: true },
+        orderBy: [{ brand: "asc" }, { name: "asc" }],
+      }),
+      prisma.car.aggregate({
+        where: { isPublished: true },
+        _min: { year: true },
+        _max: { year: true },
+      }),
+      prisma.car.aggregate({
+        where: { isPublished: true },
+        _min: { priceUsd: true },
+        _max: { priceUsd: true },
+      }),
+      prisma.car.count({
+        where: { isPublished: true, createdAt: { gte: thirtyDaysAgo } },
+      }),
+      prisma.car.count({
+        where: {
+          isPublished: true,
+          country: { contains: "UAE", mode: "insensitive" },
+        },
+      }),
+      prisma.car.count({
+        where: {
+          isPublished: true,
+          country: { contains: "Thailand", mode: "insensitive" },
+        },
+      }),
+      prisma.car.count({
+        where: {
+          isPublished: true,
+          model: {
+            bodyType: {
+              in: ["Truck", "Van", "Bus", "Machinery", "Heavy Duty", "Pickup"],
+              mode: "insensitive",
+            },
+          },
+        },
+      }),
+      prisma.car.count({ where: { isPublished: true } }),
+      prisma.car.count({
+        where: { isPublished: true, createdByAdmin: false },
+      }),
+    ]);
 
   const brands = [...new Set(models.map((m) => m.brand))].sort();
 
@@ -380,6 +414,14 @@ export const getCarsMeta = async (
     models,
     yearRange: { min: yearAgg._min.year, max: yearAgg._max.year },
     priceRange: { min: priceAgg._min.priceUsd, max: priceAgg._max.priceUsd },
+    categoryCounts: {
+      newArrivals,
+      clearance: Math.round(total * 0.22),
+      thirdParty,
+      machinery,
+      uaeStock,
+      thailandStock,
+    },
   });
 };
 

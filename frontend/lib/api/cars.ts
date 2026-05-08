@@ -58,11 +58,21 @@ export type CarsListResponse = {
   pagination: CarsPagination;
 };
 
+export type CategoryCounts = {
+  newArrivals: number;
+  clearance: number;
+  thirdParty: number;
+  machinery: number;
+  uaeStock: number;
+  thailandStock: number;
+};
+
 export type CarsMetaResponse = {
   brands: string[];
   models: PublicCarModel[];
   yearRange: { min: number | null; max: number | null };
   priceRange: { min: string | null; max: string | null };
+  categoryCounts?: CategoryCounts;
 };
 
 export type PublicCarsQuery = {
