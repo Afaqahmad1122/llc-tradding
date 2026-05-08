@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import {
-  heroFilters,
-  promoBanners,
-  rightSidebarFilters,
-} from "@/components/landing/home-data";
+import { heroFilters, promoBanners } from "@/components/landing/home-data";
 import {
   CategoryGrid,
   ContactCta,
@@ -131,8 +127,12 @@ export default function Home() {
       <MarketplaceWithSidebars
         makeLinks={makeLinks}
         priceLinks={priceLinks}
-        filters={rightSidebarFilters}
         bodyTypeLinks={bodyTypeLinks}
+        sidebarMeta={{
+          brands: makes,
+          models: meta?.models ?? [],
+          yearRange: meta?.yearRange ?? { min: null, max: null },
+        }}
       >
         <HeroSection filters={heroFilters} stats={stats} />
         <PromoBannerStrip items={promoBanners} />

@@ -450,6 +450,11 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
   const priceMax = parseOptionalNumber(req.query.priceMax);
   const fuel = parseEnum(req.query.fuel, FuelType);
   const transmission = parseEnum(req.query.transmission, TransmissionType);
+  const steering = parseEnum(req.query.steering, { RHD: "RHD", LHD: "LHD", OTHER: "OTHER" } as const);
+  const modelCode =
+    typeof req.query.modelCode === "string" && req.query.modelCode.trim()
+      ? req.query.modelCode.trim()
+      : undefined;
   const sort = typeof req.query.sort === "string" ? req.query.sort : "latest";
 
   const modelFilter: Prisma.ModelWhereInput | undefined =
@@ -475,6 +480,10 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
     ...(modelFilter ? { model: modelFilter } : {}),
     ...(fuel ? { fuel } : {}),
     ...(transmission ? { transmission } : {}),
+    ...(steering ? { steering } : {}),
+    ...(modelCode
+      ? { modelCode: { contains: modelCode, mode: Prisma.QueryMode.insensitive } }
+      : {}),
     ...(yearMin !== undefined || yearMax !== undefined
       ? {
           year: {

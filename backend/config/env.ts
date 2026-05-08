@@ -36,7 +36,8 @@ const envSchema = z.object({
     .string()
     .default("false")
     .transform((value) => value.toLowerCase() === "true"),
-  SMTP_USER: z.string().email(),
+  /** SMTP username; full mailbox email (e.g. Hostinger) or provider-specific user (e.g. SendGrid: "apikey"). */
+  SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
   MAIL_FROM: z.string().min(1),
   /** Inbox for career applications (mailto target after apply); same for every job. */

@@ -89,6 +89,8 @@ export type PublicCarsQuery = {
   priceMax?: number;
   fuel?: string;
   transmission?: string;
+  steering?: string;
+  modelCode?: string;
 };
 
 function appendNumberParam(sp: URLSearchParams, key: string, value: number) {
@@ -124,6 +126,10 @@ export function fetchPublicCars(params: PublicCarsQuery = {}) {
   if (params.fuel?.trim()) searchParams.set("fuel", params.fuel.trim());
   if (params.transmission?.trim())
     searchParams.set("transmission", params.transmission.trim());
+  if (params.steering?.trim())
+    searchParams.set("steering", params.steering.trim());
+  if (params.modelCode?.trim())
+    searchParams.set("modelCode", params.modelCode.trim());
 
   const qs = searchParams.toString();
   return http.get<CarsListResponse>(

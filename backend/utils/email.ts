@@ -9,6 +9,9 @@ const mailTransporter = nodemailer.createTransport({
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
   },
+  ...(env.NODE_ENV === "production"
+    ? { pool: true, maxConnections: 5, maxMessages: 100 }
+    : {}),
 });
 
 const otpTemplate = (name: string, code: string, title: string, purposeText: string): string => `
