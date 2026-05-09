@@ -34,7 +34,10 @@ app.use(
     credentials: true,
   }),
 );
-app.use(morgan("combined"));
+/** Dev stays quiet; set HTTP_ACCESS_LOG=true to see request lines. Production always logs. */
+if (env.NODE_ENV !== "development" || process.env.HTTP_ACCESS_LOG === "true") {
+  app.use(morgan("combined"));
+}
 app.use(apiLimiter);
 app.use(hpp() as unknown as RequestHandler);
 app.use(cookieParser(env.COOKIE_SECRET) as unknown as RequestHandler);
