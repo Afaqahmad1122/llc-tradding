@@ -24,6 +24,8 @@ import { getPublicReviews } from "@/lib/api/reviews";
 import { buildPriceBuckets } from "@/lib/home-price-buckets";
 import { buildCarsInventoryUrl } from "@/lib/inventory-search-url";
 
+const LATEST_ARRIVALS_PREVIEW_COUNT = 2;
+
 export default function Home() {
   const { data: carsResponse, isLoading: carsLoading } = useApiQuery({
     queryKey: ["public-cars", "home", { pageSize: 8, sort: "latest" }],
@@ -117,7 +119,7 @@ export default function Home() {
   }, [categoryCounts]);
 
   const featuredCars = cars.slice(0, 4);
-  const latestCars = cars.slice(0, 6);
+  const latestCars = cars.slice(0, LATEST_ARRIVALS_PREVIEW_COUNT);
 
   return (
     <LandingPageShell
@@ -160,10 +162,23 @@ export default function Home() {
           description="Freshly listed vehicles with reference IDs and target pricing for quick decisions."
         >
           {carsLoading && cars.length === 0 ? (
-            <VehicleGridSkeleton count={6} />
+            <VehicleGridSkeleton
+              count={LATEST_ARRIVALS_PREVIEW_COUNT}
+              columns={2}
+            />
           ) : (
-            <VehicleGrid vehicles={latestCars} />
+            <VehicleGrid vehicles={latestCars} columns={2} />
           )}
+          <div className="mt-5 flex justify-center">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="rounded-xl border-[#452E5A]/25 bg-white/85 px-6 shadow-sm transition-colors hover:bg-[#f3ecff] dark:border-white/20 dark:bg-white/10 dark:hover:bg-white/15"
+            >
+              <Link href="/cars">More Vehicles</Link>
+            </Button>
+          </div>
         </SectionBlock>
         <SectionBlock
           id="about"
