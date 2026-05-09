@@ -41,7 +41,7 @@ const parsePositiveInt = (value: unknown, fallback: number): number => {
 
 const requireAdmin = (res: Response): boolean => {
   const authUserRole = res.locals.authUserRole as UserRole | undefined;
-  if (authUserRole !== UserRole.ADMIN) {
+  if (authUserRole !== UserRole.ADMIN && authUserRole !== UserRole.STAFF) {
     res.status(403).json({ message: "admin access required" });
     return false;
   }
