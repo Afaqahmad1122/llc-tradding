@@ -34,9 +34,9 @@ export default function AutoPartsPage() {
   ];
 
   const processSteps = [
-    "Customer signs agreement with Afridi Trading Japan",
+    "Customer signs agreement with icc trading Japan",
     "Customer transfers security deposit",
-    "Afridi Trading Japan gives auction access",
+    "icc trading Japan gives auction access",
     "Customer places bids and purchases cars",
     "Our team dismantles cars based on request",
     "We load container and ship to destination",
@@ -93,7 +93,7 @@ export default function AutoPartsPage() {
             Looking for quality parts for your automotive needs?
           </h2>
           <p className="mt-4 text-xl font-semibold text-[#dc2626] dark:text-[#fb7185] sm:text-3xl">
-            Afridi Trading Japan Is Your One Stop for Quality Scrap Cars and
+            icc trading Japan Is Your One Stop for Quality Scrap Cars and
             Parts
           </p>
           <p className="mt-5 max-w-4xl text-sm leading-7 text-[#374151] dark:text-slate-300 sm:text-lg">
