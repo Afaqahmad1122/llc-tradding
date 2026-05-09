@@ -18,6 +18,7 @@ import {
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
+  type StaffPermissionsPayload,
 } from "../utils/jwt.js";
 
 const REFRESH_COOKIE_NAME = "refreshToken";
@@ -47,6 +48,7 @@ type PublicUser = {
   address: string | null;
   postalCode: string | null;
   role: string;
+  permissions?: StaffPermissionsPayload | undefined;
 };
 
 const PROFILE_FIELD_KEYS = ["phone", "country", "city", "address", "postalCode"] as const;
@@ -83,14 +85,21 @@ const setRefreshCookie = (res: Response, token: string): void => {
   });
 };
 
-const sendAuthSuccess = (res: Response, user: PublicUser): void => {
+const sendAuthSuccess = async (res: Response, user: PublicUser): Promise<void> => {
+  if (user.role === (UserRole.STAFF as string)) {
+    user.permissions = await fetchStaffPermissions(user.id);
+  }
   const auth = getAuthResponse(user);
   setRefreshCookie(res, auth.refreshToken);
   res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
 };
 
 const getAuthResponse = (user: PublicUser) => {
-  const payload = { sub: user.id, role: user.role };
+  const payload: Parameters<typeof signAccessToken>[0] = {
+    sub: user.id,
+    role: user.role,
+    ...(user.permissions !== undefined ? { permissions: user.permissions } : {}),
+  };
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
 
@@ -107,6 +116,7 @@ const getAuthResponse = (user: PublicUser) => {
       address: user.address,
       postalCode: user.postalCode,
       role: user.role,
+      permissions: user.permissions,
     },
   };
 };
@@ -121,7 +131,37 @@ const getPublicUser = (user: PublicUser) => ({
   address: user.address,
   postalCode: user.postalCode,
   role: user.role,
+  permissions: user.permissions,
 });
+
+const fetchStaffPermissions = async (userId: string): Promise<StaffPermissionsPayload | undefined> => {
+  const record = await prisma.staffPermission.findUnique({
+    where: { userId },
+    select: {
+      carsCreate: true,
+      carsRead: true,
+      carsUpdate: true,
+      carsDelete: true,
+      shippingCreate: true,
+      shippingRead: true,
+      shippingUpdate: true,
+      shippingDelete: true,
+      reviewsCreate: true,
+      reviewsRead: true,
+      reviewsUpdate: true,
+      reviewsDelete: true,
+      contactCreate: true,
+      contactRead: true,
+      contactUpdate: true,
+      contactDelete: true,
+      careersCreate: true,
+      careersRead: true,
+      careersUpdate: true,
+      careersDelete: true,
+    },
+  });
+  return record ?? undefined;
+};
 
 const validatePasswordInput = (
   password: string,
@@ -563,7 +603,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 
   const authenticatedUser = user as NonNullable<typeof user>;
-  sendAuthSuccess(res, authenticatedUser);
+  await sendAuthSuccess(res, authenticatedUser);
 };
 
 export const adminLogin = async (req: Request, res: Response): Promise<void> => {
@@ -586,12 +626,13 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
   }
 
   const authenticatedUser = user as NonNullable<typeof user>;
-  if (authenticatedUser.role !== UserRole.ADMIN) {
+  const role = authenticatedUser.role as string;
+  if (role !== UserRole.ADMIN && role !== UserRole.STAFF) {
     res.status(403).json({ message: "admin access required" });
     return;
   }
 
-  sendAuthSuccess(res, authenticatedUser);
+  await sendAuthSuccess(res, authenticatedUser);
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
@@ -626,7 +667,7 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    sendAuthSuccess(res, user);
+    await sendAuthSuccess(res, user);
   } catch {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
     res.status(401).json({ message: "invalid refresh token" });

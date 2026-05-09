@@ -9,6 +9,9 @@ import {
 import { CarFront, Plus } from "lucide-react";
 import { useEffect, useReducer, useState } from "react";
 
+import { PermissionGuard } from "@/components/auth/permission-guard";
+import { useAdminAuthStore } from "@/stores/auth-store";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
@@ -47,8 +50,9 @@ import {
   listReducer,
 } from "./_lib/list-state";
 
-export default function AdminCarsPage() {
+function AdminCarsPageContent() {
   const qc = useQueryClient();
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
   const [list, dispatch] = useReducer(listReducer, initialListState);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -233,21 +237,23 @@ export default function AdminCarsPage() {
             </p>
           </div>
         </div>
-        <Button
-          type="button"
-          size="default"
-          className="gap-2 self-start sm:self-center"
-          onClick={() => {
-            setCreateOpen(true);
-            setCreateDraft(emptyCarDraft(models[0]?.id ?? ""));
-            setCreateImages([]);
-            setCreateError(null);
-            void probePresignHint();
-          }}
-        >
-          <Plus className="size-4" aria-hidden />
-          New listing
-        </Button>
+        {hasPermission("carsCreate") ? (
+          <Button
+            type="button"
+            size="default"
+            className="gap-2 self-start sm:self-center"
+            onClick={() => {
+              setCreateOpen(true);
+              setCreateDraft(emptyCarDraft(models[0]?.id ?? ""));
+              setCreateImages([]);
+              setCreateError(null);
+              void probePresignHint();
+            }}
+          >
+            <Plus className="size-4" aria-hidden />
+            New listing
+          </Button>
+        ) : null}
       </header>
 
       {models.length === 0 ? (
@@ -332,5 +338,13 @@ export default function AdminCarsPage() {
         mutation={deleteMutation}
       />
     </div>
+  );
+}
+
+export default function AdminCarsPage() {
+  return (
+    <PermissionGuard permissionKey="carsRead">
+      <AdminCarsPageContent />
+    </PermissionGuard>
   );
 }

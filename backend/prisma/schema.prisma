@@ -38,8 +38,43 @@ model User {
   reviewEligibilities ReviewEligibility[]
   reviewedContactMessages ContactMessage[] @relation("ContactMessageReviewer")
   jobApplications JobApplication[]
+  staffPermission StaffPermission?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model StaffPermission {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  carsCreate    Boolean @default(false)
+  carsRead      Boolean @default(false)
+  carsUpdate    Boolean @default(false)
+  carsDelete    Boolean @default(false)
+
+  shippingCreate Boolean @default(false)
+  shippingRead   Boolean @default(false)
+  shippingUpdate Boolean @default(false)
+  shippingDelete Boolean @default(false)
+
+  reviewsCreate Boolean @default(false)
+  reviewsRead   Boolean @default(false)
+  reviewsUpdate Boolean @default(false)
+  reviewsDelete Boolean @default(false)
+
+  contactCreate Boolean @default(false)
+  contactRead   Boolean @default(false)
+  contactUpdate Boolean @default(false)
+  contactDelete Boolean @default(false)
+
+  careersCreate Boolean @default(false)
+  careersRead   Boolean @default(false)
+  careersUpdate Boolean @default(false)
+  careersDelete Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Model {
@@ -290,6 +325,7 @@ enum SteeringType {
 
 enum UserRole {
   ADMIN
+  STAFF
   USER
 }
 

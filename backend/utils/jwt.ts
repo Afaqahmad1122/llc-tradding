@@ -1,9 +1,33 @@
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 
-type TokenPayload = {
+export type StaffPermissionsPayload = {
+  carsCreate: boolean;
+  carsRead: boolean;
+  carsUpdate: boolean;
+  carsDelete: boolean;
+  shippingCreate: boolean;
+  shippingRead: boolean;
+  shippingUpdate: boolean;
+  shippingDelete: boolean;
+  reviewsCreate: boolean;
+  reviewsRead: boolean;
+  reviewsUpdate: boolean;
+  reviewsDelete: boolean;
+  contactCreate: boolean;
+  contactRead: boolean;
+  contactUpdate: boolean;
+  contactDelete: boolean;
+  careersCreate: boolean;
+  careersRead: boolean;
+  careersUpdate: boolean;
+  careersDelete: boolean;
+};
+
+export type TokenPayload = {
   sub: string;
   role: string;
+  permissions?: StaffPermissionsPayload | undefined;
 };
 
 export const signAccessToken = (payload: TokenPayload): string => {

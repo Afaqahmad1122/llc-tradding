@@ -12,10 +12,13 @@ import {
   Shield,
   Ship,
   Star,
+  Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useAdminLogoutMutation } from "@/hooks/use-admin-logout-mutation";
+import { useAdminAuthStore } from "@/stores/auth-store";
+import type { StaffPermissions } from "@/lib/api/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -41,19 +44,23 @@ type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  permissionKey?: keyof StaffPermissions;
+  adminOnly?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/cars", label: "Cars", icon: CarFront },
-  { href: "/dashboard/careers", label: "Careers", icon: Briefcase },
-  { href: "/dashboard/reviews", label: "Reviews", icon: Star },
+  { href: "/dashboard/cars", label: "Cars", icon: CarFront, permissionKey: "carsRead" },
+  { href: "/dashboard/careers", label: "Careers", icon: Briefcase, permissionKey: "careersRead" },
+  { href: "/dashboard/reviews", label: "Reviews", icon: Star, permissionKey: "reviewsRead" },
   {
     href: "/dashboard/contact-messages",
     label: "Contact messages",
     icon: Inbox,
+    permissionKey: "contactRead",
   },
-  { href: "/dashboard/shipping", label: "Shipping", icon: Ship },
+  { href: "/dashboard/shipping", label: "Shipping", icon: Ship, permissionKey: "shippingRead" },
+  { href: "/dashboard/users", label: "Users", icon: Users, adminOnly: true },
 ];
 
 function navItemActive(pathname: string, href: string) {
@@ -66,6 +73,8 @@ function navItemActive(pathname: string, href: string) {
 function AdminSidebarNav() {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
+  const isAdmin = useAdminAuthStore((state) => state.isAdmin);
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
 
   const closeMobile = () => {
     if (isMobile) {
@@ -73,12 +82,18 @@ function AdminSidebarNav() {
     }
   };
 
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly) return isAdmin();
+    if (!item.permissionKey) return true;
+    return hasPermission(item.permissionKey);
+  });
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Admin</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
+          {visibleItems.map(({ href, label, icon: Icon }) => (
             <SidebarMenuItem key={href}>
               <SidebarMenuButton
                 asChild

@@ -1,5 +1,6 @@
 "use client";
 
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import {
   keepPreviousData,
   useMutation,
@@ -473,7 +474,7 @@ function JobFormFields({
   );
 }
 
-export default function AdminCareersPage() {
+function AdminCareersPageContent() {
   const qc = useQueryClient();
   const [list, dispatch] = useReducer(listReducer, initialListState);
 
@@ -1130,5 +1131,13 @@ export default function AdminCareersPage() {
         deleteMutation={deleteMutation}
       />
     </div>
+  );
+}
+
+export default function AdminCareersPage() {
+  return (
+    <PermissionGuard permissionKey="careersRead">
+      <AdminCareersPageContent />
+    </PermissionGuard>
   );
 }

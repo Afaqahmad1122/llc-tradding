@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import { format } from "date-fns";
 import {
   ChevronLeftIcon,
@@ -158,7 +159,7 @@ function ReviewCard({ review }: { review: AdminReview }) {
   );
 }
 
-export default function AdminReviewsPage() {
+function AdminReviewsPageContent() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] =
     useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
@@ -325,5 +326,13 @@ export default function AdminReviewsPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function AdminReviewsPage() {
+  return (
+    <PermissionGuard permissionKey="reviewsRead">
+      <AdminReviewsPageContent />
+    </PermissionGuard>
   );
 }

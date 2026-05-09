@@ -6,6 +6,7 @@ import {
   updateAdminContactMessage,
 } from "../controllers/contact-messages.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { requirePermission } from "../middlewares/permission.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
   createContactMessageSchema,
@@ -20,11 +21,12 @@ contactMessagesRouter.post(
   createContactMessage,
 );
 
-contactMessagesRouter.get("/admin", requireAuth, getAdminContactMessages);
-contactMessagesRouter.get("/admin/:id", requireAuth, getAdminContactMessageById);
+contactMessagesRouter.get("/admin", requireAuth, requirePermission("contactRead"), getAdminContactMessages);
+contactMessagesRouter.get("/admin/:id", requireAuth, requirePermission("contactRead"), getAdminContactMessageById);
 contactMessagesRouter.patch(
   "/admin/:id",
   requireAuth,
+  requirePermission("contactUpdate"),
   validateRequestBody(updateContactMessageSchema),
   updateAdminContactMessage,
 );

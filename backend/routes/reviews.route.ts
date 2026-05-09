@@ -12,6 +12,7 @@ import {
   updateReview,
 } from "../controllers/reviews.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { requirePermission } from "../middlewares/permission.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
   createBuyerReviewEligibilitySchema,
@@ -24,7 +25,7 @@ export const reviewsRouter = Router();
 
 reviewsRouter.get("/", getReviews);
 reviewsRouter.get("/summary", getReviewSummary);
-reviewsRouter.get("/admin", requireAuth, getAdminReviews);
+reviewsRouter.get("/admin", requireAuth, requirePermission("reviewsRead"), getAdminReviews);
 
 reviewsRouter.get("/me", requireAuth, getMyReviews);
 reviewsRouter.get("/me/eligibility", requireAuth, getMyPendingReviewEligibilities);
@@ -37,6 +38,7 @@ reviewsRouter.post(
 reviewsRouter.patch(
   "/:id",
   requireAuth,
+  requirePermission("reviewsUpdate"),
   validateRequestBody(updateReviewSchema),
   updateReview,
 );
@@ -50,7 +52,8 @@ reviewsRouter.post(
 reviewsRouter.post(
   "/eligibility",
   requireAuth,
+  requirePermission("reviewsCreate"),
   validateRequestBody(createReviewEligibilitySchema),
   createReviewEligibility,
 );
-reviewsRouter.get("/eligibility", requireAuth, getReviewEligibilities);
+reviewsRouter.get("/eligibility", requireAuth, requirePermission("reviewsRead"), getReviewEligibilities);

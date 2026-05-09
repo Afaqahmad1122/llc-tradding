@@ -1,5 +1,28 @@
 import { http } from "@/lib/api/http";
 
+export type StaffPermissions = {
+  carsCreate: boolean;
+  carsRead: boolean;
+  carsUpdate: boolean;
+  carsDelete: boolean;
+  shippingCreate: boolean;
+  shippingRead: boolean;
+  shippingUpdate: boolean;
+  shippingDelete: boolean;
+  reviewsCreate: boolean;
+  reviewsRead: boolean;
+  reviewsUpdate: boolean;
+  reviewsDelete: boolean;
+  contactCreate: boolean;
+  contactRead: boolean;
+  contactUpdate: boolean;
+  contactDelete: boolean;
+  careersCreate: boolean;
+  careersRead: boolean;
+  careersUpdate: boolean;
+  careersDelete: boolean;
+};
+
 export type AuthUser = {
   id: string;
   name: string;
@@ -10,6 +33,7 @@ export type AuthUser = {
   address: string | null;
   postalCode: string | null;
   role: string;
+  permissions?: StaffPermissions;
 };
 
 export type AdminLoginRequest = {

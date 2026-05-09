@@ -1,5 +1,6 @@
 "use client";
 
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import {
   keepPreviousData,
   useMutation,
@@ -396,7 +397,7 @@ function validatePortDrafts(
   return null;
 }
 
-export default function AdminShippingPage() {
+function AdminShippingPageContent() {
   const qc = useQueryClient();
   const [list, dispatch] = useReducer(listReducer, initialListState);
   const [nav, setNav] = useState<NavState>({ screen: "regions" });
@@ -2186,5 +2187,13 @@ export default function AdminShippingPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function AdminShippingPage() {
+  return (
+    <PermissionGuard permissionKey="shippingRead">
+      <AdminShippingPageContent />
+    </PermissionGuard>
   );
 }

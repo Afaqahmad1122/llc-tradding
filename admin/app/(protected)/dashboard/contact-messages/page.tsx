@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import { format } from "date-fns";
 import {
   Building2,
@@ -293,7 +294,7 @@ function MessageCard({ item }: { item: AdminContactMessage }) {
   );
 }
 
-export default function AdminContactMessagesPage() {
+function AdminContactMessagesPageContent() {
   const [list, dispatch] = useReducer(listReducer, initialListState);
 
   useEffect(() => {
@@ -533,5 +534,13 @@ export default function AdminContactMessagesPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function AdminContactMessagesPage() {
+  return (
+    <PermissionGuard permissionKey="contactRead">
+      <AdminContactMessagesPageContent />
+    </PermissionGuard>
   );
 }

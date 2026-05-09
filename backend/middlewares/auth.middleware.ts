@@ -25,8 +25,19 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
     const payload = verifyAccessToken(token);
     res.locals.authUserId = payload.sub;
     res.locals.authUserRole = payload.role;
+    if (payload.permissions) {
+      res.locals.authPermissions = payload.permissions;
+    }
     next();
   } catch {
     res.status(401).json({ message: "invalid or expired access token" });
   }
+};
+
+export const requireAdminRole = (req: Request, res: Response, next: NextFunction): void => {
+  if (res.locals.authUserRole !== "ADMIN") {
+    res.status(403).json({ message: "admin access required" });
+    return;
+  }
+  next();
 };

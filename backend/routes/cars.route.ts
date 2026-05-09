@@ -14,6 +14,7 @@ import {
   updateAdminCar,
 } from "../controllers/cars.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { requirePermission } from "../middlewares/permission.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
   carInquirySchema,
@@ -28,31 +29,35 @@ export const carsRouter = Router();
 carsRouter.get("/", getCars);
 carsRouter.get("/meta", getCarsMeta);
 
-carsRouter.get("/admin", requireAuth, getAdminCars);
+carsRouter.get("/admin", requireAuth, requirePermission("carsRead"), getAdminCars);
 carsRouter.post(
   "/admin",
   requireAuth,
+  requirePermission("carsCreate"),
   validateRequestBody(createCarSchema),
   createAdminCar,
 );
 carsRouter.post(
   "/admin/images/presign",
   requireAuth,
+  requirePermission("carsCreate"),
   validateRequestBody(presignCarImageSchema),
   presignCarImageUpload,
 );
-carsRouter.get("/admin/models", requireAuth, getAdminModels);
-carsRouter.get("/admin/:id", requireAuth, getAdminCarById);
+carsRouter.get("/admin/models", requireAuth, requirePermission("carsRead"), getAdminModels);
+carsRouter.get("/admin/:id", requireAuth, requirePermission("carsRead"), getAdminCarById);
 carsRouter.patch(
   "/admin/:id",
   requireAuth,
+  requirePermission("carsUpdate"),
   validateRequestBody(updateCarSchema),
   updateAdminCar,
 );
-carsRouter.delete("/admin/:id", requireAuth, deleteAdminCar);
+carsRouter.delete("/admin/:id", requireAuth, requirePermission("carsDelete"), deleteAdminCar);
 carsRouter.put(
   "/admin/:id/images",
   requireAuth,
+  requirePermission("carsUpdate"),
   validateRequestBody(replaceCarImagesSchema),
   replaceAdminCarImages,
 );
