@@ -5,6 +5,10 @@ import { useEffect, type ReactNode } from "react";
 import { refreshSessionApi } from "@/lib/api/auth";
 import { useAdminAuthStore } from "@/stores/auth-store";
 
+function isDashboardRole(role: string): boolean {
+  return role === "ADMIN" || role === "STAFF";
+}
+
 type AdminSessionProviderProps = {
   children: ReactNode;
 };
@@ -23,7 +27,7 @@ export function AdminSessionProvider({ children }: AdminSessionProviderProps) {
         if (!isMounted) {
           return;
         }
-        if (response.user.role !== "ADMIN") {
+        if (!isDashboardRole(response.user.role)) {
           clearAuth();
           return;
         }

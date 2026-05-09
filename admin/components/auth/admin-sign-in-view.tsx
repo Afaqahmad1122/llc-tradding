@@ -28,6 +28,10 @@ import { useAdminAuthStore } from "@/stores/auth-store";
 
 const ADMIN_HOME = "/dashboard";
 
+function isDashboardSignedIn(role: string | undefined): boolean {
+  return role === "ADMIN" || role === "STAFF";
+}
+
 export function AdminSignInView() {
   const router = useRouter();
   const hasBootstrapped = useAdminAuthStore((s) => s.hasBootstrapped);
@@ -41,7 +45,7 @@ export function AdminSignInView() {
     if (!hasBootstrapped) {
       return;
     }
-    if (user?.role === "ADMIN") {
+    if (isDashboardSignedIn(user?.role)) {
       router.replace(ADMIN_HOME);
     }
   }, [hasBootstrapped, router, user]);
@@ -55,7 +59,7 @@ export function AdminSignInView() {
     );
   }
 
-  if (user?.role === "ADMIN") {
+  if (isDashboardSignedIn(user?.role)) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center bg-muted/20 p-6">
         <Spinner className="size-9 text-muted-foreground" aria-hidden />
