@@ -16,6 +16,7 @@ import { jobsRouter } from "./routes/jobs.route.js";
 import { referenceRouter } from "./routes/reference.route.js";
 import { reviewsRouter } from "./routes/reviews.route.js";
 import { shippingRouter } from "./routes/shipping.route.js";
+import { usersRouter } from "./routes/users.route.js";
 
 export const app = express();
 
@@ -56,6 +57,7 @@ app.use("/jobs", jobsRouter);
 app.use("/contact-messages", contactMessagesRouter);
 app.use("/reference", referenceRouter);
 app.use("/shipping", shippingRouter);
+app.use("/users", usersRouter);
 
 app.use((req: Request, res: Response) => {
   notFoundHandler(req, res);

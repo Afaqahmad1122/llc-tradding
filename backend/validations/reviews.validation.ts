@@ -41,3 +41,12 @@ export const createReviewEligibilitySchema = z.object({
     .datetime("expiresAt must be a valid ISO datetime")
     .optional(),
 });
+
+export const createBuyerReviewEligibilitySchema = z.object({
+  userId: trimmedString.min(1, "userId is required"),
+  carId: optionalTrimmed,
+  expiresAt: z
+    .string()
+    .datetime("expiresAt must be a valid ISO datetime")
+    .optional(),
+});

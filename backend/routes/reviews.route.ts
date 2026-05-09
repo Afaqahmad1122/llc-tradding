@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getAdminReviews,
   createReview,
+  createBuyerReviewEligibility,
   createReviewEligibility,
   getMyReviews,
   getReviewEligibilities,
@@ -12,6 +13,7 @@ import {
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
+  createBuyerReviewEligibilitySchema,
   createReviewEligibilitySchema,
   createReviewSchema,
   updateReviewSchema,
@@ -37,6 +39,12 @@ reviewsRouter.patch(
   updateReview,
 );
 
+reviewsRouter.post(
+  "/eligibility/buyer",
+  requireAuth,
+  validateRequestBody(createBuyerReviewEligibilitySchema),
+  createBuyerReviewEligibility,
+);
 reviewsRouter.post(
   "/eligibility",
   requireAuth,

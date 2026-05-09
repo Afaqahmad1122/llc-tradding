@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { Prisma, UserRole } from "@prisma/client";
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
@@ -21,6 +22,12 @@ type UpdateReviewBody = {
 type CreateEligibilityBody = {
   userId?: string;
   invoiceReference?: string;
+  carId?: string;
+  expiresAt?: string;
+};
+
+type CreateBuyerEligibilityBody = {
+  userId?: string;
   carId?: string;
   expiresAt?: string;
 };
@@ -552,6 +559,123 @@ export const createReviewEligibility = async (
         .json({
           message: "invoiceReference already has an eligibility record",
         });
+      return;
+    }
+    throw error;
+  }
+};
+
+export const createBuyerReviewEligibility = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) {
+    return;
+  }
+
+  const body = req.body as CreateBuyerEligibilityBody;
+  const userId = body.userId?.trim();
+  const carIdOpt = normalizeOptionalString(body.carId);
+  const expiresAtRaw = body.expiresAt?.trim();
+  const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
+
+  if (!userId) {
+    res.status(400).json({ message: "userId is required" });
+    return;
+  }
+
+  if (expiresAt && Number.isNaN(expiresAt.getTime())) {
+    res.status(400).json({ message: "invalid expiresAt value" });
+    return;
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      role: UserRole.USER,
+      isActive: true,
+    },
+    select: { id: true, name: true, email: true },
+  });
+
+  if (!user) {
+    res.status(404).json({
+      message:
+        "customer not found — use an active buyer account (admin accounts cannot receive review access here)",
+    });
+    return;
+  }
+
+  let invoiceReference = "";
+  let resolvedCarId: string | null = null;
+
+  if (carIdOpt) {
+    const car = await prisma.car.findUnique({
+      where: { id: carIdOpt },
+      select: { id: true, referenceNo: true },
+    });
+    if (!car) {
+      res.status(404).json({ message: "vehicle not found" });
+      return;
+    }
+    invoiceReference = normalizeInvoiceReference(car.referenceNo);
+    resolvedCarId = car.id;
+  } else {
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const candidate = `RVW-${randomBytes(5).toString("hex").toUpperCase()}`;
+      const taken = await prisma.reviewEligibility.findUnique({
+        where: { invoiceReference: candidate },
+        select: { id: true },
+      });
+      if (!taken) {
+        invoiceReference = candidate;
+        break;
+      }
+    }
+    if (!invoiceReference) {
+      res.status(500).json({ message: "could not allocate review code" });
+      return;
+    }
+  }
+
+  try {
+    const eligibility = await prisma.reviewEligibility.create({
+      data: {
+        userId,
+        invoiceReference,
+        carId: resolvedCarId,
+        expiresAt,
+      },
+      select: {
+        id: true,
+        userId: true,
+        invoiceReference: true,
+        carId: true,
+        isUsed: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(201).json({
+      eligibility,
+      customer: { name: user.name, email: user.email },
+      reviewCodeHint:
+        resolvedCarId !== null
+          ? "Customer enters this vehicle stock reference when the site asks for their invoice / order reference."
+          : "Share this review code with the customer — they must enter it exactly when submitting feedback.",
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      res.status(409).json({
+        message:
+          resolvedCarId !== null
+            ? "This vehicle already has a review invitation — revoke or wait until it is used before creating another."
+            : "That review code is taken — try again.",
+      });
       return;
     }
     throw error;

@@ -32,6 +32,8 @@ import { fetchAdminReviews } from "@/lib/api/reviews";
 import type { AdminReview } from "@/lib/api/reviews";
 import { cn } from "@/lib/utils";
 
+import { GrantReviewEligibilityCard } from "./_components/grant-review-eligibility-card";
+
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
 
 function reviewerInitials(name: string) {
@@ -177,9 +179,12 @@ export default function AdminReviewsPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Reviews</h1>
         <p className="text-muted-foreground text-sm">
-          Customer reviews, including items not visible on the site.
+          Grant customers permission to submit a review, then moderate submitted
+          feedback below.
         </p>
       </div>
+
+      <GrantReviewEligibilityCard />
 
       <div className="bg-card text-card-foreground flex min-w-0 flex-col overflow-hidden rounded-lg border shadow-xs ring-1 ring-foreground/10">
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:p-6">
@@ -253,7 +258,8 @@ export default function AdminReviewsPage() {
                 </EmptyMedia>
                 <EmptyTitle>No reviews yet</EmptyTitle>
                 <EmptyDescription>
-                  When customers submit reviews, they will appear here.
+                  After you grant permission above and a customer submits their
+                  review, it will appear here.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
