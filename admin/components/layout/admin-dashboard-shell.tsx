@@ -138,7 +138,7 @@ export function AdminDashboardShell({
             <div className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
               <span className="truncate text-sm font-semibold">Admin</span>
               <span className="truncate text-xs text-sidebar-foreground/70">
-                LLC Trading
+                ICC Trading
               </span>
             </div>
           </div>
