@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CircleUserRound, LogOut, Settings, ShieldCheck, User } from "lucide-react";
+import { CircleUserRound, LogOut, Settings, ShieldCheck, Star, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,11 +12,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLogoutMutation } from "@/hooks/use-logout-mutation";
+import { usePendingReviewEligibilityQuery } from "@/hooks/use-pending-review-eligibility-query";
 import { useAuthStore } from "@/stores/auth-store";
 
 export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
   const user = useAuthStore((state) => state.user);
   const logoutMutation = useLogoutMutation();
+  const { data: eligibilityData, isSuccess: eligibilityLoaded } =
+    usePendingReviewEligibilityQuery();
+  const showWriteReview =
+    Boolean(user?.id) && eligibilityLoaded && (eligibilityData?.data?.length ?? 0) > 0;
 
   const handleLogout = async () => {
     try {
@@ -95,6 +100,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
                   Profile
                 </Link>
               </DropdownMenuItem>
+              {showWriteReview ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/reviews/submit">
+                    <Star className="size-4" />
+                    Write a review
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               {user.role === "ADMIN" ? (
                 <DropdownMenuItem asChild>
                   <Link href="/admin/contact-messages">
@@ -146,6 +159,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
               Profile
             </Link>
           </DropdownMenuItem>
+          {showWriteReview ? (
+            <DropdownMenuItem asChild>
+              <Link href="/reviews/submit">
+                <Star className="size-4" />
+                Write a review
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           {user.role === "ADMIN" ? (
             <DropdownMenuItem asChild>
               <Link href="/admin/contact-messages">

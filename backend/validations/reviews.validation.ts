@@ -3,18 +3,31 @@ import { z } from "zod";
 const trimmedString = z.string().trim();
 const optionalTrimmed = z.string().trim().optional();
 
-export const createReviewSchema = z.object({
-  invoiceReference: trimmedString.min(1, "invoiceReference is required"),
-  rating: z
-    .number({ invalid_type_error: "rating must be a number" })
-    .int("rating must be an integer")
-    .min(1, "rating must be at least 1")
-    .max(5, "rating cannot be more than 5"),
-  comment: trimmedString.min(10, "comment must be at least 10 characters"),
-  title: optionalTrimmed,
-  country: optionalTrimmed,
-  carId: optionalTrimmed,
-});
+export const createReviewSchema = z
+  .object({
+    eligibilityId: optionalTrimmed,
+    invoiceReference: optionalTrimmed,
+    rating: z
+      .number({ invalid_type_error: "rating must be a number" })
+      .int("rating must be an integer")
+      .min(1, "rating must be at least 1")
+      .max(5, "rating cannot be more than 5"),
+    comment: trimmedString.min(10, "comment must be at least 10 characters"),
+    title: optionalTrimmed,
+    country: optionalTrimmed,
+    carId: optionalTrimmed,
+  })
+  .refine(
+    (data) =>
+      Boolean(
+        (data.eligibilityId && data.eligibilityId.length > 0) ||
+          (data.invoiceReference && data.invoiceReference.length > 0),
+      ),
+    {
+      message: "eligibilityId or invoiceReference is required",
+      path: ["eligibilityId"],
+    },
+  );
 
 export const updateReviewSchema = z
   .object({

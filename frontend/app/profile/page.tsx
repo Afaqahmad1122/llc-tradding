@@ -186,22 +186,26 @@ export default function ProfilePage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-7 text-sm sm:space-y-8 sm:text-base">
-            <div className="grid grid-cols-1 gap-4 rounded-2xl bg-[#f7f2ff] p-4 sm:grid-cols-3 sm:gap-5 sm:p-5 dark:bg-white/5">
-              <div>
+            <div className="grid grid-cols-1 gap-4 rounded-2xl bg-[#f7f2ff] p-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start sm:gap-x-8 sm:gap-y-4 sm:p-5 dark:bg-white/5">
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wide text-[#5e4b7c]/80 dark:text-white/60">Role</p>
-                <p className="mt-1 font-semibold tracking-wide text-[#2b1848] dark:text-white">
+                <p className="mt-1 font-semibold tracking-wide whitespace-nowrap text-[#2b1848] dark:text-white">
                   {user.role}
                 </p>
               </div>
-              <div>
+              <div className="min-w-0 sm:px-1">
                 <p className="text-xs uppercase tracking-wide text-[#5e4b7c]/80 dark:text-white/60">
                   Account Email
                 </p>
-                <p className="mt-1 font-medium text-[#2b1848] dark:text-white">{user.email}</p>
+                <p className="mt-1 wrap-break-word font-medium text-[#2b1848] dark:text-white">
+                  {user.email}
+                </p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs uppercase tracking-wide text-[#5e4b7c]/80 dark:text-white/60">Status</p>
-                <p className="mt-1 font-medium text-emerald-700 dark:text-emerald-300">Active</p>
+                <p className="mt-1 font-medium whitespace-nowrap text-emerald-700 dark:text-emerald-300">
+                  Active
+                </p>
               </div>
             </div>
 

@@ -2,6 +2,7 @@
 
 import { LandingPageShell } from "@/components/landing/landing-page-shell";
 import { TestimonialGrid } from "@/components/landing/sections/testimonial-grid";
+import { WriteReviewLink } from "@/components/reviews/write-review-link";
 import { Button } from "@/components/ui/button";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { getPublicReviews } from "@/lib/api/reviews";
@@ -29,12 +30,17 @@ export default function ReviewsPage() {
   return (
     <LandingPageShell mainClassName="mx-auto w-full max-w-6xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
       <section className="rounded-3xl border border-[#452E5A]/15 bg-white/85 p-8 shadow-[0_16px_42px_-26px_rgba(30,16,78,0.75)] dark:border-white/10 dark:bg-white/5">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1E104E] dark:text-white sm:text-4xl">
-          Reviews
-        </h1>
-        <p className="mt-3 max-w-3xl text-base text-[#452E5A]/85 dark:text-white/75 sm:text-lg">
-          Public feedback from buyers who completed their purchase process.
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight text-[#1E104E] dark:text-white sm:text-4xl">
+              Reviews
+            </h1>
+            <p className="mt-3 max-w-3xl text-base text-[#452E5A]/85 dark:text-white/75 sm:text-lg">
+              Public feedback from buyers who completed their purchase process.
+            </p>
+          </div>
+          <WriteReviewLink />
+        </div>
 
         <div className="mt-6">
           {isLoading ? (

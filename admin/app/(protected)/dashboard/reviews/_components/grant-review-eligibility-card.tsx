@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,6 +65,7 @@ import { cn } from "@/lib/utils";
 
 const ELIG_PAGE_SIZE = 8;
 const CUSTOMER_PAGE_SIZE = 12;
+const SEARCH_DEBOUNCE_MS = 400;
 
 type EligibilityFilter = "all" | "pending" | "used";
 
@@ -72,7 +75,6 @@ export function GrantReviewEligibilityCard() {
   const queryClient = useQueryClient();
 
   const [customerSearchInput, setCustomerSearchInput] = useState("");
-  const [debouncedCustomerSearch, setDebouncedCustomerSearch] = useState("");
   const [customerPage, setCustomerPage] = useState(1);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,7 +83,6 @@ export function GrantReviewEligibilityCard() {
     null,
   );
   const [carSearchInput, setCarSearchInput] = useState("");
-  const [debouncedCarSearch, setDebouncedCarSearch] = useState("");
   const [selectedCar, setSelectedCar] = useState<AdminCar | null>(null);
   const [expiresAtLocal, setExpiresAtLocal] = useState("");
   const [copied, setCopied] = useState(false);
@@ -89,25 +90,24 @@ export function GrantReviewEligibilityCard() {
   const [eligPage, setEligPage] = useState(1);
   const [eligFilter, setEligFilter] = useState<EligibilityFilter>("pending");
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedCustomerSearch(customerSearchInput);
-      setCustomerPage(1);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [customerSearchInput]);
+  const debouncedCustomerSearch = useDebouncedValue(
+    customerSearchInput,
+    SEARCH_DEBOUNCE_MS,
+  );
+
+  const debouncedCarSearch = useDebouncedValue(
+    dialogOpen && dialogStep === "confirm" ? carSearchInput : "",
+    SEARCH_DEBOUNCE_MS,
+  );
 
   useEffect(() => {
-    if (!dialogOpen || dialogStep !== "confirm") return;
-    const timer = setTimeout(() => setDebouncedCarSearch(carSearchInput), 300);
-    return () => clearTimeout(timer);
-  }, [carSearchInput, dialogOpen, dialogStep]);
+    setCustomerPage(1);
+  }, [debouncedCustomerSearch]);
 
   const resetClosedDialogState = useCallback(() => {
     setDialogStep("confirm");
     setSelectedCustomer(null);
     setCarSearchInput("");
-    setDebouncedCarSearch("");
     setSelectedCar(null);
     setExpiresAtLocal("");
     setCopied(false);
@@ -180,7 +180,6 @@ export function GrantReviewEligibilityCard() {
   const openAllowDialog = (customer: AdminCustomer) => {
     setSelectedCustomer(customer);
     setCarSearchInput("");
-    setDebouncedCarSearch("");
     setSelectedCar(null);
     setExpiresAtLocal("");
     setDialogStep("confirm");
@@ -646,7 +645,11 @@ export function GrantReviewEligibilityCard() {
 
               <div className="space-y-2 rounded-lg border bg-muted/25 px-3 py-3">
                 <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                  Review / invoice reference
+                  Internal reference
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  For your records only — the buyer submits from the site after signing in without
+                  typing a code.
                 </p>
                 <p className="font-mono text-sm wrap-break-word">
                   {successInvoice}
@@ -659,7 +662,7 @@ export function GrantReviewEligibilityCard() {
                   onClick={() => void copyInvoiceReference()}
                 >
                   <CopyIcon className="size-4" />
-                  {copied ? "Copied" : "Copy reference"}
+                  {copied ? "Copied" : "Copy internal ref"}
                 </Button>
               </div>
 

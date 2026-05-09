@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
 
 type CreateReviewBody = {
+  eligibilityId?: string;
   invoiceReference?: string;
   rating?: number;
   comment?: string;
@@ -288,7 +289,8 @@ export const createReview = async (
   }
 
   const body = req.body as CreateReviewBody;
-  const invoiceReference = body.invoiceReference
+  const eligibilityIdRaw = body.eligibilityId?.trim();
+  const invoiceReferenceFromBody = body.invoiceReference
     ? normalizeInvoiceReference(body.invoiceReference)
     : undefined;
   const rating = body.rating;
@@ -297,33 +299,67 @@ export const createReview = async (
   const country = normalizeOptionalString(body.country);
   const carId = normalizeOptionalString(body.carId);
 
-  if (!invoiceReference || !rating || !comment) {
-    res
-      .status(400)
-      .json({ message: "invoiceReference, rating and comment are required" });
+  if (!rating || !comment) {
+    res.status(400).json({ message: "rating and comment are required" });
+    return;
+  }
+
+  if (!eligibilityIdRaw && !invoiceReferenceFromBody) {
+    res.status(400).json({
+      message: "eligibilityId or invoiceReference is required",
+    });
     return;
   }
 
   const now = new Date();
-  const eligibility = await prisma.reviewEligibility.findFirst({
-    where: {
-      userId: authUserId,
-      invoiceReference,
-      isUsed: false,
-    },
-    select: {
-      id: true,
-      carId: true,
-      expiresAt: true,
-    },
-  });
+
+  let eligibility: {
+    id: string;
+    carId: string | null;
+    expiresAt: Date | null;
+    invoiceReference: string;
+  } | null;
+
+  if (eligibilityIdRaw) {
+    eligibility = await prisma.reviewEligibility.findFirst({
+      where: {
+        id: eligibilityIdRaw,
+        userId: authUserId,
+        isUsed: false,
+      },
+      select: {
+        id: true,
+        carId: true,
+        expiresAt: true,
+        invoiceReference: true,
+      },
+    });
+  } else {
+    eligibility = await prisma.reviewEligibility.findFirst({
+      where: {
+        userId: authUserId,
+        invoiceReference: invoiceReferenceFromBody as string,
+        isUsed: false,
+      },
+      select: {
+        id: true,
+        carId: true,
+        expiresAt: true,
+        invoiceReference: true,
+      },
+    });
+  }
 
   if (!eligibility) {
-    res
-      .status(403)
-      .json({ message: "review not allowed for this invoice reference" });
+    res.status(403).json({
+      message: eligibilityIdRaw
+        ? "review invitation not found or already used"
+        : "review not allowed for this invoice reference",
+    });
     return;
   }
+
+  const invoiceReference = eligibility.invoiceReference;
 
   if (eligibility.expiresAt && eligibility.expiresAt <= now) {
     res.status(403).json({ message: "review eligibility has expired" });
@@ -414,6 +450,36 @@ export const getMyReviews = async (
   });
 
   res.status(200).json({ data: reviews });
+};
+
+export const getMyPendingReviewEligibilities = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  const authUserId = res.locals.authUserId as string | undefined;
+  if (!authUserId) {
+    res.status(401).json({ message: "unauthorized" });
+    return;
+  }
+
+  const now = new Date();
+
+  const data = await prisma.reviewEligibility.findMany({
+    where: {
+      userId: authUserId,
+      isUsed: false,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      carId: true,
+      expiresAt: true,
+      createdAt: true,
+    },
+  });
+
+  res.status(200).json({ data });
 };
 
 export const updateReview = async (
@@ -661,9 +727,7 @@ export const createBuyerReviewEligibility = async (
       eligibility,
       customer: { name: user.name, email: user.email },
       reviewCodeHint:
-        resolvedCarId !== null
-          ? "Customer enters this vehicle stock reference when the site asks for their invoice / order reference."
-          : "Share this review code with the customer — they must enter it exactly when submitting feedback.",
+        "Ask the customer to sign in on the website. If their account has this invitation, they will see Write a review — no code entry is required on the public site.",
     });
   } catch (error) {
     if (

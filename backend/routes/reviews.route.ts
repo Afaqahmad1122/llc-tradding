@@ -5,6 +5,7 @@ import {
   createBuyerReviewEligibility,
   createReviewEligibility,
   getMyReviews,
+  getMyPendingReviewEligibilities,
   getReviewEligibilities,
   getReviews,
   getReviewSummary,
@@ -26,6 +27,7 @@ reviewsRouter.get("/summary", getReviewSummary);
 reviewsRouter.get("/admin", requireAuth, getAdminReviews);
 
 reviewsRouter.get("/me", requireAuth, getMyReviews);
+reviewsRouter.get("/me/eligibility", requireAuth, getMyPendingReviewEligibilities);
 reviewsRouter.post(
   "/",
   requireAuth,
