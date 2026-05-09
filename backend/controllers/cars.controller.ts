@@ -513,6 +513,18 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
               title: { contains: search, mode: Prisma.QueryMode.insensitive },
             },
             {
+              chassisNo: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              modelCode: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
               model: {
                 OR: [
                   {

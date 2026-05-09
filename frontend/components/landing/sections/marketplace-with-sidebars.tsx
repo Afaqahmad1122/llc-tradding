@@ -347,14 +347,6 @@ export function MarketplaceWithSidebars({
 
         <div className="min-w-0">
           <div className="mb-5 rounded-3xl border border-[#452E5A]/12 bg-white/85 p-5 shadow-[0_12px_38px_-20px_rgba(30,16,78,0.55)] sm:p-6 dark:border-white/10 dark:bg-[#150e2e]/80">
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#452E5A]/15 bg-white p-2 pl-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-              <span className="truncate text-sm text-[#452E5A]/70 dark:text-white/60">
-                Search by keywords or reference #
-              </span>
-              <button className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] shadow-sm">
-                <Search className="size-4" />
-              </button>
-            </div>
             <h2 className="text-center font-heading text-3xl font-semibold text-[#1E104E] dark:text-white">
               Used Cars Japan - Buy Direct from Auctions
             </h2>

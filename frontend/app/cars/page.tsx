@@ -22,21 +22,48 @@ export default async function CarsPage({
 }: {
   searchParams: Promise<{
     brand?: string;
+    make?: string;
     bodyType?: string;
     priceMin?: string;
     priceMax?: string;
+    search?: string;
+    modelId?: string;
+    modelCode?: string;
+    steering?: string;
+    yearMin?: string;
+    yearMax?: string;
+    fuel?: string;
+    transmission?: string;
   }>;
 }) {
   const sp = await searchParams;
   const initialBrand =
-    typeof sp.brand === "string" ? sp.brand.trim() : "";
+    (typeof sp.brand === "string" ? sp.brand.trim() : "") ||
+    (typeof sp.make === "string" ? sp.make.trim() : "");
   const initialBodyType =
     typeof sp.bodyType === "string" ? sp.bodyType.trim() : "";
+  const initialSearch =
+    typeof sp.search === "string" ? sp.search.trim() : "";
+  const initialModelId =
+    typeof sp.modelId === "string" ? sp.modelId.trim() : "";
+  const initialModelCode =
+    typeof sp.modelCode === "string" ? sp.modelCode.trim() : "";
+  const initialSteering =
+    typeof sp.steering === "string" ? sp.steering.trim() : "";
+  const initialFuel = typeof sp.fuel === "string" ? sp.fuel.trim() : "";
+  const initialTransmission =
+    typeof sp.transmission === "string" ? sp.transmission.trim() : "";
   const initialPriceMin = parseOptionalInt(
     typeof sp.priceMin === "string" ? sp.priceMin : undefined,
   );
   const initialPriceMax = parseOptionalInt(
     typeof sp.priceMax === "string" ? sp.priceMax : undefined,
+  );
+  const initialYearMin = parseOptionalInt(
+    typeof sp.yearMin === "string" ? sp.yearMin : undefined,
+  );
+  const initialYearMax = parseOptionalInt(
+    typeof sp.yearMax === "string" ? sp.yearMax : undefined,
   );
 
   return (
@@ -55,8 +82,16 @@ export default async function CarsPage({
         <PublicCarsInventory
           initialBrand={initialBrand}
           initialBodyType={initialBodyType}
+          initialSearch={initialSearch}
           initialPriceMin={initialPriceMin}
           initialPriceMax={initialPriceMax}
+          initialModelId={initialModelId}
+          initialModelCode={initialModelCode}
+          initialSteering={initialSteering}
+          initialYearMin={initialYearMin}
+          initialYearMax={initialYearMax}
+          initialFuel={initialFuel}
+          initialTransmission={initialTransmission}
         />
       </div>
     </LandingPageShell>

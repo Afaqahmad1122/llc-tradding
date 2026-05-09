@@ -35,7 +35,29 @@ type ListState = {
   bodyType: string;
   priceMin: number | undefined;
   priceMax: number | undefined;
+  modelId: string;
+  modelCode: string;
+  steering: string;
+  yearMin: number | undefined;
+  yearMax: number | undefined;
+  fuel: string;
+  transmission: string;
   sort: "latest" | "oldest" | "priceAsc" | "priceDesc";
+};
+
+type UrlSyncPayload = {
+  search: string;
+  brand: string;
+  bodyType: string;
+  priceMin: number | undefined;
+  priceMax: number | undefined;
+  modelId: string;
+  modelCode: string;
+  steering: string;
+  yearMin: number | undefined;
+  yearMax: number | undefined;
+  fuel: string;
+  transmission: string;
 };
 
 type ListAction =
@@ -48,15 +70,7 @@ type ListAction =
       type: "SET_SORT";
       payload: "latest" | "oldest" | "priceAsc" | "priceDesc";
     }
-  | {
-      type: "SYNC_FROM_URL";
-      payload: {
-        brand: string;
-        bodyType: string;
-        priceMin: number | undefined;
-        priceMax: number | undefined;
-      };
-    };
+  | { type: "SYNC_FROM_URL"; payload: UrlSyncPayload };
 
 const initialState: ListState = {
   page: 1,
@@ -66,6 +80,13 @@ const initialState: ListState = {
   bodyType: "",
   priceMin: undefined,
   priceMax: undefined,
+  modelId: "",
+  modelCode: "",
+  steering: "",
+  yearMin: undefined,
+  yearMax: undefined,
+  fuel: "",
+  transmission: "",
   sort: "latest",
 };
 
@@ -79,37 +100,76 @@ function listReducer(state: ListState, action: ListAction): ListState {
     case "SET_PAGE":
       return { ...state, page: action.payload };
     case "SET_BRAND":
-      return { ...state, brand: action.payload, page: 1 };
+      return {
+        ...state,
+        brand: action.payload,
+        modelId: "",
+        page: 1,
+      };
     case "SET_BODY_TYPE":
       return { ...state, bodyType: action.payload, page: 1 };
     case "SET_SORT":
       return { ...state, sort: action.payload, page: 1 };
-    case "SYNC_FROM_URL":
+    case "SYNC_FROM_URL": {
+      const p = action.payload;
+      const search = p.search.trim();
       return {
         ...state,
-        brand: action.payload.brand,
-        bodyType: action.payload.bodyType,
-        priceMin: action.payload.priceMin,
-        priceMax: action.payload.priceMax,
+        brand: p.brand,
+        bodyType: p.bodyType,
+        priceMin: p.priceMin,
+        priceMax: p.priceMax,
+        searchInput: search,
+        debouncedSearch: search,
+        modelId: p.modelId,
+        modelCode: p.modelCode,
+        steering: p.steering,
+        yearMin: p.yearMin,
+        yearMax: p.yearMax,
+        fuel: p.fuel,
+        transmission: p.transmission,
         page: 1,
       };
+    }
     default:
       return state;
   }
 }
 
+function trimOrEmpty(s: string | null): string {
+  return typeof s === "string" ? s.trim() : "";
+}
+
 export function PublicCarsInventory({
   initialBrand = "",
   initialBodyType = "",
+  initialSearch = "",
   initialPriceMin,
   initialPriceMax,
+  initialModelId = "",
+  initialModelCode = "",
+  initialSteering = "",
+  initialYearMin,
+  initialYearMax,
+  initialFuel = "",
+  initialTransmission = "",
 }: {
   initialBrand?: string;
   initialBodyType?: string;
+  initialSearch?: string;
   initialPriceMin?: number;
   initialPriceMax?: number;
+  initialModelId?: string;
+  initialModelCode?: string;
+  initialSteering?: string;
+  initialYearMin?: number;
+  initialYearMax?: number;
+  initialFuel?: string;
+  initialTransmission?: string;
 }) {
   const searchParams = useSearchParams();
+
+  const searchInitial = initialSearch.trim();
 
   const [list, dispatch] = useReducer(listReducer, {
     ...initialState,
@@ -117,16 +177,48 @@ export function PublicCarsInventory({
     bodyType: initialBodyType,
     priceMin: initialPriceMin,
     priceMax: initialPriceMax,
+    searchInput: searchInitial,
+    debouncedSearch: searchInitial,
+    modelId: initialModelId,
+    modelCode: initialModelCode,
+    steering: initialSteering,
+    yearMin: initialYearMin,
+    yearMax: initialYearMax,
+    fuel: initialFuel,
+    transmission: initialTransmission,
   });
 
   useEffect(() => {
-    const brand = searchParams.get("brand") ?? "";
-    const bodyType = searchParams.get("bodyType") ?? "";
+    const brand =
+      trimOrEmpty(searchParams.get("brand")) ||
+      trimOrEmpty(searchParams.get("make"));
+    const bodyType = trimOrEmpty(searchParams.get("bodyType"));
     const priceMin = parseQueryInt(searchParams.get("priceMin"));
     const priceMax = parseQueryInt(searchParams.get("priceMax"));
+    const search = trimOrEmpty(searchParams.get("search"));
+    const modelId = trimOrEmpty(searchParams.get("modelId"));
+    const modelCode = trimOrEmpty(searchParams.get("modelCode"));
+    const steering = trimOrEmpty(searchParams.get("steering"));
+    const yearMin = parseQueryInt(searchParams.get("yearMin"));
+    const yearMax = parseQueryInt(searchParams.get("yearMax"));
+    const fuel = trimOrEmpty(searchParams.get("fuel"));
+    const transmission = trimOrEmpty(searchParams.get("transmission"));
     dispatch({
       type: "SYNC_FROM_URL",
-      payload: { brand, bodyType, priceMin, priceMax },
+      payload: {
+        search,
+        brand,
+        bodyType,
+        priceMin,
+        priceMax,
+        modelId,
+        modelCode,
+        steering,
+        yearMin,
+        yearMax,
+        fuel,
+        transmission,
+      },
     });
   }, [searchParams]);
 
@@ -152,6 +244,13 @@ export function PublicCarsInventory({
       list.bodyType,
       list.priceMin,
       list.priceMax,
+      list.modelId,
+      list.modelCode,
+      list.steering,
+      list.yearMin,
+      list.yearMax,
+      list.fuel,
+      list.transmission,
       list.sort,
     ],
     queryFn: () =>
@@ -163,6 +262,15 @@ export function PublicCarsInventory({
         ...(list.bodyType ? { bodyType: list.bodyType } : {}),
         ...(list.priceMin != null ? { priceMin: list.priceMin } : {}),
         ...(list.priceMax != null ? { priceMax: list.priceMax } : {}),
+        ...(list.modelId ? { modelId: list.modelId } : {}),
+        ...(list.modelCode.trim()
+          ? { modelCode: list.modelCode.trim() }
+          : {}),
+        ...(list.steering ? { steering: list.steering } : {}),
+        ...(list.yearMin != null ? { yearMin: list.yearMin } : {}),
+        ...(list.yearMax != null ? { yearMax: list.yearMax } : {}),
+        ...(list.fuel ? { fuel: list.fuel } : {}),
+        ...(list.transmission ? { transmission: list.transmission } : {}),
         ...(list.sort !== "latest" ? { sort: list.sort } : {}),
       }),
     placeholderData: keepPreviousData,
@@ -196,10 +304,18 @@ export function PublicCarsInventory({
     metaQuery.isLoading;
 
   const hasFilters =
+    Boolean(list.debouncedSearch) ||
     Boolean(list.brand) ||
     Boolean(list.bodyType) ||
     list.priceMin != null ||
-    list.priceMax != null;
+    list.priceMax != null ||
+    Boolean(list.modelId) ||
+    Boolean(list.modelCode.trim()) ||
+    Boolean(list.steering) ||
+    list.yearMin != null ||
+    list.yearMax != null ||
+    Boolean(list.fuel) ||
+    Boolean(list.transmission);
 
   const priceFilterLabel =
     list.priceMin != null && list.priceMax != null
