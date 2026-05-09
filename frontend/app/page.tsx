@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { heroFilters, promoBanners } from "@/components/landing/home-data";
@@ -25,6 +26,8 @@ import { buildPriceBuckets } from "@/lib/home-price-buckets";
 import { buildCarsInventoryUrl } from "@/lib/inventory-search-url";
 
 const LATEST_ARRIVALS_PREVIEW_COUNT = 2;
+const SHOW_MORE_BUTTON_CLASS =
+  "h-11 rounded-xl border-[#3A2552]/25 bg-white/90 px-6 text-[0.95rem] font-semibold text-[#2A165B] shadow-[0_12px_30px_-20px_rgba(30,16,78,0.85)] transition-all hover:-translate-y-0.5 hover:border-[#FF653F]/45 hover:bg-[#f7f0ff] hover:text-[#1E104E] hover:shadow-[0_16px_36px_-18px_rgba(30,16,78,0.9)] dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/15";
 
 export default function Home() {
   const { data: carsResponse, isLoading: carsLoading } = useApiQuery({
@@ -174,9 +177,12 @@ export default function Home() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-xl border-[#452E5A]/25 bg-white/85 px-6 shadow-sm transition-colors hover:bg-[#f3ecff] dark:border-white/20 dark:bg-white/10 dark:hover:bg-white/15"
+              className={SHOW_MORE_BUTTON_CLASS}
             >
-              <Link href="/cars">More Vehicles</Link>
+              <Link href="/cars">
+                More Vehicles
+                <ArrowRightIcon className="size-4 transition-transform group-hover/button:translate-x-0.5" />
+              </Link>
             </Button>
           </div>
         </SectionBlock>
@@ -204,9 +210,12 @@ export default function Home() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-xl border-[#452E5A]/25 bg-white/85 px-6 shadow-sm transition-colors hover:bg-[#f3ecff] dark:border-white/20 dark:bg-white/10 dark:hover:bg-white/15"
+              className={SHOW_MORE_BUTTON_CLASS}
             >
-              <Link href="/reviews">Show more reviews</Link>
+              <Link href="/reviews">
+                Show More Reviews
+                <ArrowRightIcon className="size-4 transition-transform group-hover/button:translate-x-0.5" />
+              </Link>
             </Button>
           </div>
         </SectionBlock>
