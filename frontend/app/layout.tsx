@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
-import { SITE_ORIGIN } from "./seo";
-import "./globals.css";
+import { RootJsonLd } from "@/components/seo/root-json-ld";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
+import { SITE_ORIGIN } from "@/lib/site-origin";
+import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -69,6 +70,13 @@ export const metadata: Metadata = {
     shortcut: "/body-types/logo_hino.png",
     apple: "/body-types/logo_hino.png",
   },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+        },
+      }
+    : {}),
 };
 
 export default function RootLayout({
@@ -83,6 +91,7 @@ export default function RootLayout({
       className={`${inter.variable} ${montserrat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <RootJsonLd />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
