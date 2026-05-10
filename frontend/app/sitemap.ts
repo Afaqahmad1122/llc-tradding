@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { SITE_ORIGIN } from "./seo";
+import { SITE_ORIGIN } from "@/lib/site-origin";
 
 /** Public routes for search indexing */
 const STATIC_PATHS: `/${string}`[] = [
