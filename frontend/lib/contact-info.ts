@@ -6,6 +6,14 @@ export const UGANDA_CONTACT_PHONE = "+256 755 419 993";
 export const UGANDA_CONTACT_PHONE_TEL = "+256755419993";
 export const UGANDA_WHATSAPP_URL = "https://wa.me/256755419993";
 export const UGANDA_OFFICE_ADDRESS = "Kampala, Nakawa, Future Holding Bond";
+export const JAPAN_OFFICE_ADDRESS_LINES = [
+  "3231102",
+  "栃木県栃木市藤岡町赤麻字西原868番3",
+  "株式会社ICC TRADING 御中",
+  "323-1102",
+  "Tochigi Ken, Tochigi Shi, Fujioka-cho, Akamaza, Nishihara 867-3, Japan",
+  "ICC TRADING CO, LTD",
+];
 export const INSTAGRAM_URL =
   "https://www.instagram.com/icc_trading_japan?utm_source=qr";
 export const INSTAGRAM_HANDLE = "@icc_trading_japan";
@@ -33,14 +41,7 @@ export const OFFICE_CONTACTS: OfficeContact[] = [
   },
   {
     title: "Japan Office",
-    lines: [
-      "3231102",
-      "栃木県栃木市藤岡町赤麻字西原868番3",
-      "株式会社ICC TRADING 御中",
-      "323-1102",
-      "Tochigi Ken, Tochigi Shi, Fujioka-cho, Akamaza, Nishihara 867-3, Japan",
-      "ICC TRADING CO, LTD",
-    ],
+    lines: JAPAN_OFFICE_ADDRESS_LINES,
     phoneLabel: "Japan",
     phone: CONTACT_PHONE,
     phoneHref: CONTACT_PHONE_TEL_URL,

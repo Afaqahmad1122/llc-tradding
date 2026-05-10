@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { WhatsAppFloat } from "@/components/whatsapp-float";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -89,6 +90,7 @@ export default function RootLayout({
         >
           <QueryProvider>
             {children}
+            <WhatsAppFloat />
             <Toaster richColors position="top-right" />
           </QueryProvider>
         </ThemeProvider>
