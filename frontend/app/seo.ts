@@ -6,6 +6,8 @@ type BuildPageMetadataInput = {
   path: `/${string}`;
 };
 
+export const SITE_ORIGIN = "https://icctradingco.com";
+
 const SITE_NAME = "ICC Trading Co Ltd";
 const DEFAULT_OG_IMAGE = "/bernardsie-honda-1596081_1920.png";
 
