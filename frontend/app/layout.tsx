@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
+import { SITE_ORIGIN } from "./seo";
 import "./globals.css";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -19,7 +20,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://icctrading.co"),
+  metadataBase: new URL(SITE_ORIGIN),
   title: {
     default: "ICC Trading Co Ltd | Japanese Used Cars Export",
     template: "%s | ICC Trading Co Ltd",
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: "https://icctrading.co",
+    url: SITE_ORIGIN,
     siteName: "ICC Trading Co Ltd",
     title: "ICC Trading Co Ltd | Japanese Used Cars Export",
     description:
