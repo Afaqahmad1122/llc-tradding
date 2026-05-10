@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { type ComponentType, type FormEvent, type SVGProps, useState } from "react";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
 
 import { InstagramIcon } from "@/components/icons/instagram-icon";
@@ -25,6 +25,7 @@ import {
   CONTACT_PHONE_TEL_URL,
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
+  JAPAN_OFFICE_ADDRESS_LINES,
   UGANDA_CONTACT_PHONE,
   UGANDA_CONTACT_PHONE_TEL_URL,
   UGANDA_OFFICE_ADDRESS,
@@ -37,7 +38,15 @@ const PHONE_MIN_LENGTH = 6;
 const MESSAGE_MIN_LENGTH = 10;
 const MESSAGE_MAX_LENGTH = 2000;
 
-const contactDetails = [
+type ContactDetail = {
+  label: string;
+  value: string;
+  valueLines?: string[];
+  href: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+};
+
+const contactDetails: ContactDetail[] = [
   {
     label: "WhatsApp",
     value: CONTACT_PHONE,
@@ -49,6 +58,13 @@ const contactDetails = [
     value: CONTACT_PHONE,
     href: CONTACT_PHONE_TEL_URL,
     icon: Phone,
+  },
+  {
+    label: "Japan Office",
+    value: JAPAN_OFFICE_ADDRESS_LINES.join(", "),
+    valueLines: JAPAN_OFFICE_ADDRESS_LINES,
+    href: "/contact/global-offices",
+    icon: MapPin,
   },
   {
     label: "Uganda Phone",
@@ -295,9 +311,17 @@ export function ContactCta() {
                     <p className="text-sm font-semibold text-[#EA3B58]">
                       {item.label}
                     </p>
-                    <p className="text-sm text-[#2F2142]/85 dark:text-white/80">
-                      {item.value}
-                    </p>
+                    {item.valueLines ? (
+                      <div className="space-y-0.5 text-sm text-[#2F2142]/85 dark:text-white/80">
+                        {item.valueLines.map((line) => (
+                          <p key={line}>{line}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[#2F2142]/85 dark:text-white/80">
+                        {item.value}
+                      </p>
+                    )}
                   </div>
                 </Link>
               );
