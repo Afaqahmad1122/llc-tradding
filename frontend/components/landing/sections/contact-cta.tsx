@@ -26,10 +26,6 @@ import {
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
   JAPAN_OFFICE_ADDRESS_LINES,
-  UGANDA_CONTACT_PHONE,
-  UGANDA_CONTACT_PHONE_TEL_URL,
-  UGANDA_OFFICE_ADDRESS,
-  UGANDA_WHATSAPP_URL,
   WHATSAPP_URL,
 } from "@/lib/contact-info";
 
@@ -63,24 +59,6 @@ const contactDetails: ContactDetail[] = [
     label: "Japan Office",
     value: JAPAN_OFFICE_ADDRESS_LINES.join(", "),
     valueLines: JAPAN_OFFICE_ADDRESS_LINES,
-    href: "/contact/global-offices",
-    icon: MapPin,
-  },
-  {
-    label: "Uganda Phone",
-    value: UGANDA_CONTACT_PHONE,
-    href: UGANDA_CONTACT_PHONE_TEL_URL,
-    icon: Phone,
-  },
-  {
-    label: "Uganda WhatsApp",
-    value: UGANDA_CONTACT_PHONE,
-    href: UGANDA_WHATSAPP_URL,
-    icon: WhatsAppIcon,
-  },
-  {
-    label: "Uganda Office",
-    value: UGANDA_OFFICE_ADDRESS,
     href: "/contact/global-offices",
     icon: MapPin,
   },
