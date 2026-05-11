@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat } from "next/font/google";
+import Script from "next/script";
 import { RootJsonLd } from "@/components/seo/root-json-ld";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -19,6 +20,8 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   display: "swap",
 });
+
+const GOOGLE_ANALYTICS_ID = "G-8JJ572YGNJ";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
@@ -90,6 +93,18 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${montserrat.variable} h-full antialiased`}
     >
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_ID}`}
+        strategy="beforeInteractive"
+      />
+      <Script id="google-analytics" strategy="beforeInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GOOGLE_ANALYTICS_ID}');
+        `}
+      </Script>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <RootJsonLd />
         <ThemeProvider
