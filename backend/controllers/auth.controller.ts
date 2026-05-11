@@ -21,7 +21,8 @@ import {
   type StaffPermissionsPayload,
 } from "../utils/jwt.js";
 
-const REFRESH_COOKIE_NAME = "refreshToken";
+const USER_REFRESH_COOKIE_NAME = "refreshToken";
+const ADMIN_REFRESH_COOKIE_NAME = "adminRefreshToken";
 
 type AuthBody = {
   name?: string;
@@ -78,19 +79,39 @@ const neutralForgotPasswordResponse = {
   message: "if the account exists, a password reset code has been sent",
 };
 
-const setRefreshCookie = (res: Response, token: string): void => {
-  res.cookie(REFRESH_COOKIE_NAME, token, {
+const setRefreshCookie = (res: Response, token: string, cookieName: string): void => {
+  res.cookie(cookieName, token, {
     ...refreshCookieOptions,
     expires: getTokenExpiryDate(token),
   });
 };
 
-const sendAuthSuccess = async (res: Response, user: PublicUser): Promise<void> => {
+const clearRefreshCookie = (res: Response, cookieName: string): void => {
+  res.clearCookie(cookieName, refreshCookieOptions);
+};
+
+const sendUserAuthSuccess = async (res: Response, user: PublicUser): Promise<void> => {
   if (user.role === (UserRole.STAFF as string)) {
     user.permissions = await fetchStaffPermissions(user.id);
   }
   const auth = getAuthResponse(user);
-  setRefreshCookie(res, auth.refreshToken);
+  setRefreshCookie(res, auth.refreshToken, USER_REFRESH_COOKIE_NAME);
+  res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
+};
+
+const sendAdminAuthSuccess = async (
+  res: Response,
+  user: PublicUser,
+  options?: { clearUserRefreshCookie?: boolean },
+): Promise<void> => {
+  if (user.role === (UserRole.STAFF as string)) {
+    user.permissions = await fetchStaffPermissions(user.id);
+  }
+  const auth = getAuthResponse(user);
+  setRefreshCookie(res, auth.refreshToken, ADMIN_REFRESH_COOKIE_NAME);
+  if (options?.clearUserRefreshCookie) {
+    clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
+  }
   res.status(200).json({ accessToken: auth.accessToken, user: auth.user });
 };
 
@@ -579,7 +600,8 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     },
   });
 
-  res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+  clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
+  clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
   res.status(200).json({ message: "password reset successful" });
 };
 
@@ -603,7 +625,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 
   const authenticatedUser = user as NonNullable<typeof user>;
-  await sendAuthSuccess(res, authenticatedUser);
+  await sendUserAuthSuccess(res, authenticatedUser);
 };
 
 export const adminLogin = async (req: Request, res: Response): Promise<void> => {
@@ -632,11 +654,11 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  await sendAuthSuccess(res, authenticatedUser);
+  await sendAdminAuthSuccess(res, authenticatedUser, { clearUserRefreshCookie: true });
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
-  const refreshToken = req.signedCookies?.[REFRESH_COOKIE_NAME] as string | undefined;
+  const refreshToken = req.signedCookies?.[USER_REFRESH_COOKIE_NAME] as string | undefined;
 
   if (!refreshToken) {
     res.status(401).json({ message: "refresh token missing" });
@@ -662,14 +684,60 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!user || !user.isActive) {
-      res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+      clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
       res.status(401).json({ message: "invalid session" });
       return;
     }
 
-    await sendAuthSuccess(res, user);
+    await sendUserAuthSuccess(res, user);
   } catch {
-    res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+    clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
+    res.status(401).json({ message: "invalid refresh token" });
+  }
+};
+
+export const adminRefresh = async (req: Request, res: Response): Promise<void> => {
+  const refreshToken = req.signedCookies?.[ADMIN_REFRESH_COOKIE_NAME] as string | undefined;
+
+  if (!refreshToken) {
+    res.status(401).json({ message: "refresh token missing" });
+    return;
+  }
+
+  try {
+    const payload = verifyRefreshToken(refreshToken);
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        country: true,
+        city: true,
+        address: true,
+        postalCode: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    if (!user || !user.isActive) {
+      clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
+      res.status(401).json({ message: "invalid session" });
+      return;
+    }
+
+    const role = user.role as string;
+    if (role !== UserRole.ADMIN && role !== UserRole.STAFF) {
+      clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
+      res.status(401).json({ message: "invalid session" });
+      return;
+    }
+
+    await sendAdminAuthSuccess(res, user);
+  } catch {
+    clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
     res.status(401).json({ message: "invalid refresh token" });
   }
 };
@@ -713,6 +781,11 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 };
 
 export const logout = (_req: Request, res: Response): void => {
-  res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+  clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
+  res.status(200).json({ success: true });
+};
+
+export const adminLogout = (_req: Request, res: Response): void => {
+  clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
   res.status(200).json({ success: true });
 };

@@ -2,6 +2,8 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import {
   adminLogin,
+  adminLogout,
+  adminRefresh,
   forgotPassword,
   login,
   logout,
@@ -56,6 +58,8 @@ authRouter.post(
 );
 authRouter.post("/login", loginLimiter, validateRequestBody(loginSchema), login);
 authRouter.post("/admin/login", loginLimiter, validateRequestBody(loginSchema), adminLogin);
+authRouter.post("/admin/refresh", adminRefresh);
+authRouter.post("/admin/logout", adminLogout);
 authRouter.post("/refresh", refresh);
 authRouter.post("/logout", logout);
 authRouter.patch("/profile", requireAuth, validateRequestBody(updateProfileSchema), updateProfile);

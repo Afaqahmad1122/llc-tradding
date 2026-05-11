@@ -69,7 +69,7 @@ apiClient.interceptors.response.use(
 
     const url = typeof originalRequest?.url === "string" ? originalRequest.url : "";
     const isRefreshRequest =
-      url.includes("/auth/refresh") || url.endsWith("/auth/refresh");
+      url.includes("/auth/admin/refresh") || url.endsWith("/auth/admin/refresh");
 
     if (
       statusCode === 401 &&
@@ -82,7 +82,7 @@ apiClient.interceptors.response.use(
         const refreshResponse = await apiClient.post<{
           accessToken: string;
           user: AuthUser;
-        }>("/auth/refresh");
+        }>("/auth/admin/refresh");
 
         useAdminAuthStore
           .getState()

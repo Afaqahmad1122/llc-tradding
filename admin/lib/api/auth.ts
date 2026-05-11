@@ -63,9 +63,9 @@ export const adminLoginApi = (payload: AdminLoginRequest) => {
 };
 
 export const refreshSessionApi = () => {
-  return http.post<RefreshResponse>("/auth/refresh");
+  return http.post<RefreshResponse>("/auth/admin/refresh");
 };
 
 export const logoutApi = () => {
-  return http.post<LogoutResponse>("/auth/logout");
+  return http.post<LogoutResponse>("/auth/admin/logout");
 };
