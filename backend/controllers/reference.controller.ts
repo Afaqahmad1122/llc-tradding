@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Request, Response } from "express";
 
 import { env } from "../config/env.js";
+import { withPkrRate } from "../lib/usd-pkr-rate.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -169,30 +170,40 @@ export const getDestinationPorts = (req: Request, res: Response): void => {
   }
 };
 
+async function loadFxRatesPayload(): Promise<RatesPayload> {
+  if (env.OPEN_EXCHANGE_RATES_APP_ID?.trim()) {
+    try {
+      return await fetchRatesOpenExchange();
+    } catch {
+      return await fetchRatesFrankfurter();
+    }
+  }
+  return await fetchRatesFrankfurter();
+}
+
 export const getFxRates = async (
   _req: Request,
   res: Response,
 ): Promise<void> => {
   try {
     const now = Date.now();
-    if (ratesCache && ratesCache.expiresAt > now) {
-      res.status(200).json(ratesCache.data);
-      return;
-    }
-
     let payload: RatesPayload;
-    if (env.OPEN_EXCHANGE_RATES_APP_ID?.trim()) {
-      try {
-        payload = await fetchRatesOpenExchange();
-      } catch {
-        payload = await fetchRatesFrankfurter();
-      }
+    if (ratesCache && ratesCache.expiresAt > now) {
+      payload = ratesCache.data;
     } else {
-      payload = await fetchRatesFrankfurter();
+      payload = await loadFxRatesPayload();
+      ratesCache = { expiresAt: now + RATES_TTL_MS, data: payload };
     }
 
-    ratesCache = { expiresAt: now + RATES_TTL_MS, data: payload };
-    res.status(200).json(payload);
+    const rates = await withPkrRate(payload.rates);
+    const enriched: RatesPayload = { ...payload, rates };
+    if (rates !== payload.rates) {
+      ratesCache = {
+        expiresAt: ratesCache?.expiresAt ?? now + RATES_TTL_MS,
+        data: enriched,
+      };
+    }
+    res.status(200).json(enriched);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "failed to load exchange rates";
