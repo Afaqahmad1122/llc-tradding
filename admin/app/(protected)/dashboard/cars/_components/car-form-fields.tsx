@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,12 +13,18 @@ import {
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { CarModelSummary } from "@/lib/api/cars";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useFxRatesQuery } from "@/hooks/use-fx-rates-query";
 
 import {
   newCarKvRow,
   type CarFormDraft,
   type CarKvRow,
 } from "../_lib/draft-utils";
+import {
+  computePkrFromUsd,
+  formatPkrRateHint,
+} from "../_lib/price-fx";
 import {
   FUEL_OPTIONS,
   STEERING_OPTIONS,
@@ -40,6 +47,30 @@ export function CarFormFields({
   models,
   referenceReadOnly,
 }: CarFormFieldsProps) {
+  const fxQuery = useFxRatesQuery();
+  const pkrPerUsd = fxQuery.data?.rates?.PKR;
+  const debouncedUsd = useDebouncedValue(draft.priceUsd, 400);
+  const pricePkrManualRef = useRef(false);
+
+  useEffect(() => {
+    if (pricePkrManualRef.current) return;
+    const next = computePkrFromUsd(debouncedUsd, pkrPerUsd);
+    if (next == null) return;
+    if (next === draft.pricePkr) return;
+    onChange({ pricePkr: next });
+  }, [debouncedUsd, draft.pricePkr, onChange, pkrPerUsd]);
+
+  const pkrHint =
+    typeof pkrPerUsd === "number" && Number.isFinite(pkrPerUsd) && pkrPerUsd > 0
+      ? pricePkrManualRef.current
+        ? `${formatPkrRateHint(pkrPerUsd)} — you edited PKR manually.`
+        : `${formatPkrRateHint(pkrPerUsd)} — auto-filled from USD.`
+      : fxQuery.isError
+        ? "PKR rate unavailable; enter PKR manually or try again later."
+        : fxQuery.isLoading
+          ? "Loading exchange rate…"
+          : null;
+
   return (
     <div className="grid w-full grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
       <div className="space-y-2">
@@ -103,14 +134,22 @@ export function CarFormFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-pkr`}>Price PKR (optional)</Label>
+        <Label htmlFor={`${idPrefix}-pkr`}>Price PKR</Label>
         <Input
           id={`${idPrefix}-pkr`}
-          inputMode="decimal"
+          inputMode="numeric"
           value={draft.pricePkr}
-          placeholder="e.g. 5200000"
-          onChange={(e) => onChange({ pricePkr: e.target.value })}
+          placeholder="Filled from USD when rate is available"
+          onChange={(e) => {
+            pricePkrManualRef.current = true;
+            onChange({ pricePkr: e.target.value });
+          }}
         />
+        {pkrHint ? (
+          <p className="text-muted-foreground text-xs leading-relaxed">
+            {pkrHint}
+          </p>
+        ) : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mile`}>Mileage</Label>

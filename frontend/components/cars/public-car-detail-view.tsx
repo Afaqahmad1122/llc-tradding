@@ -55,6 +55,15 @@ import {
   humanizeFeatureKey,
   inventoryTitle,
 } from "@/lib/car-display";
+import {
+  buildCalculatorCurrencyOptions,
+  calculatorCurrencyName,
+  defaultCurrencyForCountry,
+} from "@/lib/calculator-currencies";
+import {
+  resolveHeaderPkrLine,
+  resolveVehiclePriceDisplay,
+} from "@/lib/vehicle-price-fx";
 import type { PublicCar } from "@/lib/api/cars";
 import { submitCarInquiry } from "@/lib/api/cars";
 import { ApiError } from "@/lib/api/client";
@@ -69,23 +78,6 @@ const SHIPMENT_MODES = ["Roro", "Container"] as const;
 
 const DEFAULT_CALC_COUNTRY_CODE = "PK";
 const FALLBACK_DESTINATION_PORTS = ["Nearest major port"] as const;
-
-function formatIntForeignCurrency(
-  amount: number,
-  currencyCode: string,
-): string {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currencyCode,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    return `${currencyCode} ${amount.toLocaleString(undefined, {
-      maximumFractionDigits: 0,
-    })}`;
-  }
-}
 
 function sortedGallery(car: PublicCar) {
   return [...car.images].sort((a, b) => a.position - b.position);
@@ -298,37 +290,37 @@ export function PublicCarDetailView({
     [countries, countryCode],
   );
 
-  const currencyOptions = useMemo(() => {
-    const fromCountry = selectedCountry?.currencyCodes ?? [];
-    const set = new Set<string>(["USD", ...fromCountry]);
-    const rest = [...set].filter((c) => c !== "USD").sort();
-    return ["USD", ...rest] as string[];
-  }, [selectedCountry]);
+  const currencyOptions = useMemo(
+    () => buildCalculatorCurrencyOptions(selectedCountry?.currencyCodes ?? []),
+    [selectedCountry?.currencyCodes],
+  );
 
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("PKR");
   const lastCurrencyCountryRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!selectedCountry) return;
     if (lastCurrencyCountryRef.current === countryCode) return;
     lastCurrencyCountryRef.current = countryCode;
-    const next =
-      selectedCountry.currencyCodes.find((c) => c !== "USD") ??
-      selectedCountry.currencyCodes[0] ??
-      "USD";
-    setCurrency(next);
-  }, [countryCode, selectedCountry]);
+    setCurrency(
+      defaultCurrencyForCountry(
+        countryCode,
+        selectedCountry.currencyCodes,
+        currencyOptions,
+      ),
+    );
+  }, [countryCode, currencyOptions, selectedCountry]);
 
   useEffect(() => {
     if (currencyOptions.includes(currency)) return;
-    const fallback =
-      (selectedCountry &&
-        (selectedCountry.currencyCodes.find((c) => c !== "USD") ??
-          selectedCountry.currencyCodes[0])) ??
-      currencyOptions[0] ??
-      "USD";
-    setCurrency(fallback);
-  }, [currency, currencyOptions, selectedCountry]);
+    setCurrency(
+      defaultCurrencyForCountry(
+        countryCode,
+        selectedCountry?.currencyCodes ?? [],
+        currencyOptions,
+      ),
+    );
+  }, [countryCode, currency, currencyOptions, selectedCountry?.currencyCodes]);
 
   const [portOverride, setPortOverride] = useState<string | null>(null);
 
@@ -362,7 +354,16 @@ export function PublicCarDetailView({
 
   const title = inventoryTitle(car);
   const usd = formatUsd(car.priceUsd);
-  const pkrLine = formatPkr(car.pricePkr);
+  const fxRates = fxQuery.data?.rates;
+  const pkrLine = useMemo(
+    () =>
+      resolveHeaderPkrLine({
+        priceUsd: car.priceUsd,
+        pricePkr: car.pricePkr,
+        fxRates,
+      }),
+    [car.pricePkr, car.priceUsd, fxRates],
+  );
   const originLabel = car.country?.trim()
     ? car.country.trim().toUpperCase()
     : null;
@@ -372,34 +373,17 @@ export function PublicCarDetailView({
     countries.find((c) => c.code === countryCode)?.name ??
     countryCode;
 
-  const priceUsdNum = Number.parseFloat(car.priceUsd);
-  const fxRates = fxQuery.data?.rates;
-  const fxMultiplier = currency === "USD" ? 1 : (fxRates?.[currency] ?? null);
-
-  const vehiclePricePrimary = useMemo(() => {
-    if (currency === "USD") {
-      return { label: usd, hint: null as string | null };
-    }
-    if (
-      typeof fxMultiplier === "number" &&
-      Number.isFinite(fxMultiplier) &&
-      fxMultiplier > 0 &&
-      Number.isFinite(priceUsdNum)
-    ) {
-      return {
-        label: formatIntForeignCurrency(priceUsdNum * fxMultiplier, currency),
-        hint: null,
-      };
-    }
-    if (currency === "PKR") {
-      const line = formatPkr(car.pricePkr);
-      if (line) return { label: line, hint: null };
-    }
-    return {
-      label: usd,
-      hint: `Approximate (${currency}); USD shown — FX unavailable.`,
-    };
-  }, [car.pricePkr, currency, fxMultiplier, priceUsdNum, usd]);
+  const vehiclePricePrimary = useMemo(
+    () =>
+      resolveVehiclePriceDisplay({
+        currency,
+        priceUsd: car.priceUsd,
+        pricePkr: car.pricePkr,
+        fxRates,
+        fxLoading: fxQuery.isPending && currency !== "USD",
+      }),
+    [car.pricePkr, car.priceUsd, currency, fxQuery.isPending, fxRates],
+  );
 
   const mileageDisplay =
     car.mileage != null
@@ -764,8 +748,16 @@ export function PublicCarDetailView({
               </SelectTrigger>
               <SelectContent side="bottom" position="popper">
                 {currencyOptions.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
+                  <SelectItem
+                    key={c}
+                    value={c}
+                    textValue={c}
+                    aria-label={`${c}, ${calculatorCurrencyName(c)}`}
+                  >
+                    <span className="font-semibold tabular-nums">{c}</span>
+                    <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                      {calculatorCurrencyName(c)}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -782,6 +774,12 @@ export function PublicCarDetailView({
             {vehiclePricePrimary.hint ? (
               <p className="mt-2 text-[10px] font-medium leading-snug text-white/80">
                 {vehiclePricePrimary.hint}
+              </p>
+            ) : null}
+            {fxQuery.isError && currency !== "USD" ? (
+              <p className="mt-2 text-[10px] font-medium leading-snug text-amber-200">
+                Live exchange rate unavailable. Showing USD or stored price where
+                possible.
               </p>
             ) : null}
           </div>
