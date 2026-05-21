@@ -800,7 +800,7 @@ export const createAdminCar = async (
   const images = ensureSinglePrimary(body.images ?? []);
   const pricePkr = await resolvePricePkr({
     priceUsd: body.priceUsd,
-    pricePkr: body.pricePkr,
+    ...(body.pricePkr !== undefined ? { pricePkr: body.pricePkr } : {}),
   });
   const bodyWithPkr: CreateCarBody = {
     ...body,
