@@ -10,6 +10,7 @@ import type { PublicCar } from "@/lib/api/cars";
 import {
   buildInquiryWhatsAppUrl,
   displayStr,
+  formatPkr,
   formatUsd,
   inventoryTitle,
 } from "@/lib/car-display";
@@ -68,6 +69,7 @@ export function VehicleGrid({
         const transmissionPart = displayStr(car.transmission);
         const locationPart = locationText(car);
         const mileagePart = formatMileage(car);
+        const pkrLine = formatPkr(car.pricePkr);
 
         return (
           <Card
@@ -124,9 +126,19 @@ export function VehicleGrid({
                 <MapPinIcon className="size-3.5" aria-hidden />
                 <span className="truncate">{locationPart}</span>
               </div>
-              <p className="text-3xl font-semibold tracking-tight text-[#1E104E] dark:text-white">
-                {formatUsd(car.priceUsd)}
-              </p>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5C4A76] dark:text-white/55">
+                  FOB price
+                </p>
+                <p className="mt-1 text-3xl font-semibold tracking-tight text-[#1E104E] dark:text-white">
+                  {formatUsd(car.priceUsd)}
+                </p>
+                {pkrLine ? (
+                  <p className="mt-1 text-base font-semibold tabular-nums text-[#EA3B58]">
+                    {pkrLine}
+                  </p>
+                ) : null}
+              </div>
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant="outline"
