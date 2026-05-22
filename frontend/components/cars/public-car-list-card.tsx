@@ -29,6 +29,7 @@ import {
   buildInquireMailto,
   buildInquiryWhatsAppUrl,
   displayStr,
+  formatJpy,
   formatPkr,
   formatUsd,
   inventoryTitle,
@@ -113,6 +114,7 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
 
   const usd = formatUsd(car.priceUsd);
   const pkrLine = formatPkr(car.pricePkr);
+  const jpyLine = formatJpy(car.priceJpy);
   const title = inventoryTitle(car);
 
   return (
@@ -271,6 +273,11 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
               {pkrLine ? (
                 <p className="text-accent/90 mt-0.5 text-sm font-semibold tabular-nums">
                   {pkrLine}
+                </p>
+              ) : null}
+              {jpyLine ? (
+                <p className="text-muted-foreground mt-0.5 text-sm font-semibold tabular-nums">
+                  {jpyLine}
                 </p>
               ) : null}
             </div>

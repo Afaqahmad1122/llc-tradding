@@ -17,7 +17,11 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { AdminCar } from "@/lib/api/cars";
 
-import { formatErrorMessage, formatUsd } from "../_lib/draft-utils";
+import {
+  formatCurrency,
+  formatErrorMessage,
+  formatUsd,
+} from "../_lib/draft-utils";
 import type { ListAction, ListState } from "../_lib/list-state";
 import { CarCardThumb } from "./car-card-thumb";
 import { MetaItem } from "./meta-item";
@@ -167,6 +171,12 @@ export function CarsListContent({
                         <MetaItem label="Year">{car.year}</MetaItem>
                         <MetaItem label="Price (USD)">
                           {formatUsd(car.priceUsd)}
+                        </MetaItem>
+                        <MetaItem label="Price (PKR)">
+                          {formatCurrency(car.pricePkr, "PKR")}
+                        </MetaItem>
+                        <MetaItem label="Price (JPY)">
+                          {formatCurrency(car.priceJpy, "JPY")}
                         </MetaItem>
                         <MetaItem label="Mileage">
                           {car.mileage != null

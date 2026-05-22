@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -28,13 +28,6 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
@@ -50,27 +43,18 @@ import {
   buildInquiryWhatsAppUrl,
   displayStr,
   featureEntryActive,
+  formatJpy,
   formatPkr,
   formatUsd,
   humanizeFeatureKey,
   inventoryTitle,
 } from "@/lib/car-display";
-import {
-  buildCalculatorCurrencyOptions,
-  calculatorCurrencyName,
-  defaultCurrencyForCountry,
-} from "@/lib/calculator-currencies";
-import {
-  resolveHeaderPkrLine,
-  resolveVehiclePriceDisplay,
-} from "@/lib/vehicle-price-fx";
 import type { PublicCar } from "@/lib/api/cars";
 import { submitCarInquiry } from "@/lib/api/cars";
 import { ApiError } from "@/lib/api/client";
 import {
   useDestinationCountriesQuery,
   useDestinationPortsQuery,
-  useFxRatesQuery,
 } from "@/hooks/use-calculator-reference";
 import { cn } from "@/lib/utils";
 
@@ -130,7 +114,7 @@ function calculatorNote(opts: {
   freight: string;
   inspection: string;
   insurance: string;
-  currencyLabel: string;
+  priceLabels: string;
 }): string {
   return [
     "Shipping quote request:",
@@ -139,7 +123,7 @@ function calculatorNote(opts: {
     `Freight: ${opts.freight}`,
     `Inspection: ${opts.inspection}`,
     `Insurance: ${opts.insurance}`,
-    `Currency: ${opts.currencyLabel}`,
+    `Shown prices: ${opts.priceLabels}`,
     "",
     "Please confirm total landed cost.",
   ].join("\n");
@@ -151,6 +135,7 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
   const title = inventoryTitle(car);
   const usd = formatUsd(car.priceUsd);
   const pkrLine = formatPkr(car.pricePkr);
+  const jpyLine = formatJpy(car.priceJpy);
   const waHref = buildInquiryWhatsAppUrl(car);
   const mailHref = buildInquireMailto(car);
   const engineBadge =
@@ -208,6 +193,11 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
               {pkrLine}
             </p>
           ) : null}
+          {jpyLine ? (
+            <p className="text-muted-foreground text-xs font-semibold tabular-nums">
+              {jpyLine}
+            </p>
+          ) : null}
         </div>
         <div className="mt-auto flex gap-2">
           <Button
@@ -256,7 +246,6 @@ export function PublicCarDetailView({
   const active = gallery[activeIndex] ?? null;
 
   const countriesQuery = useDestinationCountriesQuery();
-  const fxQuery = useFxRatesQuery();
 
   const countries = countriesQuery.data?.data ?? [];
   const [countryCode, setCountryCode] = useState(DEFAULT_CALC_COUNTRY_CODE);
@@ -290,38 +279,6 @@ export function PublicCarDetailView({
     [countries, countryCode],
   );
 
-  const currencyOptions = useMemo(
-    () => buildCalculatorCurrencyOptions(selectedCountry?.currencyCodes ?? []),
-    [selectedCountry?.currencyCodes],
-  );
-
-  const [currency, setCurrency] = useState("PKR");
-  const lastCurrencyCountryRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!selectedCountry) return;
-    if (lastCurrencyCountryRef.current === countryCode) return;
-    lastCurrencyCountryRef.current = countryCode;
-    setCurrency(
-      defaultCurrencyForCountry(
-        countryCode,
-        selectedCountry.currencyCodes,
-        currencyOptions,
-      ),
-    );
-  }, [countryCode, currencyOptions, selectedCountry]);
-
-  useEffect(() => {
-    if (currencyOptions.includes(currency)) return;
-    setCurrency(
-      defaultCurrencyForCountry(
-        countryCode,
-        selectedCountry?.currencyCodes ?? [],
-        currencyOptions,
-      ),
-    );
-  }, [countryCode, currency, currencyOptions, selectedCountry?.currencyCodes]);
-
   const [portOverride, setPortOverride] = useState<string | null>(null);
 
   useEffect(() => {
@@ -354,16 +311,8 @@ export function PublicCarDetailView({
 
   const title = inventoryTitle(car);
   const usd = formatUsd(car.priceUsd);
-  const fxRates = fxQuery.data?.rates;
-  const pkrLine = useMemo(
-    () =>
-      resolveHeaderPkrLine({
-        priceUsd: car.priceUsd,
-        pricePkr: car.pricePkr,
-        fxRates,
-      }),
-    [car.pricePkr, car.priceUsd, fxRates],
-  );
+  const pkrLine = formatPkr(car.pricePkr);
+  const jpyLine = formatJpy(car.priceJpy);
   const originLabel = car.country?.trim()
     ? car.country.trim().toUpperCase()
     : null;
@@ -372,18 +321,6 @@ export function PublicCarDetailView({
     selectedCountry?.name ??
     countries.find((c) => c.code === countryCode)?.name ??
     countryCode;
-
-  const vehiclePricePrimary = useMemo(
-    () =>
-      resolveVehiclePriceDisplay({
-        currency,
-        priceUsd: car.priceUsd,
-        pricePkr: car.pricePkr,
-        fxRates,
-        fxLoading: fxQuery.isPending && currency !== "USD",
-      }),
-    [car.pricePkr, car.priceUsd, currency, fxQuery.isPending, fxRates],
-  );
 
   const mileageDisplay =
     car.mileage != null
@@ -448,7 +385,7 @@ export function PublicCarDetailView({
     freight: freight === "prepaid" ? "Prepaid" : "Collect",
     inspection: inspection === "yes" ? "Yes" : "No",
     insurance: insurance === "yes" ? "Yes" : "No",
-    currencyLabel: currency,
+    priceLabels: "USD / PKR / JPY",
   });
 
   const askWa = buildInquiryWhatsAppUrl(car, calcLines);
@@ -598,6 +535,11 @@ export function PublicCarDetailView({
                 {pkrLine}
               </p>
             ) : null}
+            {jpyLine ? (
+              <p className="text-sm font-semibold tabular-nums text-muted-foreground">
+                {jpyLine}
+              </p>
+            ) : null}
             {originLabel ? (
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">
                 <span className="bg-accent inline-block size-2 rounded-full shadow-sm" />
@@ -737,51 +679,29 @@ export function PublicCarDetailView({
         <aside className="brand-gradient-main relative z-0 space-y-4 overflow-visible rounded-2xl p-5 text-white shadow-xl ring-1 ring-black/15 lg:sticky lg:top-24 dark:ring-white/10">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-lg font-bold tracking-tight">
-              Total price calculator
+              Shipping quote request
             </h2>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger
-                aria-label="Currency"
-                className="min-h-[44px] max-w-32 rounded-lg border-white/25 bg-white pr-8 font-semibold text-[16px] text-primary leading-tight lg:h-9 lg:min-h-0 lg:max-w-26 lg:py-1 lg:text-xs"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent side="bottom" position="popper">
-                {currencyOptions.map((c) => (
-                  <SelectItem
-                    key={c}
-                    value={c}
-                    textValue={c}
-                    aria-label={`${c}, ${calculatorCurrencyName(c)}`}
-                  >
-                    <span className="font-semibold tabular-nums">{c}</span>
-                    <span className="text-muted-foreground ml-1.5 text-xs font-normal">
-                      {calculatorCurrencyName(c)}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">
               Vehicle price
             </p>
-            <p className="mt-2 inline-block min-w-32 rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
-              {vehiclePricePrimary.label}
-            </p>
-            {vehiclePricePrimary.hint ? (
-              <p className="mt-2 text-[10px] font-medium leading-snug text-white/80">
-                {vehiclePricePrimary.hint}
+            <div className="mt-2 space-y-2">
+              <p className="inline-block min-w-32 rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
+                {usd}
               </p>
-            ) : null}
-            {fxQuery.isError && currency !== "USD" ? (
-              <p className="mt-2 text-[10px] font-medium leading-snug text-amber-200">
-                Live exchange rate unavailable. Showing USD or stored price where
-                possible.
-              </p>
-            ) : null}
+              {pkrLine ? (
+                <p className="text-sm font-semibold tabular-nums text-white">
+                  {pkrLine}
+                </p>
+              ) : null}
+              {jpyLine ? (
+                <p className="text-sm font-semibold tabular-nums text-white/85">
+                  {jpyLine}
+                </p>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -918,7 +838,7 @@ export function PublicCarDetailView({
 
           <div className="space-y-3 border-t border-white/15 pt-4">
             <p className="text-[11px] font-bold uppercase tracking-wider">
-              Total price
+              Quote request
             </p>
             <Button
               asChild
@@ -929,7 +849,7 @@ export function PublicCarDetailView({
               </a>
             </Button>
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/90">
-              Total price in local
+              Manual prices shown above
             </p>
             <Button
               asChild

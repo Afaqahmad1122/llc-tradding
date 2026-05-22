@@ -28,6 +28,17 @@ export function formatPkr(price: string | null): string | null {
   }).format(n);
 }
 
+export function formatJpy(price: string | null): string | null {
+  if (price == null || price === "") return null;
+  const n = Number(price);
+  if (!Number.isFinite(n)) return null;
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "JPY",
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
 export function displayStr(value: string | null | undefined): string {
   const s = value?.trim();
   return s ? s : "—";

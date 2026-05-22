@@ -1,0 +1,1 @@
+ALTER TABLE "Car" ADD COLUMN "priceJpy" DECIMAL(14, 2);

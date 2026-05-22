@@ -60,8 +60,9 @@ export function CarCreateDialog({
         <DialogHeader className="shrink-0 pr-10 sm:pr-12">
           <DialogTitle>Create listing</DialogTitle>
           <DialogDescription>
-            Required fields: reference number, vehicle model, year, and USD
-            price. Uploaded images show live previews below before you save.
+            Required fields: reference number, vehicle model, year, USD price,
+            PKR price, and JPY price. Uploaded images show live previews below
+            before you save.
           </DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-1">

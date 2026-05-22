@@ -7,7 +7,6 @@ import type { Request, Response } from "express";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 import { s3Bucket, s3Client } from "../config/s3.js";
-import { resolvePricePkr } from "../lib/usd-pkr-rate.js";
 
 type CarImageInput = {
   url: string;
@@ -25,7 +24,8 @@ type CreateCarBody = {
   mileage?: number;
   mileageUnit?: string;
   priceUsd: number;
-  pricePkr?: number;
+  pricePkr: number;
+  priceJpy: number;
   fuel?: FuelType;
   transmission?: TransmissionType;
   seats?: number;
@@ -69,6 +69,7 @@ const PUBLIC_CAR_SELECT = {
   mileageUnit: true,
   priceUsd: true,
   pricePkr: true,
+  priceJpy: true,
   fuel: true,
   transmission: true,
   seats: true,
@@ -285,6 +286,7 @@ const buildCreateData = (
   if (body.mileage !== undefined) data.mileage = body.mileage;
   if (body.mileageUnit !== undefined) data.mileageUnit = body.mileageUnit;
   if (body.pricePkr !== undefined) data.pricePkr = body.pricePkr;
+  if (body.priceJpy !== undefined) data.priceJpy = body.priceJpy;
   if (body.fuel !== undefined) data.fuel = body.fuel;
   if (body.transmission !== undefined) data.transmission = body.transmission;
   if (body.seats !== undefined) data.seats = body.seats;
@@ -317,6 +319,7 @@ const buildUpdateData = (body: UpdateCarBody): Prisma.CarUpdateInput => {
   if (body.mileageUnit !== undefined) data.mileageUnit = body.mileageUnit;
   if (body.priceUsd !== undefined) data.priceUsd = body.priceUsd;
   if (body.pricePkr !== undefined) data.pricePkr = body.pricePkr;
+  if (body.priceJpy !== undefined) data.priceJpy = body.priceJpy;
   if (body.fuel !== undefined) data.fuel = body.fuel;
   if (body.transmission !== undefined) data.transmission = body.transmission;
   if (body.seats !== undefined) data.seats = body.seats;
@@ -798,19 +801,11 @@ export const createAdminCar = async (
   const authUserId = res.locals.authUserId as string | undefined;
   const body = req.body as CreateCarBody;
   const images = ensureSinglePrimary(body.images ?? []);
-  const pricePkr = await resolvePricePkr({
-    priceUsd: body.priceUsd,
-    ...(body.pricePkr !== undefined ? { pricePkr: body.pricePkr } : {}),
-  });
-  const bodyWithPkr: CreateCarBody = {
-    ...body,
-    ...(pricePkr !== undefined ? { pricePkr } : {}),
-  };
 
   try {
     const car = await prisma.$transaction(async (tx) => {
       const created = await tx.car.create({
-        data: buildCreateData(bodyWithPkr, authUserId ?? null),
+        data: buildCreateData(body, authUserId ?? null),
         select: { id: true },
       });
 
@@ -856,17 +851,7 @@ export const updateAdminCar = async (
   }
 
   const body = req.body as UpdateCarBody;
-  let pricePkr = body.pricePkr;
-  if (body.priceUsd !== undefined && body.pricePkr === undefined) {
-    const computed = await resolvePricePkr({ priceUsd: body.priceUsd });
-    if (computed !== undefined) pricePkr = computed;
-  }
-  const bodyWithPkr: UpdateCarBody = {
-    ...body,
-    ...(pricePkr !== undefined ? { pricePkr } : {}),
-  };
-
-  const data = buildUpdateData(bodyWithPkr);
+  const data = buildUpdateData(body);
   if (Object.keys(data).length === 0) {
     res.status(400).json({ message: "at least one field is required" });
     return;

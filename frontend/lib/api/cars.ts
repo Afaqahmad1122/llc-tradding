@@ -26,6 +26,7 @@ export type PublicCar = {
   /** Prisma Decimal */
   priceUsd: string;
   pricePkr: string | null;
+  priceJpy: string | null;
   fuel: string | null;
   transmission: string | null;
   seats: number | null;
