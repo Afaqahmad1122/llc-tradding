@@ -12,7 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { PublicCar } from "@/lib/api/cars";
-import { buildInquiryWhatsAppUrl } from "@/lib/car-display";
+import {
+  buildInquiryWhatsAppUrl,
+  formatPkr,
+  formatUsd,
+} from "@/lib/car-display";
 
 function primaryImageUrl(car: PublicCar): string | null {
   const primary = car.images.find((i) => i.isPrimary)?.url;
@@ -92,6 +96,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
               const waUrl = buildInquiryWhatsAppUrl(car);
               const make = car.model.brand;
               const modelName = car.model.name;
+              const pkrLine = formatPkr(car.pricePkr);
 
               return (
                 <CarouselItem
@@ -125,9 +130,19 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                       <p className="text-sm font-semibold tracking-wide text-[#0F8A66] uppercase dark:text-[#3DD598]">
                         {modelName}
                       </p>
-                      <p className="text-[11px] font-medium tracking-wide text-[#5C4A76] uppercase dark:text-white/55">
-                        Best Price
-                      </p>
+                      <div>
+                        <p className="text-[10px] font-bold tracking-wide text-[#5C4A76] uppercase dark:text-white/55">
+                          FOB price
+                        </p>
+                        <p className="mt-0.5 text-lg leading-none font-bold tabular-nums text-[#EA3B58]">
+                          {formatUsd(car.priceUsd)}
+                        </p>
+                        {pkrLine ? (
+                          <p className="mt-1 text-sm font-semibold tabular-nums text-[#EA3B58]">
+                            {pkrLine}
+                          </p>
+                        ) : null}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           asChild
