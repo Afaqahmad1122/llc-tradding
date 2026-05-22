@@ -1,5 +1,10 @@
 import { app } from "./app.js";
 import { env } from "./config/env.js";
+import { prisma } from "./config/prisma.js";
+import { syncDefaultVehicleModels } from "./lib/sync-default-vehicle-models.js";
+
+await syncDefaultVehicleModels(prisma);
+console.log("Default vehicle models are in sync with the catalog.");
 
 const server = app.listen(env.PORT, () => {
   console.log(`Backend running on port ${env.PORT}`);
