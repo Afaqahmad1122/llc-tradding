@@ -103,6 +103,7 @@ model Car {
   mileageUnit    String           @default("km")
   priceUsd       Decimal          @db.Decimal(12, 2)
   pricePkr       Decimal?         @db.Decimal(14, 2)
+  priceJpy       Decimal?         @db.Decimal(14, 2)
   fuel           FuelType?
   transmission   TransmissionType?
   seats          Int?

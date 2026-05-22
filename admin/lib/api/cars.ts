@@ -27,6 +27,7 @@ export type AdminCar = {
   /** Prisma Decimal serializes as string in JSON */
   priceUsd: string;
   pricePkr: string | null;
+  priceJpy: string | null;
   fuel: string | null;
   transmission: string | null;
   seats: number | null;
@@ -102,7 +103,8 @@ export type CreateAdminCarBody = {
   mileage?: number;
   mileageUnit?: string;
   priceUsd: number;
-  pricePkr?: number;
+  pricePkr: number;
+  priceJpy: number;
   fuel?: CarFuel;
   transmission?: CarTransmission;
   seats?: number;

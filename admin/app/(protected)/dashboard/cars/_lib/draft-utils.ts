@@ -127,6 +127,7 @@ export type CarFormDraft = {
   mileageUnit: string;
   priceUsd: string;
   pricePkr: string;
+  priceJpy: string;
   fuel: string;
   transmission: string;
   steering: string;
@@ -161,6 +162,19 @@ export function formatUsd(value: string | null): string {
   }).format(n);
 }
 
+export function formatCurrency(
+  value: string | null,
+  currency: "PKR" | "JPY",
+): string {
+  const n = value == null ? NaN : Number(value);
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
 export function adminImageToDraft(
   img: AdminCarImage,
   uid?: string,
@@ -184,6 +198,7 @@ export function emptyCarDraft(modelId = ""): CarFormDraft {
     mileageUnit: "km",
     priceUsd: "",
     pricePkr: "",
+    priceJpy: "",
     fuel: "",
     transmission: "",
     steering: "",
@@ -213,6 +228,7 @@ export function carToDraft(car: AdminCar): CarFormDraft {
     mileageUnit: car.mileageUnit ?? "km",
     priceUsd: String(car.priceUsd),
     pricePkr: car.pricePkr ? String(car.pricePkr) : "",
+    priceJpy: car.priceJpy ? String(car.priceJpy) : "",
     fuel: car.fuel ?? "",
     transmission: car.transmission ?? "",
     steering: car.steering ?? "",
@@ -251,6 +267,15 @@ export function parseRequiredUsd(raw: string): number | null {
   return n;
 }
 
+export function parseRequiredCurrencyInt(
+  raw: string,
+  max: number,
+): number | null {
+  const n = Number.parseInt(raw.trim(), 10);
+  if (!Number.isFinite(n) || n <= 0 || n > max) return null;
+  return n;
+}
+
 export function draftToImageInputs(images: ImageDraftRow[]): CarImageInput[] {
   return images.map((img, index) => ({
     url: img.url.trim(),
@@ -274,6 +299,16 @@ export function validateCarDraft(
   if (year === null) return "Year must be a number between 1900 and 2100.";
   const priceUsd = parseRequiredUsd(draft.priceUsd);
   if (priceUsd === null) return "USD price must be a positive number.";
+  const pricePkr = parseRequiredCurrencyInt(
+    draft.pricePkr,
+    1_000_000_000_000,
+  );
+  if (pricePkr === null) return "PKR price must be a positive number.";
+  const priceJpy = parseRequiredCurrencyInt(
+    draft.priceJpy,
+    1_000_000_000_000,
+  );
+  if (priceJpy === null) return "JPY price must be a positive number.";
 
   for (const row of images) {
     const trimmed = row.url.trim();
@@ -301,7 +336,15 @@ export function buildMutationBodyBase(
 ): Record<string, unknown> {
   const year = parseRequiredYear(draft.year);
   const priceUsd = parseRequiredUsd(draft.priceUsd);
-  if (year == null || priceUsd == null) {
+  const pricePkr = parseRequiredCurrencyInt(
+    draft.pricePkr,
+    1_000_000_000_000,
+  );
+  const priceJpy = parseRequiredCurrencyInt(
+    draft.priceJpy,
+    1_000_000_000_000,
+  );
+  if (year == null || priceUsd == null || pricePkr == null || priceJpy == null) {
     throw new Error("Validation failed.");
   }
   const body: Record<string, unknown> = {
@@ -309,15 +352,14 @@ export function buildMutationBodyBase(
     modelId: draft.modelId.trim(),
     year,
     priceUsd,
+    pricePkr,
+    priceJpy,
     ...(draft.title.trim() ? { title: draft.title.trim() } : {}),
     ...(parseOptionalPositiveInt(draft.mileage) != null
       ? { mileage: parseOptionalPositiveInt(draft.mileage)! }
       : {}),
     ...(draft.mileageUnit.trim()
       ? { mileageUnit: draft.mileageUnit.trim() }
-      : {}),
-    ...(parseOptionalPositiveInt(draft.pricePkr) != null
-      ? { pricePkr: parseOptionalPositiveInt(draft.pricePkr)! }
       : {}),
     ...(draft.fuel.trim() ? { fuel: draft.fuel } : {}),
     ...(draft.transmission.trim()
