@@ -30,6 +30,7 @@ type CarFormFieldsProps = {
   onChange: (patch: Partial<CarFormDraft>) => void;
   idPrefix: string;
   models: CarModelSummary[];
+  onCreateModel?: (name: string) => void;
   referenceReadOnly?: boolean;
 };
 
@@ -38,6 +39,7 @@ export function CarFormFields({
   onChange,
   idPrefix,
   models,
+  onCreateModel,
   referenceReadOnly,
 }: CarFormFieldsProps) {
   return (
@@ -70,6 +72,7 @@ export function CarFormFields({
           models={models}
           value={draft.modelId}
           onChange={(modelId) => onChange({ modelId })}
+          onCreateModel={onCreateModel}
         />
       </div>
       <div className="space-y-2 sm:col-span-2">

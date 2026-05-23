@@ -46,6 +46,9 @@ type CreateCarBody = {
 };
 
 type UpdateCarBody = Partial<CreateCarBody>;
+type CreateCarModelBody = {
+  name: string;
+};
 type ReplaceImagesBody = { images: CarImageInput[] };
 type PresignBody = {
   contentType: "image/jpeg" | "image/png" | "image/webp";
@@ -59,6 +62,15 @@ const PRESIGN_EXPIRES_IN_SEC = 300;
 const SIMILAR_CARS_LIMIT = 5;
 const S3_DELETE_BATCH_SIZE = 1_000;
 const S3_IMAGE_KEY_PREFIX = "cars/";
+const ADMIN_CREATED_MODEL_BRAND = "Others";
+
+const ADMIN_MODEL_SELECT = {
+  id: true,
+  name: true,
+  brand: true,
+  slug: true,
+  bodyType: true,
+} satisfies Prisma.ModelSelect;
 
 const PUBLIC_CAR_SELECT = {
   id: true,
@@ -268,6 +280,19 @@ const imageIdentity = (image: { key?: string | null; url: string }): string => {
   if (validKey) return `key:${validKey}`;
   return `url:${image.url.trim()}`;
 };
+
+const normalizeModelSlugPart = (value: string): string => {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "model";
+};
+
+const buildAdminModelSlug = (name: string): string =>
+  `${normalizeModelSlugPart(ADMIN_CREATED_MODEL_BRAND)}-${normalizeModelSlugPart(name)}`;
 
 const buildCreateData = (
   body: CreateCarBody,
@@ -673,11 +698,63 @@ export const getAdminModels = async (
   if (!requireAdmin(res)) return;
 
   const models = await prisma.model.findMany({
-    select: { id: true, name: true, brand: true, slug: true, bodyType: true },
+    select: ADMIN_MODEL_SELECT,
     orderBy: [{ brand: "asc" }, { name: "asc" }],
   });
 
   res.status(200).json({ models });
+};
+
+export const createAdminModel = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) return;
+
+  const body = req.body as CreateCarModelBody;
+  const name = body.name.trim();
+  const slug = buildAdminModelSlug(name);
+
+  const existing = await prisma.model.findUnique({
+    where: { slug },
+    select: ADMIN_MODEL_SELECT,
+  });
+
+  if (existing) {
+    res.status(200).json({ model: existing });
+    return;
+  }
+
+  try {
+    const model = await prisma.model.create({
+      data: {
+        name,
+        slug,
+        brand: ADMIN_CREATED_MODEL_BRAND,
+        bodyType: null,
+      },
+      select: ADMIN_MODEL_SELECT,
+    });
+
+    res.status(201).json({ model });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const model = await prisma.model.findUnique({
+        where: { slug },
+        select: ADMIN_MODEL_SELECT,
+      });
+
+      if (model) {
+        res.status(200).json({ model });
+        return;
+      }
+    }
+
+    throw error;
+  }
 };
 
 export const getAdminCars = async (

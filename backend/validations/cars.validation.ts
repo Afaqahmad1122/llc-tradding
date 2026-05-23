@@ -67,6 +67,10 @@ const baseCarFields = {
 
 export const createCarSchema = z.object(baseCarFields);
 
+export const createCarModelSchema = z.object({
+  name: trimmed.min(1, "model name is required").max(80),
+});
+
 export const updateCarSchema = z
   .object({
     referenceNo: baseCarFields.referenceNo.optional(),

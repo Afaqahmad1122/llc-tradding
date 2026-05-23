@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, SearchIcon } from "lucide-react";
+import { ChevronsUpDown, Plus, SearchIcon } from "lucide-react";
 import * as React from "react";
 
 import type { CarModelSummary } from "@/lib/api/cars";
@@ -22,6 +22,7 @@ type CarModelComboboxProps = {
   models: CarModelSummary[];
   value: string;
   onChange: (modelId: string) => void;
+  onCreateModel?: (name: string) => void;
   disabled?: boolean;
 };
 
@@ -30,15 +31,12 @@ export function CarModelCombobox({
   models,
   value,
   onChange,
+  onCreateModel,
   disabled,
 }: CarModelComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const searchInputId = `${id}-search`;
-
-  React.useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -60,9 +58,16 @@ export function CarModelCombobox({
   }, [models, query]);
 
   const emptyList = models.length === 0;
+  const canCreateModel = Boolean(onCreateModel);
+  const createModelName = query.trim();
+
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (!nextOpen) setQuery("");
+  }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -70,7 +75,7 @@ export function CarModelCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          disabled={disabled || emptyList}
+          disabled={disabled || (emptyList && !canCreateModel)}
           className={cn(
             "h-auto min-h-9 w-full justify-between border-border/70 px-2.5 py-2 text-left font-normal shadow-none hover:bg-muted/80 active:translate-y-0",
             !selected && "text-muted-foreground",
@@ -78,7 +83,9 @@ export function CarModelCombobox({
         >
           <span className="truncate">
             {emptyList
-              ? "No models loaded — run vehicle seed"
+              ? canCreateModel
+                ? "Search to add a model…"
+                : "No models loaded — run vehicle seed"
               : selected
                 ? `${selected.brand} — ${selected.name}`
                 : "Search or choose a model…"}
@@ -123,15 +130,31 @@ export function CarModelCombobox({
                 )}
                 onClick={() => {
                   onChange("");
-                  setOpen(false);
+                  handleOpenChange(false);
                 }}
               >
                 Select a model…
               </button>
-              {query.trim() !== "" && filtered.length === 0 ? (
-                <p className="text-muted-foreground px-2 py-6 text-center text-sm">
-                  No matching model.
-                </p>
+              {createModelName !== "" && filtered.length === 0 ? (
+                canCreateModel ? (
+                  <button
+                    type="button"
+                    className="hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-2 rounded-sm px-2 py-2 text-left text-sm font-medium outline-none"
+                    onClick={() => {
+                      onCreateModel?.(createModelName);
+                      handleOpenChange(false);
+                    }}
+                  >
+                    <Plus className="size-4 shrink-0" aria-hidden />
+                    <span className="min-w-0 truncate">
+                      Add &quot;{createModelName}&quot;
+                    </span>
+                  </button>
+                ) : (
+                  <p className="text-muted-foreground px-2 py-6 text-center text-sm">
+                    No matching model.
+                  </p>
+                )
               ) : (
                 filtered.map((m) => (
                   <button
@@ -145,7 +168,7 @@ export function CarModelCombobox({
                     )}
                     onClick={() => {
                       onChange(m.id);
-                      setOpen(false);
+                      handleOpenChange(false);
                     }}
                   >
                     {m.brand} — {m.name}
