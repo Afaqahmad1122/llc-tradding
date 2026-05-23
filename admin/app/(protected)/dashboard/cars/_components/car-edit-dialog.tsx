@@ -26,6 +26,7 @@ type CarEditDialogProps = {
   draft: CarFormDraft | null;
   onDraftChange: (patch: Partial<CarFormDraft>) => void;
   models: CarModelSummary[];
+  onCreateModel?: (name: string) => void;
   images: ImageDraftRow[];
   onImagesChange: (next: ImageDraftRow[]) => void;
   editError: string | null;
@@ -40,6 +41,7 @@ export function CarEditDialog({
   draft,
   onDraftChange,
   models,
+  onCreateModel,
   images,
   onImagesChange,
   editError,
@@ -74,6 +76,7 @@ export function CarEditDialog({
               models={models}
               referenceReadOnly
               onChange={onDraftChange}
+              onCreateModel={onCreateModel}
             />
           ) : null}
           <ImageDraftSection

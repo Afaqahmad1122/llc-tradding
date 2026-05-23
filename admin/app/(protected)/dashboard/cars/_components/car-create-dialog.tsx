@@ -25,6 +25,7 @@ type CarCreateDialogProps = {
   draft: CarFormDraft;
   onDraftChange: (patch: Partial<CarFormDraft>) => void;
   models: CarModelSummary[];
+  onCreateModel?: (name: string) => void;
   images: ImageDraftRow[];
   onImagesChange: (next: ImageDraftRow[]) => void;
   uploadHint: string | null;
@@ -39,6 +40,7 @@ export function CarCreateDialog({
   draft,
   onDraftChange,
   models,
+  onCreateModel,
   images,
   onImagesChange,
   uploadHint,
@@ -71,6 +73,7 @@ export function CarCreateDialog({
             draft={draft}
             onChange={onDraftChange}
             models={models}
+            onCreateModel={onCreateModel}
           />
           <ImageDraftSection
             idPrefix="create"

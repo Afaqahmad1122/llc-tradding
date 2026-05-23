@@ -132,6 +132,14 @@ export type CreateAdminCarResponse = {
 
 export type UpdateAdminCarResponse = CreateAdminCarResponse;
 
+export type CreateAdminModelBody = {
+  name: string;
+};
+
+export type CreateAdminModelResponse = {
+  model: CarModelSummary;
+};
+
 export type DeleteCarResponse = {
   message: string;
 };
@@ -174,6 +182,13 @@ export function fetchAdminCars(params: AdminCarsQuery = {}) {
 
 export function fetchAdminModels() {
   return http.get<{ models: CarModelSummary[] }>("/cars/admin/models");
+}
+
+export function createAdminModel(body: CreateAdminModelBody) {
+  return http.post<CreateAdminModelResponse, CreateAdminModelBody>(
+    "/cars/admin/models",
+    body,
+  );
 }
 
 export function fetchAdminCarById(id: string) {

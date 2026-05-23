@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
 import {
   createAdminCar,
+  createAdminModel,
   fetchAdminCars,
   fetchAdminModels,
   deleteAdminCar,
@@ -24,10 +25,12 @@ import {
   replaceAdminCarImages,
   updateAdminCar,
   type AdminCar,
+  type CarModelSummary,
   type CreateAdminCarBody,
   type UpdateAdminCarBody,
 } from "@/lib/api/cars";
 
+import { AddCarModelDialog } from "./_components/add-car-model-dialog";
 import { CarCreateDialog } from "./_components/car-create-dialog";
 import { CarEditDialog } from "./_components/car-edit-dialog";
 import { CarDeleteDialog } from "./_components/car-unpublish-dialog";
@@ -50,9 +53,12 @@ import {
   listReducer,
 } from "./_lib/list-state";
 
+type AddModelTarget = "create" | "edit";
+
 function AdminCarsPageContent() {
   const qc = useQueryClient();
   const hasPermission = useAdminAuthStore((state) => state.hasPermission);
+  const canCreateCars = hasPermission("carsCreate");
   const [list, dispatch] = useReducer(listReducer, initialListState);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -65,6 +71,11 @@ function AdminCarsPageContent() {
   const [editDraft, setEditDraft] = useState<CarFormDraft | null>(null);
   const [editImages, setEditImages] = useState<ImageDraftRow[]>([]);
   const [editError, setEditError] = useState<string | null>(null);
+
+  const [addModelTarget, setAddModelTarget] =
+    useState<AddModelTarget | null>(null);
+  const [addModelName, setAddModelName] = useState("");
+  const [addModelError, setAddModelError] = useState<string | null>(null);
 
   const [deleteCarCandidate, setDeleteCarCandidate] = useState<AdminCar | null>(
     null,
@@ -106,6 +117,25 @@ function AdminCarsPageContent() {
       predicate: (q) =>
         Array.isArray(q.queryKey) && q.queryKey[0] === "admin-cars",
     });
+
+  const updateModelsCache = (model: CarModelSummary) => {
+    qc.setQueryData<{ models: CarModelSummary[] }>(
+      ["admin-car-models"],
+      (current) => {
+        const existing = current?.models ?? [];
+        const next = existing.some((m) => m.id === model.id)
+          ? existing.map((m) => (m.id === model.id ? model : m))
+          : [...existing, model];
+
+        next.sort(
+          (a, b) =>
+            a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name),
+        );
+
+        return { models: next };
+      },
+    );
+  };
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -180,6 +210,33 @@ function AdminCarsPageContent() {
     },
   });
 
+  const createModelMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const cleanName = name.trim();
+      if (!cleanName) throw new Error("Model name is required.");
+
+      try {
+        return await createAdminModel({ name: cleanName });
+      } catch (e: unknown) {
+        throw new Error(formatErrorMessage(e));
+      }
+    },
+    onSuccess: ({ model }) => {
+      updateModelsCache(model);
+      if (addModelTarget === "create") {
+        setCreateDraft((prev) => ({ ...prev, modelId: model.id }));
+      }
+      if (addModelTarget === "edit") {
+        setEditDraft((prev) => (prev ? { ...prev, modelId: model.id } : prev));
+      }
+      setAddModelTarget(null);
+      setAddModelName("");
+      setAddModelError(null);
+      void qc.invalidateQueries({ queryKey: ["admin-car-models"] });
+    },
+    onError: (e: unknown) => setAddModelError(formatErrorMessage(e)),
+  });
+
   const rows = data?.data ?? [];
   const totalPages = data?.pagination.totalPages ?? 0;
   const totalItems = data?.pagination.total ?? 0;
@@ -219,6 +276,22 @@ function AdminCarsPageContent() {
     setEditError(null);
   }
 
+  function openAddModelDialog(target: AddModelTarget, name: string) {
+    setAddModelTarget(target);
+    setAddModelName(name.trim());
+    setAddModelError(null);
+    createModelMutation.reset();
+  }
+
+  function handleAddModelOpenChange(open: boolean) {
+    if (!open) {
+      setAddModelTarget(null);
+      setAddModelName("");
+      setAddModelError(null);
+      createModelMutation.reset();
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 pb-12 pt-8 sm:px-7 sm:pt-10">
       <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -237,7 +310,7 @@ function AdminCarsPageContent() {
             </p>
           </div>
         </div>
-        {hasPermission("carsCreate") ? (
+        {canCreateCars ? (
           <Button
             type="button"
             size="default"
@@ -297,6 +370,11 @@ function AdminCarsPageContent() {
         draft={createDraft}
         onDraftChange={(p) => setCreateDraft((prev) => ({ ...prev, ...p }))}
         models={models}
+        onCreateModel={
+          canCreateCars
+            ? (name) => openAddModelDialog("create", name)
+            : undefined
+        }
         images={createImages}
         onImagesChange={setCreateImages}
         uploadHint={uploadHintShown}
@@ -314,6 +392,9 @@ function AdminCarsPageContent() {
         editCar={editCar}
         draft={editDraft}
         models={models}
+        onCreateModel={
+          canCreateCars ? (name) => openAddModelDialog("edit", name) : undefined
+        }
         images={editImages}
         onImagesChange={setEditImages}
         editError={editError}
@@ -336,6 +417,22 @@ function AdminCarsPageContent() {
           }
         }}
         mutation={deleteMutation}
+      />
+
+      <AddCarModelDialog
+        open={Boolean(addModelTarget)}
+        modelName={addModelName}
+        onModelNameChange={(value) => {
+          setAddModelName(value);
+          setAddModelError(null);
+        }}
+        onOpenChange={handleAddModelOpenChange}
+        onSubmit={() => {
+          setAddModelError(null);
+          createModelMutation.mutate(addModelName);
+        }}
+        error={addModelError}
+        mutation={createModelMutation}
       />
     </div>
   );

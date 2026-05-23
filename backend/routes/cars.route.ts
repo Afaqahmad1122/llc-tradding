@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createAdminCar,
+  createAdminModel,
   deleteAdminCar,
   getAdminCarById,
   getAdminCars,
@@ -19,6 +20,7 @@ import { validateRequestBody } from "../middlewares/validate-request.middleware.
 import {
   carInquirySchema,
   createCarSchema,
+  createCarModelSchema,
   presignCarImageSchema,
   replaceCarImagesSchema,
   updateCarSchema,
@@ -45,6 +47,13 @@ carsRouter.post(
   presignCarImageUpload,
 );
 carsRouter.get("/admin/models", requireAuth, requirePermission("carsRead"), getAdminModels);
+carsRouter.post(
+  "/admin/models",
+  requireAuth,
+  requirePermission("carsCreate"),
+  validateRequestBody(createCarModelSchema),
+  createAdminModel,
+);
 carsRouter.get("/admin/:id", requireAuth, requirePermission("carsRead"), getAdminCarById);
 carsRouter.patch(
   "/admin/:id",
