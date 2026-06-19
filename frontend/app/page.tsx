@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRightIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { heroFilters, promoBanners } from "@/components/landing/home-data";
@@ -217,6 +218,33 @@ export default function Home() {
                 <ArrowRightIcon className="size-4 transition-transform group-hover/button:translate-x-0.5" />
               </Link>
             </Button>
+          </div>
+        </SectionBlock>
+        <SectionBlock
+          id="website-qr"
+          title="Website QR Code"
+          description="Scan this code to open our website directly on a mobile phone."
+        >
+          <div className="flex flex-col items-center gap-5 rounded-2xl border border-[#452E5A]/15 bg-white/85 p-5 text-center shadow-[0_18px_45px_-32px_rgba(30,16,78,0.8)] sm:flex-row sm:items-center sm:text-left dark:border-white/10 dark:bg-white/5">
+            <div className="rounded-2xl border border-[#452E5A]/10 bg-white p-3 shadow-sm">
+              <Image
+                src="/qr.jpeg"
+                alt="QR code to open the LLC Trading website"
+                width={220}
+                height={220}
+                className="h-44 w-44 rounded-xl object-contain sm:h-52 sm:w-52"
+                priority={false}
+              />
+            </div>
+            <div className="max-w-xl">
+              <p className="text-lg font-semibold text-[#1E104E] dark:text-white">
+                Quick mobile access
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[#452E5A]/80 dark:text-white/70">
+                Open your phone camera, point it at the QR code, and tap the
+                link that appears to visit the website.
+              </p>
+            </div>
           </div>
         </SectionBlock>
         <ContactCta />
