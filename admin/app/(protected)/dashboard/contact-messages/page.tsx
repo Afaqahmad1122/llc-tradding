@@ -44,7 +44,9 @@ import {
 import { cn } from "@/lib/utils";
 
 function phoneHref(phone: string) {
-  return `tel:${phone.replace(/[\s()-]/g, "")}`;
+  // Strip formatting characters then remove leading 00 (international dial prefix)
+  const digits = phone.replace(/[\s()\-+]/g, "").replace(/^00/, "");
+  return `https://wa.me/${digits}`;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
@@ -168,7 +170,9 @@ function MessageCard({ item }: { item: AdminContactMessage }) {
                 </p>
                 <div className="flex min-w-0 flex-col gap-1.5 text-xs sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1">
                   <a
-                    href={`mailto:${item.email}`}
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(item.email)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground group inline-flex min-w-0 max-w-full items-center gap-1.5 underline-offset-4 hover:underline"
                   >
                     <Mail className="text-muted-foreground/80 size-3.5 shrink-0" aria-hidden />
@@ -176,6 +180,8 @@ function MessageCard({ item }: { item: AdminContactMessage }) {
                   </a>
                   <a
                     href={phoneHref(item.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 font-mono tabular-nums underline-offset-4 hover:underline"
                   >
                     <Phone className="text-muted-foreground/80 size-3.5 shrink-0" aria-hidden />
@@ -335,7 +341,7 @@ function AdminContactMessagesPageContent() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Contact messages</h1>
         <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-relaxed">
-          Read and follow up on inquiries. Click email or phone to open your mail client or dial.
+          Read and follow up on inquiries. Click email to compose a message or phone to open WhatsApp.
         </p>
       </div>
 
