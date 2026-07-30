@@ -308,7 +308,7 @@ export function ContactCta() {
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               asChild
-              className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
+              className="border-0 bg-[#25D366] text-white shadow-sm hover:bg-[#1EBE5D] hover:text-white"
             >
               <Link href={WHATSAPP_URL}>
                 <WhatsAppIcon className="size-4" />
