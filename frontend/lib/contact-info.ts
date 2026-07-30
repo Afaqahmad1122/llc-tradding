@@ -20,6 +20,8 @@ export const INSTAGRAM_URL =
 export const INSTAGRAM_HANDLE = "@icc_trading_japan";
 
 export const CONTACT_EMAIL_MAILTO = `mailto:${CONTACT_EMAIL}`;
+export const CONTACT_EMAIL_GMAIL_URL =
+  `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CONTACT_EMAIL)}`;
 export const CONTACT_PHONE_TEL_URL = `tel:${CONTACT_PHONE_TEL}`;
 
 export type OfficeContact = {

@@ -40,6 +40,11 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
   MAIL_FROM: z.string().min(1),
+  /** Inbox that receives a copy of each storefront contact-form submission. */
+  CONTACT_NOTIFICATION_EMAIL: z
+    .string()
+    .email()
+    .default("icctradingjp@gmail.com"),
   /** Inbox for career applications (mailto target after apply); same for every job. */
   JOB_APPLICATIONS_EMAIL: z
     .string()

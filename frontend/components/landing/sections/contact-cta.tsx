@@ -2,25 +2,26 @@
 
 import Link from "next/link";
 import { type ComponentType, type FormEvent, type SVGProps, useState } from "react";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import {
+  CircleAlert,
+  CircleCheck,
+  Mail,
+  MapPin,
+  MessageSquareText,
+  Phone,
+  Send,
+} from "lucide-react";
 
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useContactMessageMutation } from "@/hooks/use-contact-message-mutation";
 import { ApiError } from "@/lib/api/client";
 import {
   CONTACT_EMAIL,
-  CONTACT_EMAIL_MAILTO,
+  CONTACT_EMAIL_GMAIL_URL,
   CONTACT_PHONE,
   CONTACT_PHONE_TEL_URL,
   INSTAGRAM_HANDLE,
@@ -33,6 +34,12 @@ const NAME_MIN_LENGTH = 2;
 const PHONE_MIN_LENGTH = 6;
 const MESSAGE_MIN_LENGTH = 10;
 const MESSAGE_MAX_LENGTH = 2000;
+const fieldClassName =
+  "h-12 rounded-lg border-[#d9d2e3] bg-white px-3 text-base text-[#2F2142] shadow-xs placeholder:text-[#766b84] focus-visible:border-[#FF653F] focus-visible:ring-[#FF653F]/20 dark:border-white/15 dark:bg-white/8 dark:text-white dark:placeholder:text-white/45 dark:focus-visible:border-[#FF8A6D] dark:focus-visible:ring-[#FF653F]/25";
+const labelClassName =
+  "text-sm font-semibold text-[#2F2142] dark:text-white/90";
+const contactDetailClassName =
+  "group flex items-start gap-3 rounded-2xl border border-[#452E5A]/10 bg-white/90 p-3 transition-colors hover:border-[#EA3B58]/35 hover:bg-[#fff5f7] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10";
 
 type ContactDetail = {
   label: string;
@@ -40,6 +47,7 @@ type ContactDetail = {
   valueLines?: string[];
   href: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
+  useNativeAnchor?: boolean;
 };
 
 const contactDetails: ContactDetail[] = [
@@ -65,8 +73,9 @@ const contactDetails: ContactDetail[] = [
   {
     label: "Email",
     value: CONTACT_EMAIL,
-    href: CONTACT_EMAIL_MAILTO,
+    href: CONTACT_EMAIL_GMAIL_URL,
     icon: Mail,
+    useNativeAnchor: true,
   },
   {
     label: "Instagram",
@@ -78,7 +87,7 @@ const contactDetails: ContactDetail[] = [
 
 export function ContactCta() {
   const contactMutation = useContactMessageMutation();
-  const [vehicleRequirement, setVehicleRequirement] = useState<string>("");
+  const [messageLength, setMessageLength] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
@@ -96,8 +105,6 @@ export function ContactCta() {
       country: String(formData.get("country") ?? "").trim() || undefined,
       city: String(formData.get("city") ?? "").trim() || undefined,
       company: String(formData.get("company") ?? "").trim() || undefined,
-      vehicleRequirement:
-        String(formData.get("vehicleRequirement") ?? "").trim() || undefined,
       message: String(formData.get("message") ?? "").trim(),
     };
 
@@ -125,7 +132,7 @@ export function ContactCta() {
     try {
       await contactMutation.mutateAsync(payload);
       form.reset();
-      setVehicleRequirement("");
+      setMessageLength(0);
       setSubmitSuccess("Thank you. Your message has been sent successfully.");
     } catch (error) {
       if (error instanceof ApiError) {
@@ -144,124 +151,178 @@ export function ContactCta() {
       className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8"
     >
       <div className="space-y-5">
-        <div className="relative overflow-hidden rounded-3xl border border-white/20 brand-gradient-main p-6 text-white shadow-2xl sm:p-8 dark:border-white/15">
-          <div className="pointer-events-none absolute -left-10 -top-10 h-36 w-36 rounded-full bg-[#FF653F]/45 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-10 right-8 h-36 w-36 rounded-full bg-[#FFC85C]/40 blur-2xl" />
-          <div className="relative space-y-5">
-            <div className="space-y-2">
-              <h3 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Send us your query now
-              </h3>
-              <p className="max-w-2xl text-sm text-white/85 sm:text-base">
-                Tell us your required model, market and target budget. We will
-                share shortlist options with shipping guidance.
-              </p>
+        <div className="overflow-hidden rounded-2xl border border-[#452E5A]/15 bg-white shadow-[0_18px_50px_-32px_rgba(30,16,78,0.55)] dark:border-white/10 dark:bg-[#150e2e]">
+          <div className="border-b border-[#452E5A]/10 bg-[#fbf9ff] px-5 py-5 dark:border-white/10 dark:bg-white/4 sm:px-7 sm:py-6">
+            <div className="flex items-start gap-3.5">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#FF653F] text-[#1E104E] shadow-sm">
+                <MessageSquareText className="size-5" />
+              </span>
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-[#1E104E] sm:text-2xl dark:text-white">
+                  Send us your query
+                </h2>
+                <p className="max-w-2xl text-sm leading-6 text-[#5F5270] sm:text-base dark:text-white/65">
+                  Share your vehicle, market and budget requirements. Our team
+                  will respond with suitable options and shipping guidance.
+                </p>
+              </div>
             </div>
+          </div>
 
-            <form className="space-y-3" onSubmit={handleSubmit}>
-              <div className="grid gap-3 sm:grid-cols-2">
+          <form className="space-y-5 p-5 sm:p-7" onSubmit={handleSubmit}>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2">
+                <label htmlFor="contact-name" className={labelClassName}>
+                  Full name <span className="text-[#D93655]">*</span>
+                </label>
                 <Input
+                  id="contact-name"
                   name="name"
                   required
                   minLength={NAME_MIN_LENGTH}
                   maxLength={120}
                   autoComplete="name"
-                  placeholder="Full name*"
-                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  placeholder="e.g. Ahmed Khan"
+                  className={fieldClassName}
                 />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="contact-email" className={labelClassName}>
+                  Email address <span className="text-[#D93655]">*</span>
+                </label>
                 <Input
+                  id="contact-email"
                   name="email"
                   type="email"
                   required
                   maxLength={254}
                   autoComplete="email"
-                  placeholder="Email*"
-                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  placeholder="name@company.com"
+                  className={fieldClassName}
                 />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <label htmlFor="contact-phone" className={labelClassName}>
+                  Phone number <span className="text-[#D93655]">*</span>
+                </label>
                 <Input
+                  id="contact-phone"
                   name="phone"
+                  type="tel"
                   required
                   minLength={PHONE_MIN_LENGTH}
                   maxLength={40}
                   autoComplete="tel"
-                  placeholder="Phone*"
-                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  placeholder="+81 70 1234 5678"
+                  className={fieldClassName}
                 />
-                <input
-                  type="hidden"
-                  name="vehicleRequirement"
-                  value={vehicleRequirement}
-                />
-                <Select
-                  value={vehicleRequirement}
-                  onValueChange={setVehicleRequirement}
-                >
-                  <SelectTrigger className="h-12 w-full px-3 border-white/25 bg-white/12 text-base text-white data-placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10">
-                    <SelectValue placeholder="Vehicle requirement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="complete-car">Complete Car</SelectItem>
-                    <SelectItem value="half-cut">Half Cut</SelectItem>
-                    <SelectItem value="nose-cut">Nose Cut</SelectItem>
-                    <SelectItem value="dismantle">Dismantle</SelectItem>
-                    <SelectItem value="body-shell">Body Shell</SelectItem>
-                    <SelectItem value="machinery">Machinery</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2">
+                <label htmlFor="contact-country" className={labelClassName}>
+                  Country{" "}
+                  <span className="font-normal text-[#766b84] dark:text-white/45">
+                    (optional)
+                  </span>
+                </label>
                 <Input
+                  id="contact-country"
                   name="country"
                   maxLength={120}
                   autoComplete="country-name"
-                  placeholder="Country"
-                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  placeholder="e.g. Pakistan"
+                  className={fieldClassName}
                 />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="contact-city" className={labelClassName}>
+                  City{" "}
+                  <span className="font-normal text-[#766b84] dark:text-white/45">
+                    (optional)
+                  </span>
+                </label>
                 <Input
+                  id="contact-city"
                   name="city"
                   maxLength={120}
                   autoComplete="address-level2"
-                  placeholder="City"
-                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  placeholder="e.g. Karachi"
+                  className={fieldClassName}
                 />
+              </div>
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+                <label htmlFor="contact-company" className={labelClassName}>
+                  Company{" "}
+                  <span className="font-normal text-[#766b84] dark:text-white/45">
+                    (optional)
+                  </span>
+                </label>
                 <Input
+                  id="contact-company"
                   name="company"
                   maxLength={120}
                   autoComplete="organization"
-                  placeholder="Company"
-                  className="h-12 px-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                  placeholder="Company name"
+                  className={fieldClassName}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-4">
+                <label htmlFor="contact-message" className={labelClassName}>
+                  Message <span className="text-[#D93655]">*</span>
+                </label>
+                <span
+                  id="contact-message-count"
+                  className="text-xs tabular-nums text-[#766b84] dark:text-white/45"
+                >
+                  {messageLength}/{MESSAGE_MAX_LENGTH}
+                </span>
+              </div>
               <Textarea
+                id="contact-message"
                 name="message"
                 required
                 minLength={MESSAGE_MIN_LENGTH}
                 maxLength={MESSAGE_MAX_LENGTH}
-                placeholder="Message*"
-                className="min-h-36 px-3 py-3 border-white/25 bg-white/12 text-base text-white placeholder:text-white/70 focus-visible:border-white/45 focus-visible:ring-white/25 dark:bg-white/10"
+                aria-describedby="contact-message-count"
+                placeholder="Tell us the model, year, budget, destination port and any other requirements."
+                onChange={(event) => setMessageLength(event.currentTarget.value.length)}
+                className={`${fieldClassName} min-h-40 resize-y py-3 leading-6`}
               />
-              {submitError ? (
-                <p className="text-sm font-medium text-[#ffd6d6]">
-                  {submitError}
-                </p>
-              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-4 border-t border-[#452E5A]/10 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+              <div className="min-h-10 sm:flex-1" aria-live="polite">
+                {submitError ? (
+                  <p
+                    role="alert"
+                    className="inline-flex items-start gap-2 rounded-lg bg-[#fff1f2] px-3 py-2 text-sm font-medium text-[#a51d35] dark:bg-[#a51d35]/20 dark:text-[#ffb8c5]"
+                  >
+                    <CircleAlert className="mt-0.5 size-4 shrink-0" />
+                    {submitError}
+                  </p>
+                ) : null}
               {submitSuccess ? (
-                <p className="text-sm font-medium text-[#cfffd6]">
-                  {submitSuccess}
-                </p>
+                  <p className="inline-flex items-start gap-2 rounded-lg bg-[#edf9f1] px-3 py-2 text-sm font-medium text-[#176b3a] dark:bg-[#176b3a]/25 dark:text-[#a8efc0]">
+                    <CircleCheck className="mt-0.5 size-4 shrink-0" />
+                    {submitSuccess}
+                  </p>
               ) : null}
+              </div>
               <Button
                 type="submit"
                 disabled={contactMutation.isPending}
-                className="h-11 rounded-xl border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-5 font-semibold text-[#1E104E] hover:opacity-90"
+                className="h-12 w-full rounded-lg border-0 bg-[#1E104E] px-6 font-semibold text-white shadow-sm hover:bg-[#352060] hover:text-white sm:w-auto dark:bg-[#FF7958] dark:text-[#1E104E] dark:hover:bg-[#FF8A6D]"
               >
                 <Send className="size-4" />
                 {contactMutation.isPending ? "Sending..." : "Send Message"}
               </Button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
 
         <div className="rounded-3xl border border-[#452E5A]/15 bg-white/80 p-5 shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/5 sm:p-6">
@@ -276,12 +337,8 @@ export function ContactCta() {
           <div className="space-y-3">
             {contactDetails.map((item) => {
               const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="group flex items-start gap-3 rounded-2xl border border-[#452E5A]/10 bg-white/90 p-3 transition-colors hover:border-[#EA3B58]/35 hover:bg-[#fff5f7] dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-                >
+              const content = (
+                <>
                   <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EA3B58]/12 text-[#EA3B58]">
                     <Icon className="size-4" />
                   </span>
@@ -301,6 +358,30 @@ export function ContactCta() {
                       </p>
                     )}
                   </div>
+                </>
+              );
+
+              if (item.useNativeAnchor) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={contactDetailClassName}
+                  >
+                    {content}
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={contactDetailClassName}
+                >
+                  {content}
                 </Link>
               );
             })}
@@ -308,7 +389,7 @@ export function ContactCta() {
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               asChild
-              className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
+              className="border-0 bg-[#25D366] text-white shadow-sm hover:bg-[#1EBE5D] hover:text-white"
             >
               <Link href={WHATSAPP_URL}>
                 <WhatsAppIcon className="size-4" />
@@ -320,10 +401,14 @@ export function ContactCta() {
               variant="outline"
               className="border-[#452E5A]/20 bg-white/90 text-[#2F2142] hover:bg-[#fff5f7] hover:text-[#2F2142] dark:border-white/20 dark:bg-white/8 dark:text-white dark:hover:bg-white/15 dark:hover:text-white"
             >
-              <Link href={CONTACT_EMAIL_MAILTO}>
+              <a
+                href={CONTACT_EMAIL_GMAIL_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <Mail className="size-4" />
                 Email Us
-              </Link>
+              </a>
             </Button>
           </div>
         </div>

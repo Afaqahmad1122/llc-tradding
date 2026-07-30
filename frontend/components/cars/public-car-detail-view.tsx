@@ -550,8 +550,8 @@ export function PublicCarDetailView({
         </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_min(100%,380px)] lg:items-start">
-        <div className="space-y-4">
+      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,23.75rem)] lg:items-start">
+        <div className="min-w-0 space-y-4">
           <div className="relative overflow-hidden rounded-2xl border border-border bg-muted/80 shadow-inner ring-1 ring-border/50">
             <div className="relative aspect-16/10 w-full bg-linear-to-b from-muted/50 to-muted">
               {active?.url ? (
@@ -559,7 +559,7 @@ export function PublicCarDetailView({
                   src={active.url}
                   alt={active.altText ?? title}
                   fill
-                  className="object-contain sm:object-cover"
+                  className="object-contain p-2 sm:p-3"
                   sizes="(min-width: 1024px) 720px, 100vw"
                   priority
                   unoptimized
@@ -614,7 +614,7 @@ export function PublicCarDetailView({
                   type="button"
                   onClick={() => setActiveIndex(i)}
                   className={cn(
-                    "relative size-16 shrink-0 snap-start overflow-hidden rounded-lg border-2 transition sm:size-20",
+                    "relative size-16 shrink-0 snap-start overflow-hidden rounded-lg border-2 bg-muted transition sm:size-20",
                     i === activeIndex
                       ? "border-foreground ring-2 ring-primary/30"
                       : "border-transparent opacity-80 hover:opacity-100",
@@ -624,7 +624,7 @@ export function PublicCarDetailView({
                     src={img.url}
                     alt=""
                     fill
-                    className="object-cover"
+                    className="object-contain p-1"
                     sizes="80px"
                     unoptimized
                   />
@@ -676,7 +676,7 @@ export function PublicCarDetailView({
           ) : null}
         </div>
 
-        <aside className="brand-gradient-main relative z-0 space-y-4 overflow-visible rounded-2xl p-5 text-white shadow-xl ring-1 ring-black/15 lg:sticky lg:top-24 dark:ring-white/10">
+        <aside className="brand-gradient-main relative z-0 w-full min-w-0 max-w-full space-y-4 overflow-hidden break-words rounded-2xl p-5 text-white shadow-xl ring-1 ring-black/15 lg:sticky lg:top-24 dark:ring-white/10">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-lg font-bold tracking-tight">
               Shipping quote request
@@ -747,7 +747,7 @@ export function PublicCarDetailView({
                 </ComboboxContent>
               </Combobox>
               {countriesQuery.isError ? (
-                <p className="mt-1 text-[10px] text-amber-200">
+                <p className="mt-1 break-words text-[10px] text-amber-200">
                   Could not load country list. Check your connection and try
                   again.
                 </p>
@@ -842,7 +842,7 @@ export function PublicCarDetailView({
             </p>
             <Button
               asChild
-              className="h-11 w-full bg-destructive text-sm font-bold uppercase tracking-wide text-white hover:bg-destructive/90"
+              className="min-h-11 h-auto w-full min-w-0 shrink whitespace-normal bg-destructive px-3 py-2 text-center text-sm font-bold leading-tight uppercase tracking-wide text-white hover:bg-destructive/90"
             >
               <a href={askWa} target="_blank" rel="noopener noreferrer">
                 Ask on WhatsApp
@@ -853,7 +853,7 @@ export function PublicCarDetailView({
             </p>
             <Button
               asChild
-              className="h-11 w-full bg-amber-300 text-sm font-bold uppercase tracking-wide text-primary hover:bg-amber-200 dark:bg-amber-400 dark:text-primary dark:hover:bg-amber-300"
+              className="min-h-11 h-auto w-full min-w-0 shrink whitespace-normal bg-amber-300 px-3 py-2 text-center text-sm font-bold leading-tight uppercase tracking-wide text-primary hover:bg-amber-200 dark:bg-amber-400 dark:text-primary dark:hover:bg-amber-300"
             >
               <a href={askMail}>Ask by email</a>
             </Button>

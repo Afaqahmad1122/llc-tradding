@@ -1,6 +1,7 @@
 import { Prisma, UserRole, type ContactMessage } from "@prisma/client";
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
+import { sendContactMessageNotification } from "../utils/email.js";
 
 type CreateContactMessageBody = {
   name?: string;
@@ -134,15 +135,20 @@ export const createContactMessage = async (
     return;
   }
 
+  const country = normalizeOptionalString(body.country);
+  const city = normalizeOptionalString(body.city);
+  const company = normalizeOptionalString(body.company);
+  const vehicleRequirement = normalizeOptionalString(body.vehicleRequirement);
+
   const createdMessage = await prisma.contactMessage.create({
     data: {
       name,
       email,
       phone,
-      country: normalizeOptionalString(body.country),
-      city: normalizeOptionalString(body.city),
-      company: normalizeOptionalString(body.company),
-      vehicleRequirement: normalizeOptionalString(body.vehicleRequirement),
+      country,
+      city,
+      company,
+      vehicleRequirement,
       message,
     },
     select: {
@@ -151,6 +157,26 @@ export const createContactMessage = async (
       status: true,
     },
   });
+
+  try {
+    await sendContactMessageNotification({
+      id: createdMessage.id,
+      name,
+      email,
+      phone,
+      country,
+      city,
+      company,
+      vehicleRequirement,
+      message,
+      createdAt: createdMessage.createdAt,
+    });
+  } catch (error) {
+    console.error(
+      `Failed to send contact notification for message ${createdMessage.id}`,
+      error,
+    );
+  }
 
   res.status(201).json({
     message: "contact message received successfully",
