@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { CircleUserRound, LogOut, Settings, ShieldCheck, Star, User } from "lucide-react";
+import {
+  CircleUserRound,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  Star,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,7 +28,9 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
   const { data: eligibilityData, isSuccess: eligibilityLoaded } =
     usePendingReviewEligibilityQuery();
   const showWriteReview =
-    Boolean(user?.id) && eligibilityLoaded && (eligibilityData?.data?.length ?? 0) > 0;
+    Boolean(user?.id) &&
+    eligibilityLoaded &&
+    (eligibilityData?.data?.length ?? 0) > 0;
 
   const handleLogout = async () => {
     try {
@@ -35,18 +44,13 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
     if (mobile) {
       return (
         <>
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="flex-1 border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
-          >
+          <Button asChild variant="outline" size="sm">
             <Link href="/login">Login</Link>
           </Button>
           <Button
             asChild
             size="sm"
-            className="flex-1 border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
+            className="h-10 flex-1 rounded-[4px] border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-sm font-semibold text-[#1E104E] shadow-sm transition-shadow hover:opacity-90 hover:shadow-md"
           >
             <Link href="/signup">Register</Link>
           </Button>
@@ -60,14 +64,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
           asChild
           variant="outline"
           size="sm"
-          className="border-[#452E5A]/25 text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
+          className="h-10 rounded-[4px] border-[#452E5A]/25 px-5 text-sm font-semibold text-[#452E5A] hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/10"
         >
           <Link href="/login">Login</Link>
         </Button>
         <Button
           asChild
           size="sm"
-          className="border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] hover:opacity-90"
+          className="h-10 rounded-[4px] border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] px-5 text-sm font-semibold text-[#1E104E] shadow-sm transition-shadow hover:opacity-90 hover:shadow-md"
         >
           <Link href="/signup">Register</Link>
         </Button>
