@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -50,7 +50,7 @@ import {
   inventoryTitle,
 } from "@/lib/car-display";
 import type { PublicCar } from "@/lib/api/cars";
-import { submitCarInquiry } from "@/lib/api/cars";
+import { submitCarInquiry, trackCarEvent } from "@/lib/api/cars";
 import { ApiError } from "@/lib/api/client";
 import {
   useDestinationCountriesQuery,
@@ -204,7 +204,9 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
             asChild
             className="h-9 flex-1 border-0 bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-500"
           >
-            <a href={mailHref}>Inquire now</a>
+            <a href={mailHref} target="_blank" rel="noopener noreferrer">
+              Inquire now
+            </a>
           </Button>
           <Button
             asChild
@@ -244,6 +246,13 @@ export function PublicCarDetailView({
   const gallery = useMemo(() => sortedGallery(car), [car]);
   const [activeIndex, setActiveIndex] = useState(0);
   const active = gallery[activeIndex] ?? null;
+
+  const trackedViewRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (trackedViewRef.current === car.referenceNo) return;
+    trackedViewRef.current = car.referenceNo;
+    trackCarEvent(car.referenceNo, "DETAIL_VIEW").catch(() => {});
+  }, [car.referenceNo]);
 
   const countriesQuery = useDestinationCountriesQuery();
 
@@ -842,9 +851,19 @@ export function PublicCarDetailView({
             </p>
             <Button
               asChild
-              className="min-h-11 h-auto w-full min-w-0 shrink whitespace-normal bg-destructive px-3 py-2 text-center text-sm font-bold leading-tight uppercase tracking-wide text-white hover:bg-destructive/90"
+              variant="ghost"
+              className="min-h-11 h-auto w-full min-w-0 shrink whitespace-normal bg-destructive px-3 py-2 text-center text-sm font-bold leading-tight uppercase tracking-wide text-white hover:bg-destructive/90 hover:text-white"
             >
-              <a href={askWa} target="_blank" rel="noopener noreferrer">
+              <a
+                href={askWa}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackCarEvent(car.referenceNo, "WHATSAPP_CLICK").catch(
+                    () => {},
+                  )
+                }
+              >
                 Ask on WhatsApp
               </a>
             </Button>
@@ -853,9 +872,21 @@ export function PublicCarDetailView({
             </p>
             <Button
               asChild
-              className="min-h-11 h-auto w-full min-w-0 shrink whitespace-normal bg-amber-300 px-3 py-2 text-center text-sm font-bold leading-tight uppercase tracking-wide text-primary hover:bg-amber-200 dark:bg-amber-400 dark:text-primary dark:hover:bg-amber-300"
+              variant="ghost"
+              className="min-h-11 h-auto w-full min-w-0 shrink whitespace-normal bg-amber-300 px-3 py-2 text-center text-sm font-bold leading-tight uppercase tracking-wide text-primary hover:bg-amber-200 hover:text-primary dark:bg-amber-400 dark:text-primary dark:hover:bg-amber-300 dark:hover:text-primary"
             >
-              <a href={askMail}>Ask by email</a>
+              <a
+                href={askMail}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackCarEvent(car.referenceNo, "EMAIL_CLICK").catch(
+                    () => {},
+                  )
+                }
+              >
+                Ask by email
+              </a>
             </Button>
           </div>
         </aside>

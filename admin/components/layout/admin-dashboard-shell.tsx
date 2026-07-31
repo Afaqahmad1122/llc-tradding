@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
+  BarChart3,
   Briefcase,
   CarFront,
   Inbox,
@@ -52,6 +53,12 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/cars", label: "Cars", icon: CarFront, permissionKey: "carsRead" },
+  {
+    href: "/dashboard/analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    permissionKey: "carsRead",
+  },
   { href: "/dashboard/careers", label: "Careers", icon: Briefcase, permissionKey: "careersRead" },
   { href: "/dashboard/reviews", label: "Reviews", icon: Star, permissionKey: "reviewsRead" },
   {

@@ -1,5 +1,5 @@
 import type { PublicCar } from "@/lib/api/cars";
-import { CONTACT_EMAIL_MAILTO, WHATSAPP_URL } from "@/lib/contact-info";
+import { CONTACT_EMAIL, WHATSAPP_URL } from "@/lib/contact-info";
 
 export function inventoryTitle(car: PublicCar): string {
   return car.title?.trim()
@@ -62,13 +62,19 @@ export function buildInquiryWhatsAppUrl(
 
 export function buildInquireMailto(car: PublicCar, extra?: string): string {
   const title = inventoryTitle(car);
-  const subject = encodeURIComponent(`Inquiry: ${car.referenceNo} — ${title}`);
+  const subject = `Inquiry: ${car.referenceNo} — ${title}`;
   let bodyText = `Hello,\n\nI'm interested in this vehicle:\nReference: ${car.referenceNo}\n${title}\nYear: ${car.year}\n\nPlease share details.\n`;
   if (extra?.trim()) {
     bodyText += `\n${extra.trim()}\n`;
   }
-  const body = encodeURIComponent(bodyText);
-  return `${CONTACT_EMAIL_MAILTO}?subject=${subject}&body=${body}`;
+  const params = new URLSearchParams({
+    view: "cm",
+    fs: "1",
+    to: CONTACT_EMAIL,
+    su: subject,
+    body: bodyText,
+  });
+  return `https://mail.google.com/mail/?${params.toString()}`;
 }
 
 export function featureEntryActive(value: unknown): boolean {

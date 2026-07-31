@@ -1,7 +1,13 @@
 import { randomBytes } from "node:crypto";
 import { DeleteObjectsCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { FuelType, Prisma, TransmissionType, UserRole } from "@prisma/client";
+import {
+  CarEventType,
+  FuelType,
+  Prisma,
+  TransmissionType,
+  UserRole,
+} from "@prisma/client";
 import type { SteeringType } from "@prisma/client";
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
@@ -58,6 +64,8 @@ type PresignBody = {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 50;
+const ENGAGEMENT_DEFAULT_DAYS = 30;
+const ENGAGEMENT_MAX_DAYS = 365;
 const PRESIGN_EXPIRES_IN_SEC = 300;
 const SIMILAR_CARS_LIMIT = 5;
 const S3_DELETE_BATCH_SIZE = 1_000;
@@ -691,6 +699,41 @@ export const submitCarInquiry = async (
   res.status(201).json({ message: "inquiry submitted successfully" });
 };
 
+type TrackCarEventBody = {
+  type: CarEventType;
+};
+
+export const trackCarEvent = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const referenceNo = req.params.referenceNo
+    ? normalizeReferenceNo(req.params.referenceNo)
+    : "";
+  if (!referenceNo) {
+    res.status(400).json({ message: "referenceNo is required" });
+    return;
+  }
+
+  const car = await prisma.car.findFirst({
+    where: { referenceNo, isPublished: true },
+    select: { id: true },
+  });
+
+  if (!car) {
+    res.status(404).json({ message: "car not found" });
+    return;
+  }
+
+  const { type } = req.body as TrackCarEventBody;
+
+  await prisma.carEvent.create({
+    data: { carId: car.id, type },
+  });
+
+  res.status(201).json({ success: true });
+};
+
 export const getAdminModels = async (
   _req: Request,
   res: Response,
@@ -835,6 +878,99 @@ export const getAdminCars = async (
 
   res.status(200).json({
     data,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  });
+};
+
+export const getCarEngagementStats = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) return;
+
+  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+  const pageSize = Math.min(
+    parsePositiveInt(req.query.pageSize, DEFAULT_PAGE_SIZE),
+    MAX_PAGE_SIZE,
+  );
+  const days = Math.min(
+    parsePositiveInt(req.query.days, ENGAGEMENT_DEFAULT_DAYS),
+    ENGAGEMENT_MAX_DAYS,
+  );
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const grouped = await prisma.carEvent.groupBy({
+    by: ["carId", "type"],
+    where: { createdAt: { gte: since } },
+    _count: { _all: true },
+  });
+
+  const statsByCarId = new Map<
+    string,
+    { views: number; whatsappClicks: number; emailClicks: number }
+  >();
+  for (const row of grouped) {
+    const entry = statsByCarId.get(row.carId) ?? {
+      views: 0,
+      whatsappClicks: 0,
+      emailClicks: 0,
+    };
+    if (row.type === CarEventType.DETAIL_VIEW) entry.views = row._count._all;
+    if (row.type === CarEventType.WHATSAPP_CLICK)
+      entry.whatsappClicks = row._count._all;
+    if (row.type === CarEventType.EMAIL_CLICK)
+      entry.emailClicks = row._count._all;
+    statsByCarId.set(row.carId, entry);
+  }
+
+  const carIds = [...statsByCarId.keys()];
+  const cars =
+    carIds.length > 0
+      ? await prisma.car.findMany({
+          where: { id: { in: carIds } },
+          select: {
+            id: true,
+            referenceNo: true,
+            title: true,
+            model: { select: { brand: true, name: true } },
+          },
+        })
+      : [];
+  const carById = new Map(cars.map((c) => [c.id, c]));
+
+  const rows = carIds
+    .map((id) => {
+      const stats = statsByCarId.get(id);
+      const car = carById.get(id);
+      if (!stats || !car) return null;
+      const clicks = stats.whatsappClicks + stats.emailClicks;
+      return {
+        carId: id,
+        referenceNo: car.referenceNo,
+        title: car.title,
+        model: `${car.model.brand} ${car.model.name}`,
+        views: stats.views,
+        whatsappClicks: stats.whatsappClicks,
+        emailClicks: stats.emailClicks,
+        clicks,
+        clickThroughRate: stats.views > 0 ? clicks / stats.views : 0,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null)
+    .sort((a, b) => b.views + b.clicks - (a.views + a.clicks));
+
+  const total = rows.length;
+  const start = (page - 1) * pageSize;
+  const data = rows.slice(start, start + pageSize);
+
+  res.status(200).json({
+    data,
+    days,
     pagination: {
       page,
       pageSize,

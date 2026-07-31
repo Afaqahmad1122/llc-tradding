@@ -173,3 +173,13 @@ export function submitCarInquiry(
     body,
   );
 }
+
+export type CarEventType = "DETAIL_VIEW" | "WHATSAPP_CLICK" | "EMAIL_CLICK";
+
+export function trackCarEvent(referenceNo: string, type: CarEventType) {
+  const ref = referenceNo.trim().toUpperCase();
+  return http.post<{ success: boolean }>(
+    `/cars/${encodeURIComponent(ref)}/events`,
+    { type },
+  );
+}

@@ -115,3 +115,7 @@ export const carInquirySchema = z.object({
   destinationPort: trimmed.max(64).optional(),
   message: trimmed.max(2000).optional(),
 });
+
+export const trackCarEventSchema = z.object({
+  type: z.enum(["DETAIL_VIEW", "WHATSAPP_CLICK", "EMAIL_CLICK"]),
+});

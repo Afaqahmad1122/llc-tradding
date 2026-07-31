@@ -7,11 +7,13 @@ import {
   getAdminCars,
   getAdminModels,
   getCarByReference,
+  getCarEngagementStats,
   getCarsMeta,
   getCars,
   presignCarImageUpload,
   replaceAdminCarImages,
   submitCarInquiry,
+  trackCarEvent,
   updateAdminCar,
 } from "../controllers/cars.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -23,6 +25,7 @@ import {
   createCarModelSchema,
   presignCarImageSchema,
   replaceCarImagesSchema,
+  trackCarEventSchema,
   updateCarSchema,
 } from "../validations/cars.validation.js";
 
@@ -32,6 +35,12 @@ carsRouter.get("/", getCars);
 carsRouter.get("/meta", getCarsMeta);
 
 carsRouter.get("/admin", requireAuth, requirePermission("carsRead"), getAdminCars);
+carsRouter.get(
+  "/admin/analytics/engagement",
+  requireAuth,
+  requirePermission("carsRead"),
+  getCarEngagementStats,
+);
 carsRouter.post(
   "/admin",
   requireAuth,
@@ -76,4 +85,9 @@ carsRouter.post(
   "/:referenceNo/inquire",
   validateRequestBody(carInquirySchema),
   submitCarInquiry,
+);
+carsRouter.post(
+  "/:referenceNo/events",
+  validateRequestBody(trackCarEventSchema),
+  trackCarEvent,
 );

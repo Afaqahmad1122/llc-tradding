@@ -253,7 +253,12 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
                 asChild
                 className="h-11 gap-2 border-0 bg-emerald-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500"
               >
-                <a href={mailHref} aria-label={`Email inquiry for ${car.referenceNo}`}>
+                <a
+                  href={mailHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Email inquiry for ${car.referenceNo}`}
+                >
                   <MailIcon className="size-4" aria-hidden />
                   Inquire now
                 </a>
