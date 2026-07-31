@@ -13,6 +13,7 @@ import {
   Ship,
   Star,
   Users,
+  UsersRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -60,7 +61,13 @@ const NAV_ITEMS: NavItem[] = [
     permissionKey: "contactRead",
   },
   { href: "/dashboard/shipping", label: "Shipping", icon: Ship, permissionKey: "shippingRead" },
-  { href: "/dashboard/users", label: "Users", icon: Users, adminOnly: true },
+  { href: "/dashboard/users", label: "Staff", icon: Users, adminOnly: true },
+  {
+    href: "/dashboard/all-users",
+    label: "All Users",
+    icon: UsersRound,
+    adminOnly: true,
+  },
 ];
 
 function navItemActive(pathname: string, href: string) {
