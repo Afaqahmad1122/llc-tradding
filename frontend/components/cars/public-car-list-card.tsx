@@ -31,8 +31,9 @@ import {
   displayStr,
   formatJpy,
   formatPkr,
-  formatUsd,
+  hasVisiblePrice,
   inventoryTitle,
+  primaryPriceLabel,
 } from "@/lib/car-display";
 
 function SpecCell({
@@ -112,7 +113,8 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
     ? car.country.trim().toUpperCase()
     : null;
 
-  const usd = formatUsd(car.priceUsd);
+  const hasPrice = hasVisiblePrice(car);
+  const primaryPrice = primaryPriceLabel(car);
   const pkrLine = formatPkr(car.pricePkr);
   const jpyLine = formatJpy(car.priceJpy);
   const title = inventoryTitle(car);
@@ -270,10 +272,16 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
 
             <div className="lg:text-right">
               <p className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.14em]">
-                FOB price
+                {hasPrice ? "FOB price" : "Price"}
               </p>
-              <p className="text-accent text-2xl font-bold tabular-nums tracking-tight">
-                {usd}
+              <p
+                className={cn(
+                  "text-accent text-2xl font-bold tabular-nums tracking-tight",
+                  !hasPrice &&
+                    "animate-bounce rounded-lg bg-amber-300 px-3 py-1 text-primary shadow-sm",
+                )}
+              >
+                {primaryPrice}
               </p>
               {pkrLine ? (
                 <p className="text-accent/90 mt-0.5 text-sm font-semibold tabular-nums">

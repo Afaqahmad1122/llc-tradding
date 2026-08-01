@@ -25,7 +25,7 @@ export type AdminCar = {
   mileage: number | null;
   mileageUnit: string;
   /** Prisma Decimal serializes as string in JSON */
-  priceUsd: string;
+  priceUsd: string | null;
   pricePkr: string | null;
   priceJpy: string | null;
   fuel: string | null;
@@ -102,9 +102,9 @@ export type CreateAdminCarBody = {
   year: number;
   mileage?: number;
   mileageUnit?: string;
-  priceUsd: number;
-  pricePkr: number;
-  priceJpy: number;
+  priceUsd?: number | null;
+  pricePkr?: number | null;
+  priceJpy?: number | null;
   fuel?: CarFuel;
   transmission?: CarTransmission;
   seats?: number;
@@ -154,6 +154,11 @@ export type PresignCarImageResponse = {
   key: string;
   publicUrl: string;
   expiresInSec: number;
+};
+
+export type UploadCarImageResponse = {
+  key: string;
+  publicUrl: string;
 };
 
 export type ReplaceCarImagesBody = {
@@ -221,6 +226,18 @@ export function presignCarImageUpload(body: PresignCarImageBody) {
   return http.post<PresignCarImageResponse, PresignCarImageBody>(
     "/cars/admin/images/presign",
     body,
+  );
+}
+
+export function uploadCarImage(file: File) {
+  return http.post<UploadCarImageResponse, File>(
+    "/cars/admin/images/upload",
+    file,
+    {
+      headers: {
+        "Content-Type": file.type,
+      },
+    },
   );
 }
 

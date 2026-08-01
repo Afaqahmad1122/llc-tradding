@@ -96,7 +96,7 @@ export function CarFormFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-usd`}>Price (USD)</Label>
+        <Label htmlFor={`${idPrefix}-usd`}>Price (USD optional)</Label>
         <Input
           id={`${idPrefix}-usd`}
           inputMode="decimal"
@@ -106,7 +106,7 @@ export function CarFormFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-pkr`}>Price PKR</Label>
+        <Label htmlFor={`${idPrefix}-pkr`}>Price PKR (optional)</Label>
         <Input
           id={`${idPrefix}-pkr`}
           inputMode="numeric"
@@ -116,7 +116,7 @@ export function CarFormFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-jpy`}>Price JPY</Label>
+        <Label htmlFor={`${idPrefix}-jpy`}>Price JPY (optional)</Label>
         <Input
           id={`${idPrefix}-jpy`}
           inputMode="numeric"

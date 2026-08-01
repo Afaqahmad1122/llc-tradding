@@ -37,13 +37,13 @@ export type VehiclePriceDisplay = {
 /** Live FX first; stored PKR only when currency is PKR and rates are unavailable. */
 export function resolveVehiclePriceDisplay(input: {
   currency: string;
-  priceUsd: string;
+  priceUsd: string | null;
   pricePkr: string | null;
   fxRates: Record<string, number> | undefined;
   fxLoading?: boolean;
 }): VehiclePriceDisplay {
   const usd = formatUsd(input.priceUsd);
-  const priceUsdNum = Number.parseFloat(input.priceUsd);
+  const priceUsdNum = Number.parseFloat(input.priceUsd ?? "");
 
   if (input.currency === "USD") {
     return { label: usd, hint: null };
@@ -83,11 +83,11 @@ export function resolveVehiclePriceDisplay(input: {
 
 /** Header secondary line: PKR from live USD×rate when possible. */
 export function resolveHeaderPkrLine(input: {
-  priceUsd: string;
+  priceUsd: string | null;
   pricePkr: string | null;
   fxRates: Record<string, number> | undefined;
 }): string | null {
-  const priceUsdNum = Number.parseFloat(input.priceUsd);
+  const priceUsdNum = Number.parseFloat(input.priceUsd ?? "");
   const rate = input.fxRates?.PKR;
   if (
     typeof rate === "number" &&

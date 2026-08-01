@@ -24,7 +24,7 @@ export type PublicCar = {
   mileage: number | null;
   mileageUnit: string;
   /** Prisma Decimal */
-  priceUsd: string;
+  priceUsd: string | null;
   pricePkr: string | null;
   priceJpy: string | null;
   fuel: string | null;

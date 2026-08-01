@@ -45,9 +45,10 @@ import {
   featureEntryActive,
   formatJpy,
   formatPkr,
-  formatUsd,
+  hasVisiblePrice,
   humanizeFeatureKey,
   inventoryTitle,
+  primaryPriceLabel,
 } from "@/lib/car-display";
 import type { PublicCar } from "@/lib/api/cars";
 import { submitCarInquiry, trackCarEvent } from "@/lib/api/cars";
@@ -133,7 +134,8 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
   const imageUrl =
     car.images.find((i) => i.isPrimary)?.url ?? car.images[0]?.url ?? null;
   const title = inventoryTitle(car);
-  const usd = formatUsd(car.priceUsd);
+  const hasPrice = hasVisiblePrice(car);
+  const primaryPrice = primaryPriceLabel(car);
   const pkrLine = formatPkr(car.pricePkr);
   const jpyLine = formatJpy(car.priceJpy);
   const waHref = buildInquiryWhatsAppUrl(car);
@@ -183,10 +185,16 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
         </div>
         <div className="text-right text-xs">
           <div className="text-muted-foreground text-left text-[10px] font-bold uppercase">
-            FOB price
+            {hasPrice ? "FOB price" : "Price"}
           </div>
-          <p className="text-destructive text-base font-bold tabular-nums">
-            {usd}
+          <p
+            className={cn(
+              "text-destructive text-base font-bold tabular-nums",
+              !hasPrice &&
+                "inline-flex animate-bounce rounded-md bg-amber-300 px-2 py-1 text-primary shadow-sm",
+            )}
+          >
+            {primaryPrice}
           </p>
           {pkrLine ? (
             <p className="text-amber-600 dark:text-amber-400 text-xs font-semibold tabular-nums">
@@ -319,7 +327,8 @@ export function PublicCarDetailView({
   const [galleryDownloading, setGalleryDownloading] = useState(false);
 
   const title = inventoryTitle(car);
-  const usd = formatUsd(car.priceUsd);
+  const hasPrice = hasVisiblePrice(car);
+  const primaryPrice = primaryPriceLabel(car);
   const pkrLine = formatPkr(car.pricePkr);
   const jpyLine = formatJpy(car.priceJpy);
   const originLabel = car.country?.trim()
@@ -515,7 +524,7 @@ export function PublicCarDetailView({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-4">
             <span className="inline-flex items-center rounded-md bg-destructive px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
-              FOB price
+              {hasPrice ? "FOB price" : "Ask for price"}
             </span>
             <h1 className="font-heading max-w-4xl text-2xl font-bold leading-tight tracking-tight text-primary sm:text-3xl lg:text-4xl">
               {title.toUpperCase()}
@@ -536,8 +545,13 @@ export function PublicCarDetailView({
             </div>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-            <p className="inline-flex min-w-40 items-center justify-center rounded-xl bg-destructive px-5 py-3 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl">
-              {usd}
+            <p
+              className={cn(
+                "inline-flex min-w-40 items-center justify-center rounded-xl bg-destructive px-5 py-3 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl",
+                !hasPrice && "animate-bounce bg-amber-300 text-primary",
+              )}
+            >
+              {primaryPrice}
             </p>
             {pkrLine ? (
               <p className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">
@@ -694,11 +708,16 @@ export function PublicCarDetailView({
 
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">
-              Vehicle price
+              {hasPrice ? "Vehicle price" : "Ask for price"}
             </p>
             <div className="mt-2 space-y-2">
-              <p className="inline-block min-w-32 rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md">
-                {usd}
+              <p
+                className={cn(
+                  "inline-block min-w-32 rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md",
+                  !hasPrice && "animate-bounce bg-amber-300 text-primary",
+                )}
+              >
+                {primaryPrice}
               </p>
               {pkrLine ? (
                 <p className="text-sm font-semibold tabular-nums text-white">

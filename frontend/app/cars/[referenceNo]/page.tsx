@@ -6,7 +6,7 @@ import { PublicCarDetailView } from "@/components/cars/public-car-detail-view";
 import { LandingPageShell } from "@/components/landing/landing-page-shell";
 import { ApiError } from "@/lib/api/client";
 import { fetchPublicCarByReference } from "@/lib/api/cars";
-import { inventoryTitle } from "@/lib/car-display";
+import { inventoryTitle, primaryPriceLabel } from "@/lib/car-display";
 
 type PageProps = {
   params: Promise<{ referenceNo: string }>;
@@ -23,7 +23,10 @@ export async function generateMetadata({
   try {
     const { car } = await fetchPublicCarByReference(referenceNo);
     const title = inventoryTitle(car);
-    const description = `${title} — ${car.year}. Reference ${car.referenceNo}. FOB ${car.priceUsd} USD. Export-ready stock from ICC Trading Co Ltd.`;
+    const priceLabel = primaryPriceLabel(car);
+    const priceText =
+      priceLabel === "Ask" ? "Ask for price" : `FOB ${priceLabel}`;
+    const description = `${title} — ${car.year}. Reference ${car.referenceNo}. ${priceText}. Export-ready stock from ICC Trading Co Ltd.`;
     return buildPageMetadata({
       title: `${car.referenceNo} · ${title}`,
       description,

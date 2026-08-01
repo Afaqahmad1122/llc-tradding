@@ -39,6 +39,18 @@ export function formatJpy(price: string | null): string | null {
   }).format(n);
 }
 
+export function hasVisiblePrice(car: Pick<PublicCar, "priceUsd" | "pricePkr" | "priceJpy">): boolean {
+  return Boolean(formatUsd(car.priceUsd) !== "—" || formatPkr(car.pricePkr) || formatJpy(car.priceJpy));
+}
+
+export function primaryPriceLabel(
+  car: Pick<PublicCar, "priceUsd" | "pricePkr" | "priceJpy">,
+): string {
+  const usd = formatUsd(car.priceUsd);
+  if (usd !== "—") return usd;
+  return formatPkr(car.pricePkr) ?? formatJpy(car.priceJpy) ?? "Ask";
+}
+
 export function displayStr(value: string | null | undefined): string {
   const s = value?.trim();
   return s ? s : "—";

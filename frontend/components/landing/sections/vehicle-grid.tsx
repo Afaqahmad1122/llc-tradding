@@ -11,8 +11,9 @@ import {
   buildInquiryWhatsAppUrl,
   displayStr,
   formatPkr,
-  formatUsd,
+  hasVisiblePrice,
   inventoryTitle,
+  primaryPriceLabel,
 } from "@/lib/car-display";
 
 function primaryImageUrl(car: PublicCar): string | null {
@@ -69,6 +70,8 @@ export function VehicleGrid({
         const transmissionPart = displayStr(car.transmission);
         const locationPart = locationText(car);
         const mileagePart = formatMileage(car);
+        const hasPrice = hasVisiblePrice(car);
+        const primaryPrice = primaryPriceLabel(car);
         const pkrLine = formatPkr(car.pricePkr);
 
         return (
@@ -128,10 +131,16 @@ export function VehicleGrid({
               </div>
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#5C4A76] dark:text-white/55">
-                  FOB price
+                  {hasPrice ? "FOB price" : "Price"}
                 </p>
-                <p className="mt-1 text-3xl font-semibold tracking-tight text-[#1E104E] dark:text-white">
-                  {formatUsd(car.priceUsd)}
+                <p
+                  className={`mt-1 text-3xl font-semibold tracking-tight text-[#1E104E] dark:text-white ${
+                    hasPrice
+                      ? ""
+                      : "inline-flex animate-bounce rounded-lg bg-amber-300 px-3 py-1 text-[#1E104E] shadow-sm dark:text-[#1E104E]"
+                  }`}
+                >
+                  {primaryPrice}
                 </p>
                 {pkrLine ? (
                   <p className="mt-1 text-base font-semibold tabular-nums text-[#EA3B58]">

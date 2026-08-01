@@ -35,9 +35,9 @@ type CreateCarBody = {
   year: number;
   mileage?: number;
   mileageUnit?: string;
-  priceUsd: number;
-  pricePkr: number;
-  priceJpy: number;
+  priceUsd?: number | null;
+  pricePkr?: number | null;
+  priceJpy?: number | null;
   fuel?: FuelType;
   transmission?: TransmissionType;
   seats?: number;
@@ -315,7 +315,6 @@ const buildCreateData = (
   const data: Prisma.CarCreateInput = {
     referenceNo: normalizeReferenceNo(body.referenceNo),
     year: body.year,
-    priceUsd: body.priceUsd,
     chassisNo: normalizeChassisNo(body.chassisNo) ?? null,
     model: { connect: { id: body.modelId } },
     createdByAdmin: true,
@@ -324,6 +323,7 @@ const buildCreateData = (
   if (body.title !== undefined) data.title = body.title;
   if (body.mileage !== undefined) data.mileage = body.mileage;
   if (body.mileageUnit !== undefined) data.mileageUnit = body.mileageUnit;
+  if (body.priceUsd !== undefined) data.priceUsd = body.priceUsd;
   if (body.pricePkr !== undefined) data.pricePkr = body.pricePkr;
   if (body.priceJpy !== undefined) data.priceJpy = body.priceJpy;
   if (body.fuel !== undefined) data.fuel = body.fuel;
@@ -1303,5 +1303,57 @@ export const presignCarImageUpload = async (
     key,
     publicUrl,
     expiresInSec: PRESIGN_EXPIRES_IN_SEC,
+  });
+};
+
+export const uploadAdminCarImage = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) return;
+
+  if (!s3Bucket) {
+    res.status(503).json({ message: "image upload is not configured" });
+    return;
+  }
+
+  const contentType = req.header("content-type");
+  const ext =
+    contentType === "image/jpeg"
+      ? "jpg"
+      : contentType === "image/png"
+        ? "png"
+        : contentType === "image/webp"
+          ? "webp"
+          : null;
+
+  if (!contentType || !ext) {
+    res.status(400).json({ message: "unsupported image type" });
+    return;
+  }
+
+  if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+    res.status(400).json({ message: "image file is required" });
+    return;
+  }
+
+  const random = randomBytes(8).toString("hex");
+  const key = `cars/${Date.now()}-${random}.${ext}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: s3Bucket,
+      Key: key,
+      Body: req.body,
+      ContentType: contentType,
+    }),
+  );
+
+  const region = env.AWS_REGION;
+  const publicUrl = `https://${s3Bucket}.s3.${region}.amazonaws.com/${key}`;
+
+  res.status(201).json({
+    key,
+    publicUrl,
   });
 };

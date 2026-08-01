@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from "express";
 import {
   createAdminCar,
   createAdminModel,
@@ -15,6 +16,7 @@ import {
   submitCarInquiry,
   streamAdminCarEvents,
   trackCarEvent,
+  uploadAdminCarImage,
   updateAdminCar,
 } from "../controllers/cars.controller.js";
 import {
@@ -64,6 +66,16 @@ carsRouter.post(
   requirePermission("carsCreate"),
   validateRequestBody(presignCarImageSchema),
   presignCarImageUpload,
+);
+carsRouter.post(
+  "/admin/images/upload",
+  requireAuth,
+  requirePermission("carsCreate"),
+  express.raw({
+    type: ["image/jpeg", "image/png", "image/webp"],
+    limit: "10mb",
+  }),
+  uploadAdminCarImage,
 );
 carsRouter.get("/admin/models", requireAuth, requirePermission("carsRead"), getAdminModels);
 carsRouter.post(

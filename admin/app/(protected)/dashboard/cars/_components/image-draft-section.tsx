@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { presignCarImageUpload } from "@/lib/api/cars";
+import { uploadCarImage } from "@/lib/api/cars";
 
 import type { ImageDraftRow } from "../_lib/draft-utils";
 import { mapFileToPresignParts } from "../_lib/presign-helpers";
@@ -67,17 +67,7 @@ export function ImageDraftSection({
     setUploadError(null);
     setUploadBusy(true);
     try {
-      const presigned = await presignCarImageUpload(parts.body);
-      const res = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": parts.body.contentType,
-        },
-      });
-      if (!res.ok) {
-        throw new Error(`Upload failed (${res.status})`);
-      }
+      const uploaded = await uploadCarImage(file);
       const nextUid = crypto.randomUUID();
       onChange([
         ...images.map((r) =>
@@ -85,8 +75,8 @@ export function ImageDraftSection({
         ),
         {
           uid: nextUid,
-          url: presigned.publicUrl,
-          key: presigned.key,
+          url: uploaded.publicUrl,
+          key: uploaded.key,
           altText: "",
           isPrimary: images.every((r) => !r.isPrimary),
         },
