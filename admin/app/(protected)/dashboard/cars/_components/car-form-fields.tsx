@@ -1,6 +1,16 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import {
+  BadgeDollarSign,
+  CarFront,
+  FileText,
+  MapPin,
+  Plus,
+  Settings2,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,8 +53,14 @@ export function CarFormFields({
   referenceReadOnly,
 }: CarFormFieldsProps) {
   return (
-    <div className="grid w-full grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-      <div className="space-y-2">
+    <div className="flex w-full flex-col gap-5">
+      <FormSection
+        title="Listing"
+        description="Core details used for inventory search and public titles."
+        icon={FileText}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ref`}>Reference #</Label>
         <Input
           id={`${idPrefix}-ref`}
@@ -64,8 +80,8 @@ export function CarFormFields({
           readOnly={referenceReadOnly}
           className={referenceReadOnly ? "bg-muted" : undefined}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-model`}>Model</Label>
         <CarModelCombobox
           id={`${idPrefix}-model`}
@@ -74,8 +90,8 @@ export function CarFormFields({
           onChange={(modelId) => onChange({ modelId })}
           onCreateModel={onCreateModel}
         />
-      </div>
-      <div className="space-y-2 sm:col-span-2">
+          </div>
+          <div className="space-y-2 sm:col-span-2">
         <Label htmlFor={`${idPrefix}-title`}>Title (optional)</Label>
         <Input
           id={`${idPrefix}-title`}
@@ -84,8 +100,8 @@ export function CarFormFields({
           onChange={(e) => onChange({ title: e.target.value })}
           maxLength={200}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-year`}>Year</Label>
         <Input
           id={`${idPrefix}-year`}
@@ -94,8 +110,17 @@ export function CarFormFields({
           placeholder="e.g. 2022"
           onChange={(e) => onChange({ year: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Pricing"
+        description="Leave price fields blank to show Ask on the website."
+        icon={BadgeDollarSign}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-usd`}>Price (USD optional)</Label>
         <Input
           id={`${idPrefix}-usd`}
@@ -104,8 +129,8 @@ export function CarFormFields({
           placeholder="e.g. 18500"
           onChange={(e) => onChange({ priceUsd: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-pkr`}>Price PKR (optional)</Label>
         <Input
           id={`${idPrefix}-pkr`}
@@ -114,8 +139,8 @@ export function CarFormFields({
           placeholder="e.g. 5150000"
           onChange={(e) => onChange({ pricePkr: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-jpy`}>Price JPY (optional)</Label>
         <Input
           id={`${idPrefix}-jpy`}
@@ -124,8 +149,17 @@ export function CarFormFields({
           placeholder="e.g. 2850000"
           onChange={(e) => onChange({ priceJpy: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Vehicle Specs"
+        description="Mechanical and searchable vehicle attributes."
+        icon={CarFront}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mile`}>Mileage</Label>
         <Input
           id={`${idPrefix}-mile`}
@@ -134,8 +168,8 @@ export function CarFormFields({
           placeholder="e.g. 45000"
           onChange={(e) => onChange({ mileage: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mu`}>Mileage unit</Label>
         <Input
           id={`${idPrefix}-mu`}
@@ -144,9 +178,9 @@ export function CarFormFields({
           maxLength={8}
           placeholder="km or mi"
         />
-      </div>
+          </div>
 
-      <div className="space-y-2">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-fuel`}>Fuel</Label>
         <NativeSelect
           id={`${idPrefix}-fuel`}
@@ -161,8 +195,8 @@ export function CarFormFields({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-trans`}>Transmission</Label>
         <NativeSelect
           id={`${idPrefix}-trans`}
@@ -177,8 +211,8 @@ export function CarFormFields({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-steer`}>Steering</Label>
         <NativeSelect
           id={`${idPrefix}-steer`}
@@ -193,8 +227,8 @@ export function CarFormFields({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-seats`}>Seats</Label>
         <Input
           id={`${idPrefix}-seats`}
@@ -203,8 +237,8 @@ export function CarFormFields({
           placeholder="e.g. 5"
           onChange={(e) => onChange({ seats: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-doors`}>Doors</Label>
         <Input
           id={`${idPrefix}-doors`}
@@ -213,9 +247,9 @@ export function CarFormFields({
           placeholder="e.g. 4"
           onChange={(e) => onChange({ doors: e.target.value })}
         />
-      </div>
+          </div>
 
-      <div className="space-y-2">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ecc`}>Engine CC</Label>
         <Input
           id={`${idPrefix}-ecc`}
@@ -224,8 +258,8 @@ export function CarFormFields({
           placeholder="e.g. 2000"
           onChange={(e) => onChange({ engineCc: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ecode`}>Engine code</Label>
         <Input
           id={`${idPrefix}-ecode`}
@@ -233,8 +267,17 @@ export function CarFormFields({
           placeholder="e.g. B48"
           onChange={(e) => onChange({ engineCode: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Codes & Location"
+        description="Identifiers and stock origin shown in admin and listings."
+        icon={MapPin}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mcode`}>Model code</Label>
         <Input
           id={`${idPrefix}-mcode`}
@@ -242,8 +285,8 @@ export function CarFormFields({
           placeholder="Factory / option code"
           onChange={(e) => onChange({ modelCode: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-chassis`}>Chassis #</Label>
         <Input
           id={`${idPrefix}-chassis`}
@@ -251,8 +294,8 @@ export function CarFormFields({
           placeholder="VIN or chassis number"
           onChange={(e) => onChange({ chassisNo: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-color`}>Color</Label>
         <Input
           id={`${idPrefix}-color`}
@@ -260,8 +303,8 @@ export function CarFormFields({
           placeholder="e.g. Pearl White"
           onChange={(e) => onChange({ color: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-drive`}>Drive</Label>
         <Input
           id={`${idPrefix}-drive`}
@@ -269,8 +312,8 @@ export function CarFormFields({
           placeholder="e.g. AWD, FWD, RWD"
           onChange={(e) => onChange({ drive: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-country`}>Country</Label>
         <Input
           id={`${idPrefix}-country`}
@@ -278,8 +321,8 @@ export function CarFormFields({
           placeholder="e.g. Japan"
           onChange={(e) => onChange({ country: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-city`}>City</Label>
         <Input
           id={`${idPrefix}-city`}
@@ -287,9 +330,16 @@ export function CarFormFields({
           placeholder="e.g. Tokyo"
           onChange={(e) => onChange({ city: e.target.value })}
         />
-      </div>
+          </div>
+        </div>
+      </FormSection>
 
-      <div className="space-y-8 sm:col-span-2 rounded-xl border border-border/50 bg-muted/15 p-4 ring-1 ring-border/30 sm:p-5 dark:bg-muted/10">
+      <FormSection
+        title="Additional Details"
+        description="Flexible specs, features, and publication state."
+        icon={Settings2}
+      >
+        <div className="space-y-8">
         <CarKvRecordSection
           idPrefix={idPrefix}
           section="specs"
@@ -323,8 +373,41 @@ export function CarFormFields({
             Published on public inventory
           </Label>
         </div>
-      </div>
+        </div>
+      </FormSection>
     </div>
+  );
+}
+
+function FormSection({
+  title,
+  description,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-border/60 bg-card shadow-xs ring-1 ring-border/30">
+      <div className="flex gap-3 border-b border-border/60 bg-muted/20 px-4 py-3">
+        <div
+          className="bg-primary/10 text-primary ring-primary/15 flex size-9 shrink-0 items-center justify-center rounded-lg ring-1"
+          aria-hidden
+        >
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+          <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
   );
 }
 
