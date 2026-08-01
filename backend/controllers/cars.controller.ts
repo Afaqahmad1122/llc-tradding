@@ -13,6 +13,12 @@ import type { Request, Response } from "express";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 import { s3Bucket, s3Client } from "../config/s3.js";
+import { getBearerToken } from "../middlewares/auth.middleware.js";
+import {
+  addAdminCarEventStreamClient,
+  broadcastAdminCarDetailView,
+} from "../lib/admin-car-event-stream.js";
+import { verifyAccessToken } from "../utils/jwt.js";
 
 type CarImageInput = {
   url: string;
@@ -703,6 +709,40 @@ type TrackCarEventBody = {
   type: CarEventType;
 };
 
+type CarEventViewer = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  country: string | null;
+  city: string | null;
+};
+
+const getOptionalCarEventViewer = async (
+  req: Request,
+): Promise<CarEventViewer | null> => {
+  const token = getBearerToken(req.headers.authorization);
+  if (!token) return null;
+
+  try {
+    const payload = verifyAccessToken(token);
+    const viewer = await prisma.user.findFirst({
+      where: { id: payload.sub, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        country: true,
+        city: true,
+      },
+    });
+    return viewer ?? null;
+  } catch {
+    return null;
+  }
+};
+
 export const trackCarEvent = async (
   req: Request,
   res: Response,
@@ -717,7 +757,12 @@ export const trackCarEvent = async (
 
   const car = await prisma.car.findFirst({
     where: { referenceNo, isPublished: true },
-    select: { id: true },
+    select: {
+      id: true,
+      referenceNo: true,
+      title: true,
+      model: { select: { brand: true, name: true } },
+    },
   });
 
   if (!car) {
@@ -726,12 +771,46 @@ export const trackCarEvent = async (
   }
 
   const { type } = req.body as TrackCarEventBody;
+  const viewer =
+    type === CarEventType.DETAIL_VIEW
+      ? await getOptionalCarEventViewer(req)
+      : null;
 
-  await prisma.carEvent.create({
+  const event = await prisma.carEvent.create({
     data: { carId: car.id, type },
+    select: { id: true, createdAt: true },
   });
 
+  if (type === CarEventType.DETAIL_VIEW) {
+    broadcastAdminCarDetailView({
+      eventId: event.id,
+      carId: car.id,
+      referenceNo: car.referenceNo,
+      title: car.title,
+      model: `${car.model.brand} ${car.model.name}`,
+      viewedAt: event.createdAt.toISOString(),
+      viewer,
+    });
+  }
+
   res.status(201).json({ success: true });
+};
+
+export const streamAdminCarEvents = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) return;
+
+  res.status(200);
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+
+  const cleanup = addAdminCarEventStreamClient(res);
+  req.on("close", cleanup);
 };
 
 export const getAdminModels = async (

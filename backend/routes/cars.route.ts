@@ -13,10 +13,14 @@ import {
   presignCarImageUpload,
   replaceAdminCarImages,
   submitCarInquiry,
+  streamAdminCarEvents,
   trackCarEvent,
   updateAdminCar,
 } from "../controllers/cars.controller.js";
-import { requireAuth } from "../middlewares/auth.middleware.js";
+import {
+  requireAuth,
+  requireAuthForEventStream,
+} from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permission.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
@@ -40,6 +44,12 @@ carsRouter.get(
   requireAuth,
   requirePermission("carsRead"),
   getCarEngagementStats,
+);
+carsRouter.get(
+  "/admin/analytics/events/stream",
+  requireAuthForEventStream,
+  requirePermission("carsRead"),
+  streamAdminCarEvents,
 );
 carsRouter.post(
   "/admin",
