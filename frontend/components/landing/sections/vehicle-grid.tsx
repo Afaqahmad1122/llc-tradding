@@ -137,7 +137,7 @@ export function VehicleGrid({
                   className={`mt-1 text-3xl font-semibold tracking-tight text-[#1E104E] dark:text-white ${
                     hasPrice
                       ? ""
-                      : "inline-flex animate-bounce rounded-lg bg-amber-300 px-3 py-1 text-[#1E104E] shadow-sm dark:text-[#1E104E]"
+                      : "ask-price-badge rounded-lg px-3 py-1 text-[#1E104E] dark:text-[#1E104E]"
                   }`}
                 >
                   {primaryPrice}

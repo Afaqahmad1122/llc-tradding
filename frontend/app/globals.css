@@ -175,4 +175,70 @@
       rgba(255, 255, 255, 0.03)
     );
   }
+
+  .ask-price-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+      linear-gradient(110deg, #1e104e 0%, #1e104e 32%, #ff653f 44%, #ffc85c 50%, #ff653f 56%, #1e104e 68%, #1e104e 100%) !important;
+    background-size: 240% 100% !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+    text-shadow: 0 0 0 rgba(255, 101, 63, 0);
+    animation:
+      ask-price-text-shine 1.15s linear infinite,
+      ask-price-text-blink 0.9s ease-in-out infinite,
+      ask-price-text-sway 1.4s ease-in-out infinite;
+    will-change: background-position, filter, opacity, transform;
+  }
+
+  .ask-price-badge::after {
+    content: none;
+  }
+
+  .ask-price-badge > span {
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes ask-price-text-shine {
+    0% {
+      background-position: 140% 50%;
+    }
+    100% {
+      background-position: -140% 50%;
+    }
+  }
+
+  @keyframes ask-price-text-blink {
+    0%,
+    100% {
+      filter: brightness(1);
+      opacity: 1;
+    }
+    50% {
+      filter:
+        brightness(1.65)
+        drop-shadow(0 0 0.18rem rgba(255, 200, 92, 0.95))
+        drop-shadow(0 0 0.55rem rgba(255, 101, 63, 0.75));
+      opacity: 0.62;
+    }
+  }
+
+  @keyframes ask-price-text-sway {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(2px);
+    }
+    75% {
+      transform: translateX(-2px);
+    }
+  }
 }

@@ -141,7 +141,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                           className={`mt-0.5 text-lg leading-none font-bold tabular-nums text-[#EA3B58] ${
                             hasPrice
                               ? ""
-                              : "inline-flex animate-bounce rounded-md bg-amber-300 px-2 py-1 text-[#1E104E] shadow-sm"
+                              : "ask-price-badge rounded-md px-2 py-1 text-[#1E104E]"
                           }`}
                         >
                           {primaryPrice}

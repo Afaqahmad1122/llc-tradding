@@ -278,7 +278,7 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
                 className={cn(
                   "text-accent text-2xl font-bold tabular-nums tracking-tight",
                   !hasPrice &&
-                    "animate-bounce rounded-lg bg-amber-300 px-3 py-1 text-primary shadow-sm",
+                    "ask-price-badge rounded-lg px-3 py-1 text-primary",
                 )}
               >
                 {primaryPrice}

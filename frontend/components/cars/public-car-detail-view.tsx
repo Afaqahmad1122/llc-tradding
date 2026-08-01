@@ -191,7 +191,7 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
             className={cn(
               "text-destructive text-base font-bold tabular-nums",
               !hasPrice &&
-                "inline-flex animate-bounce rounded-md bg-amber-300 px-2 py-1 text-primary shadow-sm",
+                "ask-price-badge rounded-md px-2 py-1 text-primary",
             )}
           >
             {primaryPrice}
@@ -548,7 +548,7 @@ export function PublicCarDetailView({
             <p
               className={cn(
                 "inline-flex min-w-40 items-center justify-center rounded-xl bg-destructive px-5 py-3 text-2xl font-bold tabular-nums text-white shadow-md sm:text-3xl",
-                !hasPrice && "animate-bounce bg-amber-300 text-primary",
+                !hasPrice && "ask-price-badge text-primary",
               )}
             >
               {primaryPrice}
@@ -714,7 +714,7 @@ export function PublicCarDetailView({
               <p
                 className={cn(
                   "inline-block min-w-32 rounded-lg bg-destructive px-4 py-2 text-center text-xl font-bold tabular-nums shadow-md",
-                  !hasPrice && "animate-bounce bg-amber-300 text-primary",
+                  !hasPrice && "ask-price-badge text-primary",
                 )}
               >
                 {primaryPrice}
