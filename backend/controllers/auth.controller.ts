@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { UserRole } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { refreshCookieOptions } from "../config/security.js";
 import { sendPasswordResetOtpEmail, sendVerificationOtpEmail } from "../utils/email.js";
@@ -23,6 +24,27 @@ import {
 
 const USER_REFRESH_COOKIE_NAME = "refreshToken";
 const ADMIN_REFRESH_COOKIE_NAME = "adminRefreshToken";
+const PUBLIC_USER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  phone: true,
+  country: true,
+  city: true,
+  address: true,
+  postalCode: true,
+  role: true,
+} satisfies Prisma.UserSelect;
+const LOGIN_USER_SELECT = {
+  ...PUBLIC_USER_SELECT,
+  passwordHash: true,
+  emailVerifiedAt: true,
+  isActive: true,
+} satisfies Prisma.UserSelect;
+const REFRESH_USER_SELECT = {
+  ...PUBLIC_USER_SELECT,
+  isActive: true,
+} satisfies Prisma.UserSelect;
 
 type AuthBody = {
   name?: string;
@@ -78,6 +100,8 @@ const normalizeOtp = (otp: string): string => otp.trim();
 const neutralForgotPasswordResponse = {
   message: "if the account exists, a password reset code has been sent",
 };
+const isAdminRole = (role: string): boolean =>
+  role === UserRole.ADMIN || role === UserRole.STAFF;
 
 const setRefreshCookie = (res: Response, token: string, cookieName: string): void => {
   res.cookie(cookieName, token, {
@@ -201,20 +225,7 @@ const validatePasswordInput = (
 const findUserForLogin = async (email: string) => {
   return prisma.user.findUnique({
     where: { email },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      country: true,
-      city: true,
-      address: true,
-      postalCode: true,
-      role: true,
-      passwordHash: true,
-      emailVerifiedAt: true,
-      isActive: true,
-    },
+    select: LOGIN_USER_SELECT,
   });
 };
 
@@ -307,6 +318,62 @@ const verifyLoginEligibility = async (
     return "email not verified";
   }
   return null;
+};
+
+const authenticateLoginRequest = async (
+  body: AuthBody,
+  res: Response,
+): Promise<NonNullable<Awaited<ReturnType<typeof findUserForLogin>>> | null> => {
+  const email = body.email?.trim();
+  const password = body.password;
+
+  if (!email || !password) {
+    res.status(400).json({ message: "email and password are required" });
+    return null;
+  }
+
+  const user = await findUserForLogin(normalizeEmail(email));
+  const eligibilityError = await verifyLoginEligibility(user, password);
+  if (eligibilityError) {
+    const statusCode = eligibilityError === "invalid email or password" ? 401 : 403;
+    res.status(statusCode).json({ message: eligibilityError });
+    return null;
+  }
+
+  return user as NonNullable<typeof user>;
+};
+
+const getRefreshSessionUser = async (
+  req: Request,
+  res: Response,
+  cookieName: string,
+): Promise<(PublicUser & { isActive: boolean }) | null> => {
+  const refreshToken = req.signedCookies?.[cookieName] as string | undefined;
+
+  if (!refreshToken) {
+    res.status(401).json({ message: "refresh token missing" });
+    return null;
+  }
+
+  try {
+    const payload = verifyRefreshToken(refreshToken);
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: REFRESH_USER_SELECT,
+    });
+
+    if (!user || !user.isActive) {
+      clearRefreshCookie(res, cookieName);
+      res.status(401).json({ message: "invalid session" });
+      return null;
+    }
+
+    return user;
+  } catch {
+    clearRefreshCookie(res, cookieName);
+    res.status(401).json({ message: "invalid refresh token" });
+    return null;
+  }
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -606,50 +673,21 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-  const body = req.body as AuthBody;
-  const email = body.email?.trim();
-  const password = body.password;
-
-  if (!email || !password) {
-    res.status(400).json({ message: "email and password are required" });
-    return;
-  }
-
-  const normalizedEmail = normalizeEmail(email);
-  const user = await findUserForLogin(normalizedEmail);
-  const eligibilityError = await verifyLoginEligibility(user, password);
-  if (eligibilityError) {
-    const statusCode = eligibilityError === "invalid email or password" ? 401 : 403;
-    res.status(statusCode).json({ message: eligibilityError });
-    return;
-  }
-
-  const authenticatedUser = user as NonNullable<typeof user>;
+  const authenticatedUser = await authenticateLoginRequest(
+    req.body as AuthBody,
+    res,
+  );
+  if (!authenticatedUser) return;
   await sendUserAuthSuccess(res, authenticatedUser);
 };
 
 export const adminLogin = async (req: Request, res: Response): Promise<void> => {
-  const body = req.body as AuthBody;
-  const email = body.email?.trim();
-  const password = body.password;
-
-  if (!email || !password) {
-    res.status(400).json({ message: "email and password are required" });
-    return;
-  }
-
-  const normalizedEmail = normalizeEmail(email);
-  const user = await findUserForLogin(normalizedEmail);
-  const eligibilityError = await verifyLoginEligibility(user, password);
-  if (eligibilityError) {
-    const statusCode = eligibilityError === "invalid email or password" ? 401 : 403;
-    res.status(statusCode).json({ message: eligibilityError });
-    return;
-  }
-
-  const authenticatedUser = user as NonNullable<typeof user>;
-  const role = authenticatedUser.role as string;
-  if (role !== UserRole.ADMIN && role !== UserRole.STAFF) {
+  const authenticatedUser = await authenticateLoginRequest(
+    req.body as AuthBody,
+    res,
+  );
+  if (!authenticatedUser) return;
+  if (!isAdminRole(authenticatedUser.role as string)) {
     res.status(403).json({ message: "admin access required" });
     return;
   }
@@ -658,88 +696,19 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
-  const refreshToken = req.signedCookies?.[USER_REFRESH_COOKIE_NAME] as string | undefined;
-
-  if (!refreshToken) {
-    res.status(401).json({ message: "refresh token missing" });
-    return;
-  }
-
-  try {
-    const payload = verifyRefreshToken(refreshToken);
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        country: true,
-        city: true,
-        address: true,
-        postalCode: true,
-        role: true,
-        isActive: true,
-      },
-    });
-
-    if (!user || !user.isActive) {
-      clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
-      res.status(401).json({ message: "invalid session" });
-      return;
-    }
-
-    await sendUserAuthSuccess(res, user);
-  } catch {
-    clearRefreshCookie(res, USER_REFRESH_COOKIE_NAME);
-    res.status(401).json({ message: "invalid refresh token" });
-  }
+  const user = await getRefreshSessionUser(req, res, USER_REFRESH_COOKIE_NAME);
+  if (user) await sendUserAuthSuccess(res, user);
 };
 
 export const adminRefresh = async (req: Request, res: Response): Promise<void> => {
-  const refreshToken = req.signedCookies?.[ADMIN_REFRESH_COOKIE_NAME] as string | undefined;
-
-  if (!refreshToken) {
-    res.status(401).json({ message: "refresh token missing" });
+  const user = await getRefreshSessionUser(req, res, ADMIN_REFRESH_COOKIE_NAME);
+  if (!user) return;
+  if (!isAdminRole(user.role as string)) {
+    clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
+    res.status(401).json({ message: "invalid session" });
     return;
   }
-
-  try {
-    const payload = verifyRefreshToken(refreshToken);
-    const user = await prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        country: true,
-        city: true,
-        address: true,
-        postalCode: true,
-        role: true,
-        isActive: true,
-      },
-    });
-
-    if (!user || !user.isActive) {
-      clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
-      res.status(401).json({ message: "invalid session" });
-      return;
-    }
-
-    const role = user.role as string;
-    if (role !== UserRole.ADMIN && role !== UserRole.STAFF) {
-      clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
-      res.status(401).json({ message: "invalid session" });
-      return;
-    }
-
-    await sendAdminAuthSuccess(res, user);
-  } catch {
-    clearRefreshCookie(res, ADMIN_REFRESH_COOKIE_NAME);
-    res.status(401).json({ message: "invalid refresh token" });
-  }
+  await sendAdminAuthSuccess(res, user);
 };
 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {

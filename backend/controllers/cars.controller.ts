@@ -66,6 +66,32 @@ type PresignBody = {
   contentType: "image/jpeg" | "image/png" | "image/webp";
   ext: "jpg" | "jpeg" | "png" | "webp";
 };
+type OptionalCarData = Partial<
+  Pick<
+    Prisma.CarCreateInput,
+    | "title"
+    | "mileage"
+    | "mileageUnit"
+    | "priceUsd"
+    | "pricePkr"
+    | "priceJpy"
+    | "fuel"
+    | "transmission"
+    | "seats"
+    | "color"
+    | "drive"
+    | "doors"
+    | "steering"
+    | "engineCc"
+    | "engineCode"
+    | "modelCode"
+    | "country"
+    | "city"
+    | "specifications"
+    | "features"
+    | "isPublished"
+  >
+>;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 12;
@@ -145,6 +171,8 @@ const ADMIN_CAR_SELECT = {
     },
   },
 } satisfies Prisma.CarSelect;
+
+const CAR_SEARCH_FIELDS = ["referenceNo", "title", "chassisNo"] as const;
 
 const parsePositiveInt = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
@@ -308,6 +336,112 @@ const normalizeModelSlugPart = (value: string): string => {
 const buildAdminModelSlug = (name: string): string =>
   `${normalizeModelSlugPart(ADMIN_CREATED_MODEL_BRAND)}-${normalizeModelSlugPart(name)}`;
 
+const optionalCarData = (body: UpdateCarBody): OptionalCarData => {
+  const data: OptionalCarData = {};
+  if (body.title !== undefined) data.title = body.title;
+  if (body.mileage !== undefined) data.mileage = body.mileage;
+  if (body.mileageUnit !== undefined) data.mileageUnit = body.mileageUnit;
+  if (body.priceUsd !== undefined) data.priceUsd = body.priceUsd;
+  if (body.pricePkr !== undefined) data.pricePkr = body.pricePkr;
+  if (body.priceJpy !== undefined) data.priceJpy = body.priceJpy;
+  if (body.fuel !== undefined) data.fuel = body.fuel;
+  if (body.transmission !== undefined) data.transmission = body.transmission;
+  if (body.seats !== undefined) data.seats = body.seats;
+  if (body.color !== undefined) data.color = body.color;
+  if (body.drive !== undefined) data.drive = body.drive;
+  if (body.doors !== undefined) data.doors = body.doors;
+  if (body.steering !== undefined) data.steering = body.steering;
+  if (body.engineCc !== undefined) data.engineCc = body.engineCc;
+  if (body.engineCode !== undefined) data.engineCode = body.engineCode;
+  if (body.modelCode !== undefined) data.modelCode = body.modelCode;
+  if (body.country !== undefined) data.country = body.country;
+  if (body.city !== undefined) data.city = body.city;
+  if (body.specifications !== undefined)
+    data.specifications = body.specifications as Prisma.InputJsonValue;
+  if (body.features !== undefined)
+    data.features = body.features as Prisma.InputJsonValue;
+  if (body.isPublished !== undefined) data.isPublished = body.isPublished;
+  return data;
+};
+
+const containsInsensitive = (search: string): Prisma.StringFilter => ({
+  contains: search,
+  mode: Prisma.QueryMode.insensitive,
+});
+
+const buildCarSearchWhere = (
+  search: string,
+  options: { includeModel?: boolean; includeModelCode?: boolean } = {},
+): Prisma.CarWhereInput => {
+  if (!search) return {};
+
+  const OR = CAR_SEARCH_FIELDS.map(
+    (field) => ({ [field]: containsInsensitive(search) }) as Prisma.CarWhereInput,
+  );
+  if (options.includeModelCode) {
+    OR.push({ modelCode: containsInsensitive(search) });
+  }
+  if (options.includeModel) {
+    OR.push({
+      model: {
+        OR: [
+          { name: containsInsensitive(search) },
+          { brand: containsInsensitive(search) },
+        ],
+      },
+    });
+  }
+  return { OR };
+};
+
+const buildCarOrderBy = (sort: string): Prisma.CarOrderByWithRelationInput => {
+  if (sort === "priceAsc") return { priceUsd: "asc" };
+  if (sort === "priceDesc") return { priceUsd: "desc" };
+  if (sort === "oldest") return { createdAt: "asc" };
+  return { createdAt: "desc" };
+};
+
+const paginationPayload = (input: {
+  page: number;
+  pageSize: number;
+  total: number;
+}) => ({
+  page: input.page,
+  pageSize: input.pageSize,
+  total: input.total,
+  totalPages: Math.ceil(input.total / input.pageSize),
+});
+
+const ensureS3UploadsConfigured = (res: Response): boolean => {
+  if (s3Bucket) return true;
+  res.status(503).json({ message: "image upload is not configured" });
+  return false;
+};
+
+const createCarImageObjectKey = (ext: string): string => {
+  const random = randomBytes(8).toString("hex");
+  return `${S3_IMAGE_KEY_PREFIX}${Date.now()}-${random}.${ext}`;
+};
+
+const publicCarImageUrl = (key: string): string =>
+  `https://${s3Bucket}.s3.${env.AWS_REGION}.amazonaws.com/${key}`;
+
+const requiredCarId = (req: Request, res: Response): string | null => {
+  const id = req.params.id?.trim();
+  if (id) return id;
+  res.status(400).json({ message: "car id is required" });
+  return null;
+};
+
+const requiredReferenceNo = (req: Request, res: Response): string | null => {
+  const referenceNo = req.params.referenceNo
+    ? normalizeReferenceNo(req.params.referenceNo)
+    : "";
+  if (referenceNo) return referenceNo;
+  res.status(400).json({ message: "referenceNo is required" });
+  return null;
+};
+
 const buildCreateData = (
   body: CreateCarBody,
   createdById: string | null,
@@ -320,64 +454,18 @@ const buildCreateData = (
     createdByAdmin: true,
   };
   if (createdById) data.createdBy = { connect: { id: createdById } };
-  if (body.title !== undefined) data.title = body.title;
-  if (body.mileage !== undefined) data.mileage = body.mileage;
-  if (body.mileageUnit !== undefined) data.mileageUnit = body.mileageUnit;
-  if (body.priceUsd !== undefined) data.priceUsd = body.priceUsd;
-  if (body.pricePkr !== undefined) data.pricePkr = body.pricePkr;
-  if (body.priceJpy !== undefined) data.priceJpy = body.priceJpy;
-  if (body.fuel !== undefined) data.fuel = body.fuel;
-  if (body.transmission !== undefined) data.transmission = body.transmission;
-  if (body.seats !== undefined) data.seats = body.seats;
-  if (body.color !== undefined) data.color = body.color;
-  if (body.drive !== undefined) data.drive = body.drive;
-  if (body.doors !== undefined) data.doors = body.doors;
-  if (body.steering !== undefined) data.steering = body.steering;
-  if (body.engineCc !== undefined) data.engineCc = body.engineCc;
-  if (body.engineCode !== undefined) data.engineCode = body.engineCode;
-  if (body.modelCode !== undefined) data.modelCode = body.modelCode;
-  if (body.country !== undefined) data.country = body.country;
-  if (body.city !== undefined) data.city = body.city;
-  if (body.isPublished !== undefined) data.isPublished = body.isPublished;
-  if (body.specifications !== undefined)
-    data.specifications = body.specifications as Prisma.InputJsonValue;
-  if (body.features !== undefined)
-    data.features = body.features as Prisma.InputJsonValue;
-  return data;
+  return { ...data, ...optionalCarData(body) };
 };
 
 const buildUpdateData = (body: UpdateCarBody): Prisma.CarUpdateInput => {
-  const data: Prisma.CarUpdateInput = {};
+  const data: Prisma.CarUpdateInput = { ...optionalCarData(body) };
   if (body.referenceNo !== undefined)
     data.referenceNo = normalizeReferenceNo(body.referenceNo);
-  if (body.title !== undefined) data.title = body.title;
   if (body.modelId !== undefined)
     data.model = { connect: { id: body.modelId } };
   if (body.year !== undefined) data.year = body.year;
-  if (body.mileage !== undefined) data.mileage = body.mileage;
-  if (body.mileageUnit !== undefined) data.mileageUnit = body.mileageUnit;
-  if (body.priceUsd !== undefined) data.priceUsd = body.priceUsd;
-  if (body.pricePkr !== undefined) data.pricePkr = body.pricePkr;
-  if (body.priceJpy !== undefined) data.priceJpy = body.priceJpy;
-  if (body.fuel !== undefined) data.fuel = body.fuel;
-  if (body.transmission !== undefined) data.transmission = body.transmission;
-  if (body.seats !== undefined) data.seats = body.seats;
-  if (body.color !== undefined) data.color = body.color;
-  if (body.drive !== undefined) data.drive = body.drive;
-  if (body.doors !== undefined) data.doors = body.doors;
-  if (body.steering !== undefined) data.steering = body.steering;
-  if (body.engineCc !== undefined) data.engineCc = body.engineCc;
-  if (body.engineCode !== undefined) data.engineCode = body.engineCode;
-  if (body.modelCode !== undefined) data.modelCode = body.modelCode;
   if (body.chassisNo !== undefined)
     data.chassisNo = normalizeChassisNo(body.chassisNo) ?? null;
-  if (body.country !== undefined) data.country = body.country;
-  if (body.city !== undefined) data.city = body.city;
-  if (body.specifications !== undefined)
-    data.specifications = body.specifications as Prisma.InputJsonValue;
-  if (body.features !== undefined)
-    data.features = body.features as Prisma.InputJsonValue;
-  if (body.isPublished !== undefined) data.isPublished = body.isPublished;
   return data;
 };
 
@@ -543,61 +631,13 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
           },
         }
       : {}),
-    ...(search
-      ? {
-          OR: [
-            {
-              referenceNo: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-            {
-              title: { contains: search, mode: Prisma.QueryMode.insensitive },
-            },
-            {
-              chassisNo: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-            {
-              modelCode: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-            {
-              model: {
-                OR: [
-                  {
-                    name: {
-                      contains: search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                  {
-                    brand: {
-                      contains: search,
-                      mode: Prisma.QueryMode.insensitive,
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        }
-      : {}),
+    ...buildCarSearchWhere(search, {
+      includeModel: true,
+      includeModelCode: true,
+    }),
   };
 
-  const orderBy: Prisma.CarOrderByWithRelationInput =
-    sort === "priceAsc"
-      ? { priceUsd: "asc" }
-      : sort === "priceDesc"
-        ? { priceUsd: "desc" }
-        : sort === "oldest"
-          ? { createdAt: "asc" }
-          : { createdAt: "desc" };
+  const orderBy = buildCarOrderBy(sort);
 
   const [total, data] = await Promise.all([
     prisma.car.count({ where }),
@@ -612,12 +652,7 @@ export const getCars = async (req: Request, res: Response): Promise<void> => {
 
   res.status(200).json({
     data,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
+    pagination: paginationPayload({ page, pageSize, total }),
   });
 };
 
@@ -625,13 +660,8 @@ export const getCarByReference = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const referenceNo = req.params.referenceNo
-    ? normalizeReferenceNo(req.params.referenceNo)
-    : "";
-  if (!referenceNo) {
-    res.status(400).json({ message: "referenceNo is required" });
-    return;
-  }
+  const referenceNo = requiredReferenceNo(req, res);
+  if (!referenceNo) return;
 
   const car = await prisma.car.findFirst({
     where: { referenceNo, isPublished: true },
@@ -670,13 +700,8 @@ export const submitCarInquiry = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const referenceNo = req.params.referenceNo
-    ? normalizeReferenceNo(req.params.referenceNo)
-    : "";
-  if (!referenceNo) {
-    res.status(400).json({ message: "referenceNo is required" });
-    return;
-  }
+  const referenceNo = requiredReferenceNo(req, res);
+  if (!referenceNo) return;
 
   const car = await prisma.car.findFirst({
     where: { referenceNo, isPublished: true },
@@ -747,13 +772,8 @@ export const trackCarEvent = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const referenceNo = req.params.referenceNo
-    ? normalizeReferenceNo(req.params.referenceNo)
-    : "";
-  if (!referenceNo) {
-    res.status(400).json({ message: "referenceNo is required" });
-    return;
-  }
+  const referenceNo = requiredReferenceNo(req, res);
+  if (!referenceNo) return;
 
   const car = await prisma.car.findFirst({
     where: { referenceNo, isPublished: true },
@@ -912,37 +932,10 @@ export const getAdminCars = async (
   const where: Prisma.CarWhereInput = {
     ...(isPublished !== undefined ? { isPublished } : {}),
     ...(createdById ? { createdById } : {}),
-    ...(search
-      ? {
-          OR: [
-            {
-              referenceNo: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-            {
-              title: { contains: search, mode: Prisma.QueryMode.insensitive },
-            },
-            {
-              chassisNo: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-          ],
-        }
-      : {}),
+    ...buildCarSearchWhere(search),
   };
 
-  const orderBy: Prisma.CarOrderByWithRelationInput =
-    sort === "priceAsc"
-      ? { priceUsd: "asc" }
-      : sort === "priceDesc"
-        ? { priceUsd: "desc" }
-        : sort === "oldest"
-          ? { createdAt: "asc" }
-          : { createdAt: "desc" };
+  const orderBy = buildCarOrderBy(sort);
 
   const [total, data] = await Promise.all([
     prisma.car.count({ where }),
@@ -957,12 +950,7 @@ export const getAdminCars = async (
 
   res.status(200).json({
     data,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
+    pagination: paginationPayload({ page, pageSize, total }),
   });
 };
 
@@ -1050,12 +1038,7 @@ export const getCarEngagementStats = async (
   res.status(200).json({
     data,
     days,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
+    pagination: paginationPayload({ page, pageSize, total }),
   });
 };
 
@@ -1065,11 +1048,8 @@ export const getAdminCarById = async (
 ): Promise<void> => {
   if (!requireAdmin(res)) return;
 
-  const id = req.params.id?.trim();
-  if (!id) {
-    res.status(400).json({ message: "car id is required" });
-    return;
-  }
+  const id = requiredCarId(req, res);
+  if (!id) return;
 
   const car = await prisma.car.findUnique({
     where: { id },
@@ -1136,11 +1116,8 @@ export const updateAdminCar = async (
 ): Promise<void> => {
   if (!requireAdmin(res)) return;
 
-  const id = req.params.id?.trim();
-  if (!id) {
-    res.status(400).json({ message: "car id is required" });
-    return;
-  }
+  const id = requiredCarId(req, res);
+  if (!id) return;
 
   const body = req.body as UpdateCarBody;
   const data = buildUpdateData(body);
@@ -1175,11 +1152,8 @@ export const deleteAdminCar = async (
 ): Promise<void> => {
   if (!requireAdmin(res)) return;
 
-  const id = req.params.id?.trim();
-  if (!id) {
-    res.status(400).json({ message: "car id is required" });
-    return;
-  }
+  const id = requiredCarId(req, res);
+  if (!id) return;
 
   const car = await prisma.car.findUnique({
     where: { id },
@@ -1218,11 +1192,8 @@ export const replaceAdminCarImages = async (
 ): Promise<void> => {
   if (!requireAdmin(res)) return;
 
-  const id = req.params.id?.trim();
-  if (!id) {
-    res.status(400).json({ message: "car id is required" });
-    return;
-  }
+  const id = requiredCarId(req, res);
+  if (!id) return;
 
   const body = req.body as ReplaceImagesBody;
   const images = ensureSinglePrimary(body.images ?? []);
@@ -1276,14 +1247,10 @@ export const presignCarImageUpload = async (
 ): Promise<void> => {
   if (!requireAdmin(res)) return;
 
-  if (!s3Bucket) {
-    res.status(503).json({ message: "image upload is not configured" });
-    return;
-  }
+  if (!ensureS3UploadsConfigured(res)) return;
 
   const body = req.body as PresignBody;
-  const random = randomBytes(8).toString("hex");
-  const key = `cars/${Date.now()}-${random}.${body.ext}`;
+  const key = createCarImageObjectKey(body.ext);
 
   const command = new PutObjectCommand({
     Bucket: s3Bucket,
@@ -1295,8 +1262,7 @@ export const presignCarImageUpload = async (
     expiresIn: PRESIGN_EXPIRES_IN_SEC,
   });
 
-  const region = env.AWS_REGION;
-  const publicUrl = `https://${s3Bucket}.s3.${region}.amazonaws.com/${key}`;
+  const publicUrl = publicCarImageUrl(key);
 
   res.status(200).json({
     uploadUrl,
@@ -1312,10 +1278,7 @@ export const uploadAdminCarImage = async (
 ): Promise<void> => {
   if (!requireAdmin(res)) return;
 
-  if (!s3Bucket) {
-    res.status(503).json({ message: "image upload is not configured" });
-    return;
-  }
+  if (!ensureS3UploadsConfigured(res)) return;
 
   const contentType = req.header("content-type");
   const ext =
@@ -1337,8 +1300,7 @@ export const uploadAdminCarImage = async (
     return;
   }
 
-  const random = randomBytes(8).toString("hex");
-  const key = `cars/${Date.now()}-${random}.${ext}`;
+  const key = createCarImageObjectKey(ext);
 
   await s3Client.send(
     new PutObjectCommand({
@@ -1349,8 +1311,7 @@ export const uploadAdminCarImage = async (
     }),
   );
 
-  const region = env.AWS_REGION;
-  const publicUrl = `https://${s3Bucket}.s3.${region}.amazonaws.com/${key}`;
+  const publicUrl = publicCarImageUrl(key);
 
   res.status(201).json({
     key,

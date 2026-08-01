@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { UserRole } from "@prisma/client";
+import type { UserRole } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { hashPassword, validatePasswordStrength } from "../utils/password.js";
 
