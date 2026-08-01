@@ -35,6 +35,23 @@ import {
 } from "../_lib/constants";
 import { CarModelCombobox } from "./car-model-combobox";
 
+const DEFAULT_FEATURE_OPTIONS = [
+  "Power Steering",
+  "Power wheel",
+  "Alloy wheel",
+  "Keyless entry",
+  "Push Start",
+  "modelista Kits",
+  "Airbags",
+  "Cruise control system",
+  "Heated Seat system",
+  "Lane assist",
+  "Pre Collision Safety System",
+  "Multi function steering wheel",
+  "Rearview camera",
+  "Parking sensor",
+] as const;
+
 type CarFormFieldsProps = {
   draft: CarFormDraft;
   onChange: (patch: Partial<CarFormDraft>) => void;
@@ -361,6 +378,7 @@ export function CarFormFields({
           valueTextPlaceholder="e.g. Panoramic glass"
           rows={draft.featuresRows}
           onRowsChange={(featuresRows) => onChange({ featuresRows })}
+          presetOptions={DEFAULT_FEATURE_OPTIONS}
         />
 
         <div className="border-border/40 flex items-center gap-2 border-t pt-6">
@@ -421,6 +439,7 @@ function CarKvRecordSection({
   valueTextPlaceholder = "Enter value",
   rows,
   onRowsChange,
+  presetOptions,
 }: {
   idPrefix: string;
   section: string;
@@ -431,7 +450,12 @@ function CarKvRecordSection({
   valueTextPlaceholder?: string;
   rows: CarKvRow[];
   onRowsChange: (next: CarKvRow[]) => void;
+  presetOptions?: readonly string[];
 }) {
+  const normalizedKeys = new Set(
+    rows.map((row) => normalizeFeatureKey(row.key)).filter(Boolean),
+  );
+
   const updateRow = (id: string, patch: Partial<CarKvRow>) => {
     onRowsChange(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
@@ -440,12 +464,59 @@ function CarKvRecordSection({
     onRowsChange(rows.filter((r) => r.id !== id));
   };
 
+  const togglePreset = (feature: string, checked: boolean) => {
+    const key = normalizeFeatureKey(feature);
+    if (checked) {
+      if (normalizedKeys.has(key)) return;
+      onRowsChange([
+        ...rows,
+        {
+          id: crypto.randomUUID(),
+          key: feature,
+          kind: "yesNo",
+          text: "",
+          yesNo: true,
+        },
+      ]);
+      return;
+    }
+    onRowsChange(rows.filter((row) => normalizeFeatureKey(row.key) !== key));
+  };
+
   return (
     <div className="space-y-3">
       <div className="space-y-1">
         <Label className="text-base font-semibold">{title}</Label>
         <p className="text-muted-foreground text-sm leading-relaxed">{hint}</p>
       </div>
+      {presetOptions?.length ? (
+        <div className="grid grid-cols-1 gap-2 rounded-lg border border-border/70 bg-muted/10 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          {presetOptions.map((feature) => {
+            const checkboxId = `${idPrefix}-${section}-preset-${normalizeFeatureKey(feature).replaceAll(" ", "-")}`;
+            const checked = normalizedKeys.has(normalizeFeatureKey(feature));
+            return (
+              <div
+                key={feature}
+                className="flex min-h-9 items-center gap-2 rounded-[4px] px-2 py-1.5 text-sm hover:bg-background/80"
+              >
+                <Checkbox
+                  id={checkboxId}
+                  checked={checked}
+                  onCheckedChange={(value) =>
+                    togglePreset(feature, value === true)
+                  }
+                />
+                <Label
+                  htmlFor={checkboxId}
+                  className="cursor-pointer font-normal leading-snug"
+                >
+                  {feature}
+                </Label>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
       <div className="space-y-2">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center dark:bg-muted/5">
@@ -554,4 +625,8 @@ function CarKvRecordSection({
       </Button>
     </div>
   );
+}
+
+function normalizeFeatureKey(value: string): string {
+  return value.trim().toLowerCase();
 }

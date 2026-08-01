@@ -93,6 +93,7 @@ export function CarCreateDialog({
           <Button
             variant="outline"
             type="button"
+            className="h-10 rounded-[4px] px-4"
             onClick={() => onOpenChange(false)}
           >
             Cancel
@@ -100,7 +101,7 @@ export function CarCreateDialog({
           <Button
             type="button"
             disabled={mutation.isPending}
-            className="inline-flex gap-2"
+            className="inline-flex h-10 gap-2 rounded-[4px] px-4"
             onClick={onSubmit}
           >
             {mutation.isPending ? (
