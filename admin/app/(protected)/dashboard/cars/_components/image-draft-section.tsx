@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { presignCarImageUpload } from "@/lib/api/cars";
+import { uploadCarImage } from "@/lib/api/cars";
 
 import type { ImageDraftRow } from "../_lib/draft-utils";
 import { mapFileToPresignParts } from "../_lib/presign-helpers";
@@ -23,6 +23,8 @@ type ImageDraftSectionProps = {
   uploadHint: string | null;
 };
 
+const MAX_IMAGES = 30;
+
 export function ImageDraftSection({
   idPrefix,
   images,
@@ -31,6 +33,10 @@ export function ImageDraftSection({
 }: ImageDraftSectionProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [brokenPreviewByUid, setBrokenPreviewByUid] = useState<
     Record<string, boolean>
@@ -58,40 +64,83 @@ export function ImageDraftSection({
     );
   }
 
-  async function handleFile(change: ChangeEvent<HTMLInputElement>) {
-    const file = change.target.files?.[0];
+  async function handleFiles(change: ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(change.target.files ?? []);
     change.target.value = "";
-    if (!file) return;
-    const parts = mapFileToPresignParts(file);
-    if (!parts) return;
+    if (selectedFiles.length === 0) return;
+
+    const availableSlots = Math.max(0, MAX_IMAGES - images.length);
+    if (availableSlots === 0) {
+      setUploadError(`You can upload up to ${MAX_IMAGES} images.`);
+      return;
+    }
+
+    const acceptedFiles = selectedFiles
+      .filter((file) => mapFileToPresignParts(file))
+      .slice(0, availableSlots);
+    const rejectedCount = selectedFiles.length - acceptedFiles.length;
+
+    if (acceptedFiles.length === 0) {
+      setUploadError(
+        "Choose JPEG, PNG, or WebP images. No supported files were selected.",
+      );
+      return;
+    }
+
     setUploadError(null);
     setUploadBusy(true);
+    setUploadProgress({ current: 0, total: acceptedFiles.length });
     try {
-      const presigned = await presignCarImageUpload(parts.body);
-      const res = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": parts.body.contentType,
-        },
-      });
-      if (!res.ok) {
-        throw new Error(`Upload failed (${res.status})`);
+      const uploadedRows: ImageDraftRow[] = [];
+      const failedNames: string[] = [];
+
+      for (let index = 0; index < acceptedFiles.length; index += 1) {
+        const file = acceptedFiles[index]!;
+        setUploadProgress({ current: index + 1, total: acceptedFiles.length });
+        try {
+          const uploaded = await uploadCarImage(file);
+          uploadedRows.push({
+            uid: crypto.randomUUID(),
+            url: uploaded.publicUrl,
+            key: uploaded.key,
+            altText: "",
+            isPrimary: false,
+          });
+        } catch {
+          failedNames.push(file.name);
+        }
       }
-      const nextUid = crypto.randomUUID();
+
+      if (uploadedRows.length === 0) {
+        throw new Error("Upload failed. Please try again.");
+      }
+
+      const hasPrimary = images.some((row) => row.isPrimary);
+      if (!hasPrimary) {
+        uploadedRows[0] = { ...uploadedRows[0]!, isPrimary: true };
+      }
+
       onChange([
-        ...images.map((r) =>
-          images.some((i) => i.isPrimary) ? r : { ...r, isPrimary: false },
+        ...images.map((row) =>
+          hasPrimary ? row : { ...row, isPrimary: false },
         ),
-        {
-          uid: nextUid,
-          url: presigned.publicUrl,
-          key: presigned.key,
-          altText: "",
-          isPrimary: images.every((r) => !r.isPrimary),
-        },
+        ...uploadedRows,
       ]);
-      setUploadError(null);
+
+      const warnings: string[] = [];
+      if (rejectedCount > 0) {
+        warnings.push(
+          `${rejectedCount} file${rejectedCount === 1 ? "" : "s"} skipped.`,
+        );
+      }
+      if (failedNames.length > 0) {
+        warnings.push(
+          `${failedNames.length} upload${
+            failedNames.length === 1 ? "" : "s"
+          } failed.`,
+        );
+      }
+      setUploadError(warnings.length > 0 ? warnings.join(" ") : null);
     } catch (e: unknown) {
       setUploadError(
         e instanceof Error ? e.message : "Upload failed. Please try again.",
@@ -99,11 +148,12 @@ export function ImageDraftSection({
       throw e;
     } finally {
       setUploadBusy(false);
+      setUploadProgress(null);
     }
   }
 
   function onUploadError(change: ChangeEvent<HTMLInputElement>) {
-    void handleFile(change).catch((e: unknown) => {
+    void handleFiles(change).catch((e: unknown) => {
       console.error(e);
     });
   }
@@ -117,7 +167,7 @@ export function ImageDraftSection({
               Images
             </Label>
             <span className="text-muted-foreground text-xs tabular-nums">
-              {images.length.toLocaleString()} / 30
+              {images.length.toLocaleString()} / {MAX_IMAGES}
             </span>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
@@ -127,6 +177,7 @@ export function ImageDraftSection({
         <input
           ref={inputRef}
           type="file"
+          multiple
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={onUploadError}
@@ -137,7 +188,7 @@ export function ImageDraftSection({
             variant="outline"
             size="sm"
             className="gap-1 border-border/70 shadow-none active:translate-y-0"
-            disabled={uploadBusy || images.length >= 30}
+            disabled={uploadBusy || images.length >= MAX_IMAGES}
             onClick={() => inputRef.current?.click()}
           >
             {uploadBusy ? (
@@ -145,14 +196,16 @@ export function ImageDraftSection({
             ) : (
               <ImagePlus className="size-3.5" aria-hidden />
             )}
-            Upload
+            {uploadProgress
+              ? `Uploading ${uploadProgress.current}/${uploadProgress.total}`
+              : "Upload"}
           </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
             className="gap-1 border-border/70 shadow-none active:translate-y-0"
-            disabled={images.length >= 30}
+            disabled={images.length >= MAX_IMAGES}
             onClick={() =>
               onChange([
                 ...images,

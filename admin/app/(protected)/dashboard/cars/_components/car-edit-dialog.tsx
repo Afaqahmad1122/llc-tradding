@@ -57,18 +57,18 @@ export function CarEditDialog({
     >
       <DialogContent
         showCloseButton
-        className="flex max-h-[min(92dvh,52rem)] flex-col gap-0 overflow-hidden p-6 sm:max-w-lg md:max-w-xl lg:max-w-3xl"
+        className="flex max-h-[min(94dvh,56rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg md:max-w-2xl lg:max-w-4xl"
       >
-        <DialogHeader className="shrink-0 pr-10 sm:pr-12">
-          <DialogTitle>
+        <DialogHeader className="border-border/70 bg-muted/20 shrink-0 border-b px-5 py-4 pr-12 sm:px-6">
+          <DialogTitle className="text-xl font-semibold">
             Edit {editCar ? editCar.referenceNo : "car"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="max-w-2xl">
             Reference numbers stay fixed for auditing. Updating images replaces
             the entire ordered set, with live preview before save.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto py-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5 sm:px-6">
           {draft ? (
             <CarFormFields
               idPrefix="edit"
@@ -92,7 +92,7 @@ export function CarEditDialog({
             </Alert>
           ) : null}
         </div>
-        <DialogFooter className="mt-4 shrink-0 flex-wrap gap-2 border-border/60 border-t pt-4">
+        <DialogFooter className="border-border/70 bg-background/95 shrink-0 flex-wrap gap-2 border-t px-5 py-4 sm:px-6">
           <Button variant="outline" type="button" onClick={onDismiss}>
             Cancel
           </Button>

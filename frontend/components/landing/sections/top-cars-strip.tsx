@@ -14,8 +14,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { PublicCar } from "@/lib/api/cars";
 import {
   buildInquiryWhatsAppUrl,
+  hasVisiblePrice,
   formatPkr,
-  formatUsd,
+  primaryPriceLabel,
 } from "@/lib/car-display";
 
 function primaryImageUrl(car: PublicCar): string | null {
@@ -96,6 +97,8 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
               const waUrl = buildInquiryWhatsAppUrl(car);
               const make = car.model.brand;
               const modelName = car.model.name;
+              const hasPrice = hasVisiblePrice(car);
+              const primaryPrice = primaryPriceLabel(car);
               const pkrLine = formatPkr(car.pricePkr);
 
               return (
@@ -132,10 +135,16 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                       </p>
                       <div>
                         <p className="text-[10px] font-bold tracking-wide text-[#5C4A76] uppercase dark:text-white/55">
-                          FOB price
+                          {hasPrice ? "FOB price" : "Price"}
                         </p>
-                        <p className="mt-0.5 text-lg leading-none font-bold tabular-nums text-[#EA3B58]">
-                          {formatUsd(car.priceUsd)}
+                        <p
+                          className={`mt-0.5 text-lg leading-none font-bold tabular-nums text-[#EA3B58] ${
+                            hasPrice
+                              ? ""
+                              : "ask-price-badge rounded-md px-2 py-1 text-[#1E104E]"
+                          }`}
+                        >
+                          {primaryPrice}
                         </p>
                         {pkrLine ? (
                           <p className="mt-1 text-sm font-semibold tabular-nums text-[#EA3B58]">

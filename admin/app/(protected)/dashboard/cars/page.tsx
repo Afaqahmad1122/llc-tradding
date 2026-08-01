@@ -14,14 +14,12 @@ import { useAdminAuthStore } from "@/stores/auth-store";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ApiError } from "@/lib/api/client";
 import {
   createAdminCar,
   createAdminModel,
   fetchAdminCars,
   fetchAdminModels,
   deleteAdminCar,
-  presignCarImageUpload,
   replaceAdminCarImages,
   updateAdminCar,
   type AdminCar,
@@ -242,23 +240,10 @@ function AdminCarsPageContent() {
   const totalItems = data?.pagination.total ?? 0;
   const editOpen = Boolean(editCar && editDraft);
 
-  async function probePresignHint() {
-    setUploadHintShown(null);
-    try {
-      await presignCarImageUpload({
-        contentType: "image/png",
-        ext: "png",
-      });
-      setUploadHintShown(
-        "Direct uploads use a presigned bucket URL. Uploaded images resolve to HTTPS automatically.",
-      );
-    } catch (e: unknown) {
-      if (e instanceof ApiError && e.statusCode === 503) {
-        setUploadHintShown(
-          "Image upload is not configured on the server — add image URLs manually or configure S3 for presigned uploads.",
-        );
-      }
-    }
+  function showUploadHint() {
+    setUploadHintShown(
+      "Uploads are sent through the backend and stored in S3. Uploaded images resolve to HTTPS automatically.",
+    );
   }
 
   function openEdit(car: AdminCar) {
@@ -320,7 +305,7 @@ function AdminCarsPageContent() {
               setCreateDraft(emptyCarDraft(models[0]?.id ?? ""));
               setCreateImages([]);
               setCreateError(null);
-              void probePresignHint();
+              showUploadHint();
             }}
           >
             <Plus className="size-4" aria-hidden />

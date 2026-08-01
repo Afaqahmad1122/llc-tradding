@@ -3,6 +3,7 @@
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 
+import { AdminCarEventAlerts } from "@/components/providers/admin-car-event-alerts";
 import { AdminSessionProvider } from "@/components/providers/admin-session-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -17,8 +18,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
         storageKey="admin-theme"
         disableTransitionOnChange
       >
-        <AdminSessionProvider>{children}</AdminSessionProvider>
-        <Toaster />
+        <AdminSessionProvider>
+          <AdminCarEventAlerts />
+          {children}
+        </AdminSessionProvider>
+        <Toaster position="top-right" />
       </ThemeProvider>
     </QueryProvider>
   );

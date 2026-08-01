@@ -1,6 +1,16 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import {
+  BadgeDollarSign,
+  CarFront,
+  FileText,
+  MapPin,
+  Plus,
+  Settings2,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +35,23 @@ import {
 } from "../_lib/constants";
 import { CarModelCombobox } from "./car-model-combobox";
 
+const DEFAULT_FEATURE_OPTIONS = [
+  "Power Steering",
+  "Power wheel",
+  "Alloy wheel",
+  "Keyless entry",
+  "Push Start",
+  "modelista Kits",
+  "Airbags",
+  "Cruise control system",
+  "Heated Seat system",
+  "Lane assist",
+  "Pre Collision Safety System",
+  "Multi function steering wheel",
+  "Rearview camera",
+  "Parking sensor",
+] as const;
+
 type CarFormFieldsProps = {
   draft: CarFormDraft;
   onChange: (patch: Partial<CarFormDraft>) => void;
@@ -43,8 +70,14 @@ export function CarFormFields({
   referenceReadOnly,
 }: CarFormFieldsProps) {
   return (
-    <div className="grid w-full grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-      <div className="space-y-2">
+    <div className="flex w-full flex-col gap-5">
+      <FormSection
+        title="Listing"
+        description="Core details used for inventory search and public titles."
+        icon={FileText}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ref`}>Reference #</Label>
         <Input
           id={`${idPrefix}-ref`}
@@ -64,8 +97,8 @@ export function CarFormFields({
           readOnly={referenceReadOnly}
           className={referenceReadOnly ? "bg-muted" : undefined}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-model`}>Model</Label>
         <CarModelCombobox
           id={`${idPrefix}-model`}
@@ -74,8 +107,8 @@ export function CarFormFields({
           onChange={(modelId) => onChange({ modelId })}
           onCreateModel={onCreateModel}
         />
-      </div>
-      <div className="space-y-2 sm:col-span-2">
+          </div>
+          <div className="space-y-2 sm:col-span-2">
         <Label htmlFor={`${idPrefix}-title`}>Title (optional)</Label>
         <Input
           id={`${idPrefix}-title`}
@@ -84,8 +117,8 @@ export function CarFormFields({
           onChange={(e) => onChange({ title: e.target.value })}
           maxLength={200}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-year`}>Year</Label>
         <Input
           id={`${idPrefix}-year`}
@@ -94,9 +127,18 @@ export function CarFormFields({
           placeholder="e.g. 2022"
           onChange={(e) => onChange({ year: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-usd`}>Price (USD)</Label>
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Pricing"
+        description="Leave price fields blank to show Ask on the website."
+        icon={BadgeDollarSign}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-usd`}>Price (USD optional)</Label>
         <Input
           id={`${idPrefix}-usd`}
           inputMode="decimal"
@@ -104,9 +146,9 @@ export function CarFormFields({
           placeholder="e.g. 18500"
           onChange={(e) => onChange({ priceUsd: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-pkr`}>Price PKR</Label>
+          </div>
+          <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-pkr`}>Price PKR (optional)</Label>
         <Input
           id={`${idPrefix}-pkr`}
           inputMode="numeric"
@@ -114,9 +156,9 @@ export function CarFormFields({
           placeholder="e.g. 5150000"
           onChange={(e) => onChange({ pricePkr: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-jpy`}>Price JPY</Label>
+          </div>
+          <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-jpy`}>Price JPY (optional)</Label>
         <Input
           id={`${idPrefix}-jpy`}
           inputMode="numeric"
@@ -124,8 +166,17 @@ export function CarFormFields({
           placeholder="e.g. 2850000"
           onChange={(e) => onChange({ priceJpy: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Vehicle Specs"
+        description="Mechanical and searchable vehicle attributes."
+        icon={CarFront}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mile`}>Mileage</Label>
         <Input
           id={`${idPrefix}-mile`}
@@ -134,8 +185,8 @@ export function CarFormFields({
           placeholder="e.g. 45000"
           onChange={(e) => onChange({ mileage: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mu`}>Mileage unit</Label>
         <Input
           id={`${idPrefix}-mu`}
@@ -144,9 +195,9 @@ export function CarFormFields({
           maxLength={8}
           placeholder="km or mi"
         />
-      </div>
+          </div>
 
-      <div className="space-y-2">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-fuel`}>Fuel</Label>
         <NativeSelect
           id={`${idPrefix}-fuel`}
@@ -161,8 +212,8 @@ export function CarFormFields({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-trans`}>Transmission</Label>
         <NativeSelect
           id={`${idPrefix}-trans`}
@@ -177,8 +228,8 @@ export function CarFormFields({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-steer`}>Steering</Label>
         <NativeSelect
           id={`${idPrefix}-steer`}
@@ -193,8 +244,8 @@ export function CarFormFields({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-seats`}>Seats</Label>
         <Input
           id={`${idPrefix}-seats`}
@@ -203,8 +254,8 @@ export function CarFormFields({
           placeholder="e.g. 5"
           onChange={(e) => onChange({ seats: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-doors`}>Doors</Label>
         <Input
           id={`${idPrefix}-doors`}
@@ -213,9 +264,9 @@ export function CarFormFields({
           placeholder="e.g. 4"
           onChange={(e) => onChange({ doors: e.target.value })}
         />
-      </div>
+          </div>
 
-      <div className="space-y-2">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ecc`}>Engine CC</Label>
         <Input
           id={`${idPrefix}-ecc`}
@@ -224,8 +275,8 @@ export function CarFormFields({
           placeholder="e.g. 2000"
           onChange={(e) => onChange({ engineCc: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-ecode`}>Engine code</Label>
         <Input
           id={`${idPrefix}-ecode`}
@@ -233,8 +284,17 @@ export function CarFormFields({
           placeholder="e.g. B48"
           onChange={(e) => onChange({ engineCode: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        title="Codes & Location"
+        description="Identifiers and stock origin shown in admin and listings."
+        icon={MapPin}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-mcode`}>Model code</Label>
         <Input
           id={`${idPrefix}-mcode`}
@@ -242,8 +302,8 @@ export function CarFormFields({
           placeholder="Factory / option code"
           onChange={(e) => onChange({ modelCode: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-chassis`}>Chassis #</Label>
         <Input
           id={`${idPrefix}-chassis`}
@@ -251,8 +311,8 @@ export function CarFormFields({
           placeholder="VIN or chassis number"
           onChange={(e) => onChange({ chassisNo: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-color`}>Color</Label>
         <Input
           id={`${idPrefix}-color`}
@@ -260,8 +320,8 @@ export function CarFormFields({
           placeholder="e.g. Pearl White"
           onChange={(e) => onChange({ color: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-drive`}>Drive</Label>
         <Input
           id={`${idPrefix}-drive`}
@@ -269,8 +329,8 @@ export function CarFormFields({
           placeholder="e.g. AWD, FWD, RWD"
           onChange={(e) => onChange({ drive: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-country`}>Country</Label>
         <Input
           id={`${idPrefix}-country`}
@@ -278,8 +338,8 @@ export function CarFormFields({
           placeholder="e.g. Japan"
           onChange={(e) => onChange({ country: e.target.value })}
         />
-      </div>
-      <div className="space-y-2">
+          </div>
+          <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-city`}>City</Label>
         <Input
           id={`${idPrefix}-city`}
@@ -287,9 +347,16 @@ export function CarFormFields({
           placeholder="e.g. Tokyo"
           onChange={(e) => onChange({ city: e.target.value })}
         />
-      </div>
+          </div>
+        </div>
+      </FormSection>
 
-      <div className="space-y-8 sm:col-span-2 rounded-xl border border-border/50 bg-muted/15 p-4 ring-1 ring-border/30 sm:p-5 dark:bg-muted/10">
+      <FormSection
+        title="Additional Details"
+        description="Flexible specs, features, and publication state."
+        icon={Settings2}
+      >
+        <div className="space-y-8">
         <CarKvRecordSection
           idPrefix={idPrefix}
           section="specs"
@@ -311,6 +378,7 @@ export function CarFormFields({
           valueTextPlaceholder="e.g. Panoramic glass"
           rows={draft.featuresRows}
           onRowsChange={(featuresRows) => onChange({ featuresRows })}
+          presetOptions={DEFAULT_FEATURE_OPTIONS}
         />
 
         <div className="border-border/40 flex items-center gap-2 border-t pt-6">
@@ -323,8 +391,41 @@ export function CarFormFields({
             Published on public inventory
           </Label>
         </div>
-      </div>
+        </div>
+      </FormSection>
     </div>
+  );
+}
+
+function FormSection({
+  title,
+  description,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-border/60 bg-card shadow-xs ring-1 ring-border/30">
+      <div className="flex gap-3 border-b border-border/60 bg-muted/20 px-4 py-3">
+        <div
+          className="bg-primary/10 text-primary ring-primary/15 flex size-9 shrink-0 items-center justify-center rounded-lg ring-1"
+          aria-hidden
+        >
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+          <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
   );
 }
 
@@ -338,6 +439,7 @@ function CarKvRecordSection({
   valueTextPlaceholder = "Enter value",
   rows,
   onRowsChange,
+  presetOptions,
 }: {
   idPrefix: string;
   section: string;
@@ -348,7 +450,12 @@ function CarKvRecordSection({
   valueTextPlaceholder?: string;
   rows: CarKvRow[];
   onRowsChange: (next: CarKvRow[]) => void;
+  presetOptions?: readonly string[];
 }) {
+  const normalizedKeys = new Set(
+    rows.map((row) => normalizeFeatureKey(row.key)).filter(Boolean),
+  );
+
   const updateRow = (id: string, patch: Partial<CarKvRow>) => {
     onRowsChange(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   };
@@ -357,12 +464,59 @@ function CarKvRecordSection({
     onRowsChange(rows.filter((r) => r.id !== id));
   };
 
+  const togglePreset = (feature: string, checked: boolean) => {
+    const key = normalizeFeatureKey(feature);
+    if (checked) {
+      if (normalizedKeys.has(key)) return;
+      onRowsChange([
+        ...rows,
+        {
+          id: crypto.randomUUID(),
+          key: feature,
+          kind: "yesNo",
+          text: "",
+          yesNo: true,
+        },
+      ]);
+      return;
+    }
+    onRowsChange(rows.filter((row) => normalizeFeatureKey(row.key) !== key));
+  };
+
   return (
     <div className="space-y-3">
       <div className="space-y-1">
         <Label className="text-base font-semibold">{title}</Label>
         <p className="text-muted-foreground text-sm leading-relaxed">{hint}</p>
       </div>
+      {presetOptions?.length ? (
+        <div className="grid grid-cols-1 gap-2 rounded-lg border border-border/70 bg-muted/10 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          {presetOptions.map((feature) => {
+            const checkboxId = `${idPrefix}-${section}-preset-${normalizeFeatureKey(feature).replaceAll(" ", "-")}`;
+            const checked = normalizedKeys.has(normalizeFeatureKey(feature));
+            return (
+              <div
+                key={feature}
+                className="flex min-h-9 items-center gap-2 rounded-[4px] px-2 py-1.5 text-sm hover:bg-background/80"
+              >
+                <Checkbox
+                  id={checkboxId}
+                  checked={checked}
+                  onCheckedChange={(value) =>
+                    togglePreset(feature, value === true)
+                  }
+                />
+                <Label
+                  htmlFor={checkboxId}
+                  className="cursor-pointer font-normal leading-snug"
+                >
+                  {feature}
+                </Label>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
       <div className="space-y-2">
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/70 bg-muted/10 px-4 py-8 text-center dark:bg-muted/5">
@@ -471,4 +625,8 @@ function CarKvRecordSection({
       </Button>
     </div>
   );
+}
+
+function normalizeFeatureKey(value: string): string {
+  return value.trim().toLowerCase();
 }

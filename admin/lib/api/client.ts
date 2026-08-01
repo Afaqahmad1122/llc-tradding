@@ -33,10 +33,11 @@ export class ApiError extends Error {
 
 const API_TIMEOUT_MS = 15000;
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
 const defaultConfig: AxiosRequestConfig = {
-  baseURL,
+  baseURL: API_BASE_URL,
   timeout: API_TIMEOUT_MS,
   withCredentials: true,
   headers: {

@@ -36,6 +36,9 @@ export const carImageInputSchema = z.object({
   isPrimary: z.boolean().optional(),
 });
 
+const optionalPositiveNumber = (max: number) =>
+  z.number().positive().max(max).nullable().optional();
+
 const baseCarFields = {
   referenceNo: trimmed.min(1).max(64),
   title: trimmed.max(200).optional(),
@@ -43,9 +46,9 @@ const baseCarFields = {
   year: z.number().int().min(1900).max(2100),
   mileage: z.number().int().min(0).max(10_000_000).optional(),
   mileageUnit: trimmed.max(8).optional(),
-  priceUsd: z.number().positive().max(10_000_000),
-  pricePkr: z.number().positive().max(1_000_000_000_000),
-  priceJpy: z.number().positive().max(1_000_000_000_000),
+  priceUsd: optionalPositiveNumber(10_000_000),
+  pricePkr: optionalPositiveNumber(1_000_000_000_000),
+  priceJpy: optionalPositiveNumber(1_000_000_000_000),
   fuel: fuelEnum.optional(),
   transmission: transmissionEnum.optional(),
   seats: z.number().int().min(1).max(50).optional(),
@@ -79,9 +82,9 @@ export const updateCarSchema = z
     year: baseCarFields.year.optional(),
     mileage: baseCarFields.mileage,
     mileageUnit: baseCarFields.mileageUnit,
-    priceUsd: baseCarFields.priceUsd.optional(),
-    pricePkr: baseCarFields.pricePkr.optional(),
-    priceJpy: baseCarFields.priceJpy.optional(),
+    priceUsd: baseCarFields.priceUsd,
+    pricePkr: baseCarFields.pricePkr,
+    priceJpy: baseCarFields.priceJpy,
     fuel: baseCarFields.fuel,
     transmission: baseCarFields.transmission,
     seats: baseCarFields.seats,
@@ -114,4 +117,8 @@ export const carInquirySchema = z.object({
   destinationCountry: trimmed.max(64).optional(),
   destinationPort: trimmed.max(64).optional(),
   message: trimmed.max(2000).optional(),
+});
+
+export const trackCarEventSchema = z.object({
+  type: z.enum(["DETAIL_VIEW", "WHATSAPP_CLICK", "EMAIL_CLICK"]),
 });

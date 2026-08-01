@@ -5,6 +5,18 @@ import { prisma } from "../config/prisma.js";
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 15;
 const MAX_PAGE_SIZE = 50;
+const CUSTOMER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  createdAt: true,
+} satisfies Prisma.UserSelect;
+const ALL_USERS_SELECT = {
+  ...CUSTOMER_SELECT,
+  phone: true,
+  role: true,
+  isActive: true,
+} satisfies Prisma.UserSelect;
 
 const parsePositiveInt = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
@@ -22,6 +34,27 @@ const requireAdmin = (res: Response): boolean => {
   }
   return true;
 };
+
+const buildNameEmailSearch = (q: string): Prisma.UserWhereInput => {
+  if (!q) return {};
+  return {
+    OR: [
+      { email: { contains: q, mode: Prisma.QueryMode.insensitive } },
+      { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+    ],
+  };
+};
+
+const paginationPayload = (input: {
+  page: number;
+  pageSize: number;
+  total: number;
+}) => ({
+  page: input.page,
+  pageSize: input.pageSize,
+  total: input.total,
+  totalPages: Math.ceil(input.total / input.pageSize),
+});
 
 export const listAdminCustomers = async (
   req: Request,
@@ -42,14 +75,7 @@ export const listAdminCustomers = async (
   const where: Prisma.UserWhereInput = {
     role: UserRole.USER,
     isActive: true,
-    ...(q.length > 0
-      ? {
-          OR: [
-            { email: { contains: q, mode: Prisma.QueryMode.insensitive } },
-            { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
-          ],
-        }
-      : {}),
+    ...buildNameEmailSearch(q),
   };
 
   const [total, data] = await Promise.all([
@@ -59,22 +85,68 @@ export const listAdminCustomers = async (
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        createdAt: true,
-      },
+      select: CUSTOMER_SELECT,
     }),
   ]);
 
   res.status(200).json({
     data,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    },
+    pagination: paginationPayload({ page, pageSize, total }),
+  });
+};
+
+export const listAllUsers = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) {
+    return;
+  }
+
+  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+  const requestedPageSize = parsePositiveInt(
+    req.query.pageSize,
+    DEFAULT_PAGE_SIZE,
+  );
+  const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+
+  const roleParam =
+    typeof req.query.role === "string" ? req.query.role.toUpperCase() : "";
+  if (roleParam && !(roleParam in UserRole)) {
+    res.status(400).json({ message: "invalid role filter" });
+    return;
+  }
+
+  let isActive: boolean | undefined;
+  if (req.query.isActive === "true") {
+    isActive = true;
+  } else if (req.query.isActive === "false") {
+    isActive = false;
+  } else if (req.query.isActive !== undefined) {
+    res.status(400).json({ message: "isActive must be 'true' or 'false'" });
+    return;
+  }
+
+  const where: Prisma.UserWhereInput = {
+    ...(roleParam ? { role: roleParam as UserRole } : {}),
+    ...(isActive !== undefined ? { isActive } : {}),
+    ...buildNameEmailSearch(q),
+  };
+
+  const [total, data] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: ALL_USERS_SELECT,
+    }),
+  ]);
+
+  res.status(200).json({
+    data,
+    pagination: paginationPayload({ page, pageSize, total }),
   });
 };

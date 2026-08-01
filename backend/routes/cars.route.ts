@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from "express";
 import {
   createAdminCar,
   createAdminModel,
@@ -7,14 +8,21 @@ import {
   getAdminCars,
   getAdminModels,
   getCarByReference,
+  getCarEngagementStats,
   getCarsMeta,
   getCars,
   presignCarImageUpload,
   replaceAdminCarImages,
   submitCarInquiry,
+  streamAdminCarEvents,
+  trackCarEvent,
+  uploadAdminCarImage,
   updateAdminCar,
 } from "../controllers/cars.controller.js";
-import { requireAuth } from "../middlewares/auth.middleware.js";
+import {
+  requireAuth,
+  requireAuthForEventStream,
+} from "../middlewares/auth.middleware.js";
 import { requirePermission } from "../middlewares/permission.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
@@ -23,6 +31,7 @@ import {
   createCarModelSchema,
   presignCarImageSchema,
   replaceCarImagesSchema,
+  trackCarEventSchema,
   updateCarSchema,
 } from "../validations/cars.validation.js";
 
@@ -32,6 +41,18 @@ carsRouter.get("/", getCars);
 carsRouter.get("/meta", getCarsMeta);
 
 carsRouter.get("/admin", requireAuth, requirePermission("carsRead"), getAdminCars);
+carsRouter.get(
+  "/admin/analytics/engagement",
+  requireAuth,
+  requirePermission("carsRead"),
+  getCarEngagementStats,
+);
+carsRouter.get(
+  "/admin/analytics/events/stream",
+  requireAuthForEventStream,
+  requirePermission("carsRead"),
+  streamAdminCarEvents,
+);
 carsRouter.post(
   "/admin",
   requireAuth,
@@ -45,6 +66,16 @@ carsRouter.post(
   requirePermission("carsCreate"),
   validateRequestBody(presignCarImageSchema),
   presignCarImageUpload,
+);
+carsRouter.post(
+  "/admin/images/upload",
+  requireAuth,
+  requirePermission("carsCreate"),
+  express.raw({
+    type: ["image/jpeg", "image/png", "image/webp"],
+    limit: "10mb",
+  }),
+  uploadAdminCarImage,
 );
 carsRouter.get("/admin/models", requireAuth, requirePermission("carsRead"), getAdminModels);
 carsRouter.post(
@@ -76,4 +107,9 @@ carsRouter.post(
   "/:referenceNo/inquire",
   validateRequestBody(carInquirySchema),
   submitCarInquiry,
+);
+carsRouter.post(
+  "/:referenceNo/events",
+  validateRequestBody(trackCarEventSchema),
+  trackCarEvent,
 );
