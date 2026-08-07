@@ -133,15 +133,6 @@ const documentTypes: LedgerDocumentType[] = [
   "PAYMENT_RECEIPT",
   "OTHER",
 ];
-const standardCreateDocumentTypes: LedgerDocumentType[] = [
-  "INVOICE",
-  "PURCHASE_RECEIPT",
-  "INSPECTION_SHEET",
-  "EXPORT_CERTIFICATE",
-  "BILL_OF_LADING",
-  "SHIPPING_INVOICE",
-];
-
 type CreateDealDocumentDraft = {
   id: string;
   title: string;
@@ -530,7 +521,7 @@ function CreateDealDialog({
     note: "",
   });
   const [documents, setDocuments] = useState<CreateDealDocumentDraft[]>(
-    () => standardCreateDocumentTypes.map((type) => createDocumentDraft(type)),
+    () => [createDocumentDraft()],
   );
   const debouncedCustomerSearch = useDebouncedValue(customerSearch, SEARCH_DEBOUNCE_MS);
   const debouncedCarSearch = useDebouncedValue(carSearch, SEARCH_DEBOUNCE_MS);
@@ -587,7 +578,7 @@ function CreateDealDialog({
           `${data.failedDocumentUploads} document upload${data.failedDocumentUploads === 1 ? "" : "s"} failed. Open the deal and retry from Documents.`,
         );
       }
-      setDocuments(standardCreateDocumentTypes.map((type) => createDocumentDraft(type)));
+      setDocuments([createDocumentDraft()]);
       onCreated();
     },
   });
