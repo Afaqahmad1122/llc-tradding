@@ -1,6 +1,7 @@
 import { Prisma, UserRole } from "@prisma/client";
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
+import { hashPassword, validatePasswordStrength } from "../utils/password.js";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 15;
@@ -44,6 +45,8 @@ const buildNameEmailSearch = (q: string): Prisma.UserWhereInput => {
     ],
   };
 };
+
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 const paginationPayload = (input: {
   page: number;
@@ -93,6 +96,71 @@ export const listAdminCustomers = async (
     data,
     pagination: paginationPayload({ page, pageSize, total }),
   });
+};
+
+export const createAdminCustomer = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  if (!requireAdmin(res)) {
+    return;
+  }
+
+  const body = req.body as {
+    name?: string;
+    email?: string;
+    phone?: string;
+    country?: string;
+    city?: string;
+    address?: string;
+    postalCode?: string;
+    password?: string;
+  };
+
+  if (!body.name?.trim() || !body.email?.trim()) {
+    res.status(400).json({ message: "name and email are required" });
+    return;
+  }
+
+  if (!body.password?.trim()) {
+    res.status(400).json({ message: "password is required" });
+    return;
+  }
+
+  const normalizedEmail = normalizeEmail(body.email);
+  const existing = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: { id: true },
+  });
+  if (existing) {
+    res.status(409).json({ message: "email already in use" });
+    return;
+  }
+
+  const password = body.password.trim();
+  const strengthError = validatePasswordStrength(password);
+  if (strengthError) {
+    res.status(400).json({ message: strengthError });
+    return;
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      name: body.name.trim(),
+      email: normalizedEmail,
+      phone: body.phone?.trim() || null,
+      country: body.country?.trim() || null,
+      city: body.city?.trim() || null,
+      address: body.address?.trim() || null,
+      postalCode: body.postalCode?.trim() || null,
+      passwordHash: await hashPassword(password),
+      role: UserRole.USER,
+      emailVerifiedAt: new Date(),
+    },
+    select: CUSTOMER_SELECT,
+  });
+
+  res.status(201).json({ customer: user });
 };
 
 export const listAllUsers = async (

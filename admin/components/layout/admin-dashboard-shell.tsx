@@ -10,6 +10,7 @@ import {
   Inbox,
   LayoutDashboard,
   LogOut,
+  ReceiptText,
   Shield,
   Ship,
   Star,
@@ -68,6 +69,7 @@ const NAV_ITEMS: NavItem[] = [
     permissionKey: "contactRead",
   },
   { href: "/dashboard/shipping", label: "Shipping", icon: Ship, permissionKey: "shippingRead" },
+  { href: "/dashboard/ledger", label: "Ledger", icon: ReceiptText, adminOnly: true },
   { href: "/dashboard/users", label: "Staff", icon: Users, adminOnly: true },
   {
     href: "/dashboard/all-users",

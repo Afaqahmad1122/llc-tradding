@@ -3,11 +3,10 @@
 import Link from "next/link";
 import {
   CircleUserRound,
+  LayoutDashboard,
   LogOut,
-  Settings,
   ShieldCheck,
   Star,
-  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +30,7 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
     Boolean(user?.id) &&
     eligibilityLoaded &&
     (eligibilityData?.data?.length ?? 0) > 0;
+  const showCustomerDashboard = user?.role === "USER";
 
   const handleLogout = async () => {
     try {
@@ -98,12 +98,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile">
-                  <User className="size-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
+              {showCustomerDashboard ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="size-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               {showWriteReview ? (
                 <DropdownMenuItem asChild>
                   <Link href="/reviews/submit">
@@ -120,10 +122,6 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
                   </Link>
                 </DropdownMenuItem>
               ) : null}
-              <DropdownMenuItem>
-                <Settings className="size-4" />
-                Settings
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
@@ -157,12 +155,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href="/profile">
-              <User className="size-4" />
-              Profile
-            </Link>
-          </DropdownMenuItem>
+          {showCustomerDashboard ? (
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">
+                <LayoutDashboard className="size-4" />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           {showWriteReview ? (
             <DropdownMenuItem asChild>
               <Link href="/reviews/submit">
@@ -179,10 +179,6 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
               </Link>
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem>
-            <Settings className="size-4" />
-            Settings
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleLogout}

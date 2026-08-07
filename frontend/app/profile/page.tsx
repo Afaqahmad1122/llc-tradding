@@ -55,6 +55,10 @@ export default function ProfilePage() {
     }
     if (!user) {
       router.replace("/login");
+      return;
+    }
+    if (user.role === "USER") {
+      router.replace("/dashboard/profile");
     }
   }, [hasBootstrapped, router, user]);
 
@@ -81,7 +85,7 @@ export default function ProfilePage() {
     setFormState(baseFormState);
   }, [baseFormState, isEditing]);
 
-  if (!hasBootstrapped || !user) {
+  if (!hasBootstrapped || !user || user.role === "USER") {
     return null;
   }
 

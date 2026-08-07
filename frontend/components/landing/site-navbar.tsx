@@ -78,7 +78,7 @@ export function SiteNavbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#452E5A]/15 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#0c0720]/80">
-      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
+      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6 sm:py-4 lg:px-8 xl:px-10">
         <Link href="/" className="group flex min-w-0 items-center gap-2">
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-white shadow-sm">
             <Image
@@ -162,8 +162,8 @@ export function SiteNavbar() {
         <div className="flex items-center gap-2 lg:hidden">
           <ThemeToggle />
           <details className="relative">
-            <summary className="flex list-none cursor-pointer items-center gap-2 rounded-md border border-[#452E5A]/20 px-3 py-2 text-sm font-medium text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 dark:border-white/15 dark:text-white/80 dark:hover:bg-white/10 [&::-webkit-details-marker]:hidden">
-              <Menu className="size-4" />
+            <summary className="flex h-11 list-none cursor-pointer items-center gap-2 rounded-md border border-[#452E5A]/20 px-4 text-sm font-semibold text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 dark:border-white/15 dark:text-white/80 dark:hover:bg-white/10 [&::-webkit-details-marker]:hidden">
+              <Menu className="size-4.5" />
               Menu
             </summary>
             <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-[#452E5A]/15 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-[#150e2e]">

@@ -64,7 +64,7 @@ export function CarEditDialog({
             Edit {editCar ? editCar.referenceNo : "car"}
           </DialogTitle>
           <DialogDescription className="max-w-2xl">
-            Reference numbers stay fixed for auditing. Updating images replaces
+            Reference numbers must stay unique. Updating images replaces
             the entire ordered set, with live preview before save.
           </DialogDescription>
         </DialogHeader>
@@ -74,7 +74,6 @@ export function CarEditDialog({
               idPrefix="edit"
               draft={draft}
               models={models}
-              referenceReadOnly
               onChange={onDraftChange}
               onCreateModel={onCreateModel}
             />
