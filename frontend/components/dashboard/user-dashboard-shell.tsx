@@ -60,7 +60,7 @@ export function UserDashboardShell({
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[#faf8fc] text-[#1E104E] dark:bg-[#0c0720] dark:text-white">
+    <div className="relative flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-[#faf8fc] text-[#1E104E] dark:bg-[#0c0720] dark:text-white">
       <SiteNavbar />
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[238px_minmax(0,1fr)] lg:gap-5 lg:px-7 lg:py-7 xl:px-8">
         <aside className="h-fit rounded-[8px] border border-[#452E5A]/12 bg-white/95 p-2 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 lg:sticky lg:top-24 lg:p-3">
@@ -72,7 +72,7 @@ export function UserDashboardShell({
               {user.email}
             </p>
           </div>
-          <nav className="flex gap-1 overflow-x-auto lg:grid lg:overflow-visible">
+          <nav className="grid grid-cols-2 gap-1 sm:grid-cols-4 lg:grid-cols-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.section === activeSection;
@@ -83,14 +83,14 @@ export function UserDashboardShell({
                   asChild
                   variant="ghost"
                   className={cn(
-                    "h-10 shrink-0 justify-start rounded-[6px] px-3 text-sm font-medium text-[#4e3a68] hover:bg-[#f3edff] hover:text-[#1E104E] dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white lg:h-11",
+                    "h-10 min-w-0 justify-start rounded-[6px] px-3 text-sm font-medium text-[#4e3a68] hover:bg-[#f3edff] hover:text-[#1E104E] dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white lg:h-11",
                     isActive &&
                       "bg-[#452E5A] text-white hover:bg-[#452E5A] hover:text-white dark:bg-white dark:text-[#1E104E] dark:hover:bg-white dark:hover:text-[#1E104E]",
                   )}
                 >
                   <Link href={item.href}>
-                    <Icon className="size-4" />
-                    {item.label}
+                    <Icon className="size-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 </Button>
               );
