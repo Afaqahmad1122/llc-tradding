@@ -542,6 +542,134 @@ export const getMyLedgerDeals = async (_req: Request, res: Response): Promise<vo
   });
 };
 
+export const getMyLedgerDocumentDownload = async (req: Request, res: Response): Promise<void> => {
+  const authUserId = res.locals.authUserId as string | undefined;
+  const authUserRole = res.locals.authUserRole as UserRole | undefined;
+
+  if (!authUserId) {
+    res.status(401).json({ message: "authorization token required" });
+    return;
+  }
+  if (authUserRole !== UserRole.USER) {
+    res.status(403).json({ message: "customer account required" });
+    return;
+  }
+
+  const dealId = getRequiredParam(req, res, "id");
+  const documentId = getRequiredParam(req, res, "documentId");
+  if (!dealId || !documentId) return;
+
+  const deal = await prisma.ledgerDeal.findFirst({
+    where: { id: dealId, userId: authUserId, deletedAt: null },
+    select: { id: true },
+  });
+  if (!deal) {
+    res.status(404).json({ message: "ledger deal not found" });
+    return;
+  }
+
+  const document = await prisma.ledgerDocument.findFirst({
+    where: { id: documentId, dealId: deal.id, deletedAt: null, visibleToCustomer: true },
+    select: { id: true, fileKey: true, fileName: true },
+  });
+  if (!document) {
+    res.status(404).json({ message: "document not found" });
+    return;
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: s3Bucket,
+    Key: document.fileKey,
+    ResponseContentDisposition: `attachment; filename="${document.fileName.replace(/"/g, "")}"`,
+  });
+  const downloadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+  });
+
+  res.status(200).json({
+    downloadUrl,
+    expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+  });
+};
+
+export const getMyLedgerCarImageDownload = async (req: Request, res: Response): Promise<void> => {
+  const authUserId = res.locals.authUserId as string | undefined;
+  const authUserRole = res.locals.authUserRole as UserRole | undefined;
+
+  if (!authUserId) {
+    res.status(401).json({ message: "authorization token required" });
+    return;
+  }
+  if (authUserRole !== UserRole.USER) {
+    res.status(403).json({ message: "customer account required" });
+    return;
+  }
+
+  const dealId = getRequiredParam(req, res, "id");
+  const imageId = getRequiredParam(req, res, "imageId");
+  if (!dealId || !imageId) return;
+
+  const deal = await prisma.ledgerDeal.findFirst({
+    where: { id: dealId, userId: authUserId, deletedAt: null },
+    select: { id: true, carId: true },
+  });
+  if (!deal) {
+    res.status(404).json({ message: "ledger deal not found" });
+    return;
+  }
+
+  const image = await prisma.carImage.findFirst({
+    where: { id: imageId, carId: deal.carId },
+    select: {
+      id: true,
+      url: true,
+      key: true,
+      position: true,
+      car: { select: { referenceNo: true } },
+    },
+  });
+  if (!image) {
+    res.status(404).json({ message: "car image not found" });
+    return;
+  }
+
+  let ext = "jpg";
+  try {
+    const urlPath = new URL(image.url).pathname;
+    ext = urlPath.split(".").pop()?.split("?")[0] || ext;
+  } catch {
+    const urlPath = image.url.split("?")[0] ?? "";
+    ext = urlPath.split(".").pop() || ext;
+  }
+  const fileName = sanitizeDownloadName(
+    `${image.car.referenceNo}-image-${image.position + 1}.${ext}`,
+  );
+
+  if (!image.key) {
+    res.status(200).json({
+      downloadUrl: image.url,
+      fileName,
+      expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+    });
+    return;
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: s3Bucket,
+    Key: image.key,
+    ResponseContentDisposition: `attachment; filename="${fileName}"`,
+  });
+  const downloadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+  });
+
+  res.status(200).json({
+    downloadUrl,
+    fileName,
+    expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+  });
+};
+
 export const createAdminLedgerDeal = async (req: Request, res: Response): Promise<void> => {
   const body = req.body as CreateLedgerDealBody;
   const { user, car } = await assertCustomerAndCar(body.userId, body.carId);

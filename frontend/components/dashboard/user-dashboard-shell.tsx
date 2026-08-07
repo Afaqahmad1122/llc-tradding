@@ -62,7 +62,7 @@ export function UserDashboardShell({
   return (
     <div className="relative flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-[#faf8fc] text-[#1E104E] dark:bg-[#0c0720] dark:text-white">
       <SiteNavbar />
-      <main className="mx-auto grid w-full max-w-7xl flex-1 gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[238px_minmax(0,1fr)] lg:gap-5 lg:px-7 lg:py-7 xl:px-8">
+      <main className="mx-auto grid w-full max-w-screen-2xl flex-1 gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-5 lg:px-7 lg:py-7 xl:px-10">
         <aside className="h-fit rounded-[8px] border border-[#452E5A]/12 bg-white/95 p-2 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 lg:sticky lg:top-24 lg:p-3">
           <div className="hidden px-2 py-3 lg:block">
             <p className="truncate text-sm font-semibold text-[#1E104E] dark:text-white">

@@ -30,6 +30,20 @@ export type DashboardShipmentEvent = {
   state: "complete" | "current" | "upcoming";
 };
 
+export type DashboardOrderDocument = {
+  id: string;
+  title: string;
+  type: string;
+  fileName: string;
+  createdAt: string;
+};
+
+export type DashboardOrderImage = {
+  id: string;
+  url: string;
+  altText: string | null;
+};
+
 export type DashboardOrder = {
   id: string;
   orderNumber: string;
@@ -37,6 +51,7 @@ export type DashboardOrder = {
   referenceNo: string;
   chassisNo: string;
   image: string | null;
+  images: DashboardOrderImage[];
   status: DashboardOrderStatus;
   statusCode: LedgerDealStatus;
   paymentStatus: string;
@@ -57,6 +72,7 @@ export type DashboardOrder = {
   currentLocation: string;
   shipmentNote: string;
   documentsReady: number;
+  documents: DashboardOrderDocument[];
   timeline: DashboardShipmentEvent[];
   isActive: boolean;
   isInTransit: boolean;
@@ -246,6 +262,7 @@ export function mapLedgerDealToDashboardOrder(deal: MyLedgerDeal): DashboardOrde
     referenceNo: deal.car.referenceNo,
     chassisNo: deal.car.chassisNo || "No chassis",
     image,
+    images: deal.car.images,
     status,
     statusCode: deal.status,
     paymentStatus: getCustomerPaymentLabel(deal),
@@ -266,6 +283,13 @@ export function mapLedgerDealToDashboardOrder(deal: MyLedgerDeal): DashboardOrde
     currentLocation: deal.currentLocation?.trim() || status,
     shipmentNote: deal.shipmentNote?.trim() || "Shipment update will appear here once admin adds it.",
     documentsReady: deal.documents.length,
+    documents: deal.documents.map((document) => ({
+      id: document.id,
+      title: document.title,
+      type: document.type,
+      fileName: document.fileName,
+      createdAt: formatDashboardDate(document.createdAt),
+    })),
     timeline: buildTimeline(deal),
     isActive: deal.status !== "DELIVERED" && deal.status !== "CANCELLED",
     isInTransit: deal.status === "IN_TRANSIT",

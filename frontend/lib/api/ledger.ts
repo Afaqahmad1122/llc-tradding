@@ -137,3 +137,26 @@ export type MyLedgerDealsResponse = {
 export function fetchMyLedgerDeals() {
   return http.get<MyLedgerDealsResponse>("/ledger/me");
 }
+
+export type MyLedgerDocumentDownloadResponse = {
+  downloadUrl: string;
+  expiresIn: number;
+};
+
+export function getMyLedgerDocumentDownload(dealId: string, documentId: string) {
+  return http.get<MyLedgerDocumentDownloadResponse>(
+    `/ledger/me/${encodeURIComponent(dealId)}/documents/${encodeURIComponent(documentId)}/download`,
+  );
+}
+
+export type MyLedgerCarImageDownloadResponse = {
+  downloadUrl: string;
+  fileName: string;
+  expiresIn: number;
+};
+
+export function getMyLedgerCarImageDownload(dealId: string, imageId: string) {
+  return http.get<MyLedgerCarImageDownloadResponse>(
+    `/ledger/me/${encodeURIComponent(dealId)}/images/${encodeURIComponent(imageId)}/download`,
+  );
+}
