@@ -139,6 +139,14 @@ function formatMoney(amount: number | null | undefined, currency: string) {
   })}`;
 }
 
+function getPasswordError(password: string) {
+  if (password.length < 8) return "Password must be at least 8 characters.";
+  if (!/[a-z]/.test(password)) return "Password must include a lowercase letter.";
+  if (!/[A-Z]/.test(password)) return "Password must include an uppercase letter.";
+  if (!/\d/.test(password)) return "Password must include a number.";
+  return null;
+}
+
 function getFileMeta(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase();
   if (
@@ -398,11 +406,14 @@ function CreateDealDialog({
   const [customerSearch, setCustomerSearch] = useState("");
   const [carSearch, setCarSearch] = useState("");
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const [carPickerOpen, setCarPickerOpen] = useState(false);
   const [createdCustomer, setCreatedCustomer] = useState<AdminCustomer | null>(null);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     phone: "",
     country: "",
     city: "",
@@ -452,6 +463,7 @@ function CreateDealDialog({
       createAdminCustomer({
         name: newCustomer.name.trim(),
         email: newCustomer.email.trim(),
+        password: newCustomer.password,
         phone: newCustomer.phone.trim() || undefined,
         country: newCustomer.country.trim() || undefined,
         city: newCustomer.city.trim() || undefined,
@@ -461,7 +473,15 @@ function CreateDealDialog({
       setCreatedCustomer(data.customer);
       setForm((state) => ({ ...state, userId: data.customer.id }));
       setCustomerSearch(data.customer.email);
-      setNewCustomer({ name: "", email: "", phone: "", country: "", city: "" });
+      setNewCustomer({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        country: "",
+        city: "",
+      });
       setShowNewCustomer(false);
       setCustomerPickerOpen(false);
       void customersQuery.refetch();
@@ -473,6 +493,21 @@ function CreateDealDialog({
     customersQuery.data?.data.find((customer) => customer.id === form.userId) ??
     (createdCustomer?.id === form.userId ? createdCustomer : undefined);
   const customerRows = customersQuery.data?.data ?? [];
+  const carRows = carsQuery.data?.data ?? [];
+  const newCustomerPasswordError = newCustomer.password
+    ? getPasswordError(newCustomer.password)
+    : null;
+  const newCustomerConfirmError =
+    newCustomer.confirmPassword && newCustomer.password !== newCustomer.confirmPassword
+      ? "Passwords do not match."
+      : null;
+  const canCreateCustomer =
+    Boolean(newCustomer.name.trim()) &&
+    Boolean(newCustomer.email.trim()) &&
+    Boolean(newCustomer.password) &&
+    Boolean(newCustomer.confirmPassword) &&
+    !newCustomerPasswordError &&
+    !newCustomerConfirmError;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -536,7 +571,10 @@ function CreateDealDialog({
                     <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="start" className="w-[min(560px,calc(100vw-3rem))] gap-0 p-0">
+                <PopoverContent
+                  align="start"
+                  className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+                >
                   <div className="border-b p-3">
                     <div className="relative">
                       <SearchIcon
@@ -627,62 +665,92 @@ function CreateDealDialog({
                             Cancel
                           </Button>
                         </div>
-                  <Input
-                    placeholder="Full name"
-                    value={newCustomer.name}
-                    onChange={(event) =>
-                      setNewCustomer((state) => ({ ...state, name: event.target.value }))
-                    }
-                  />
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={newCustomer.email}
-                    onChange={(event) =>
-                      setNewCustomer((state) => ({ ...state, email: event.target.value }))
-                    }
-                  />
-                  <Input
-                    placeholder="Phone"
-                    value={newCustomer.phone}
-                    onChange={(event) =>
-                      setNewCustomer((state) => ({ ...state, phone: event.target.value }))
-                    }
-                  />
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Input
-                      placeholder="Country"
-                      value={newCustomer.country}
-                      onChange={(event) =>
-                        setNewCustomer((state) => ({
-                          ...state,
-                          country: event.target.value,
-                        }))
-                      }
-                    />
-                    <Input
-                      placeholder="City"
-                      value={newCustomer.city}
-                      onChange={(event) =>
-                        setNewCustomer((state) => ({ ...state, city: event.target.value }))
-                      }
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={
-                      createCustomerMutation.isPending ||
-                      !newCustomer.name.trim() ||
-                      !newCustomer.email.trim()
-                    }
-                    onClick={() => createCustomerMutation.mutate(undefined)}
-                  >
-                    {createCustomerMutation.isPending
-                      ? "Adding customer..."
-                      : "Add and select customer"}
-                  </Button>
+                        <Input
+                          placeholder="Full name"
+                          value={newCustomer.name}
+                          onChange={(event) =>
+                            setNewCustomer((state) => ({ ...state, name: event.target.value }))
+                          }
+                        />
+                        <Input
+                          type="email"
+                          placeholder="Email"
+                          value={newCustomer.email}
+                          onChange={(event) =>
+                            setNewCustomer((state) => ({ ...state, email: event.target.value }))
+                          }
+                        />
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="Set password"
+                          value={newCustomer.password}
+                          onChange={(event) =>
+                            setNewCustomer((state) => ({
+                              ...state,
+                              password: event.target.value,
+                            }))
+                          }
+                        />
+                        {newCustomerPasswordError ? (
+                          <p className="text-destructive text-xs">
+                            {newCustomerPasswordError}
+                          </p>
+                        ) : null}
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          placeholder="Confirm password"
+                          value={newCustomer.confirmPassword}
+                          onChange={(event) =>
+                            setNewCustomer((state) => ({
+                              ...state,
+                              confirmPassword: event.target.value,
+                            }))
+                          }
+                        />
+                        {newCustomerConfirmError ? (
+                          <p className="text-destructive text-xs">
+                            {newCustomerConfirmError}
+                          </p>
+                        ) : null}
+                        <Input
+                          placeholder="Phone"
+                          value={newCustomer.phone}
+                          onChange={(event) =>
+                            setNewCustomer((state) => ({ ...state, phone: event.target.value }))
+                          }
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Input
+                            placeholder="Country"
+                            value={newCustomer.country}
+                            onChange={(event) =>
+                              setNewCustomer((state) => ({
+                                ...state,
+                                country: event.target.value,
+                              }))
+                            }
+                          />
+                          <Input
+                            placeholder="City"
+                            value={newCustomer.city}
+                            onChange={(event) =>
+                              setNewCustomer((state) => ({ ...state, city: event.target.value }))
+                            }
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="w-full"
+                          disabled={createCustomerMutation.isPending || !canCreateCustomer}
+                          onClick={() => createCustomerMutation.mutate(undefined)}
+                        >
+                          {createCustomerMutation.isPending
+                            ? "Adding customer..."
+                            : "Add and select customer"}
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -690,24 +758,93 @@ function CreateDealDialog({
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ledger-car-search">Find car</Label>
-              <Input
-                id="ledger-car-search"
-                placeholder="Search reference, title, chassis"
-                value={carSearch}
-                onChange={(event) => setCarSearch(event.target.value)}
-              />
-              <NativeSelect
-                value={form.carId}
-                onChange={(event) => setForm((s) => ({ ...s, carId: event.target.value }))}
-              >
-                <NativeSelectOption value="">Select car</NativeSelectOption>
-                {(carsQuery.data?.data ?? []).map((car) => (
-                  <NativeSelectOption key={car.id} value={car.id}>
-                    {car.referenceNo} - {car.model.brand} {car.model.name}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <Label>Car</Label>
+              <Popover open={carPickerOpen} onOpenChange={setCarPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={carPickerOpen}
+                    className={cn(
+                      "h-auto min-h-11 w-full justify-between rounded-md px-3 py-2 text-left font-normal",
+                      !selectedCar && "text-muted-foreground",
+                    )}
+                  >
+                    <span className="min-w-0">
+                      {selectedCar ? (
+                        <>
+                          <span className="block truncate font-medium text-foreground">
+                            {selectedCar.referenceNo} - {selectedCar.model.brand}{" "}
+                            {selectedCar.model.name}
+                          </span>
+                          <span className="text-muted-foreground block truncate text-xs">
+                            {selectedCar.chassisNo ?? "No chassis"} · {selectedCar.year}
+                          </span>
+                        </>
+                      ) : (
+                        "Search and select car"
+                      )}
+                    </span>
+                    <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+                >
+                  <div className="border-b p-3">
+                    <div className="relative">
+                      <SearchIcon
+                        className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
+                        aria-hidden
+                      />
+                      <Input
+                        autoFocus
+                        placeholder="Search reference, title, chassis"
+                        className="pl-9"
+                        value={carSearch}
+                        onChange={(event) => setCarSearch(event.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-72 overflow-y-auto p-2">
+                    {carsQuery.isPending ? (
+                      <p className="text-muted-foreground px-2 py-6 text-center text-sm">
+                        Loading cars...
+                      </p>
+                    ) : carRows.length > 0 ? (
+                      carRows.map((car) => (
+                        <button
+                          key={car.id}
+                          type="button"
+                          className="hover:bg-muted flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm"
+                          onClick={() => {
+                            setForm((state) => ({ ...state, carId: car.id }));
+                            setCarPickerOpen(false);
+                          }}
+                        >
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate font-medium">
+                              {car.referenceNo} - {car.model.brand} {car.model.name}
+                            </span>
+                            <span className="text-muted-foreground truncate text-xs">
+                              {car.chassisNo ?? "No chassis"} · {car.year}
+                            </span>
+                          </span>
+                          {form.carId === car.id ? (
+                            <Check className="text-primary size-4 shrink-0" />
+                          ) : null}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground px-2 py-6 text-center text-sm">
+                        No cars found.
+                      </p>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label htmlFor="ledger-total">Total amount</Label>

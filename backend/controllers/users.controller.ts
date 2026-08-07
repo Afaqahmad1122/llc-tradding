@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { Prisma, UserRole } from "@prisma/client";
 import type { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
@@ -48,9 +47,6 @@ const buildNameEmailSearch = (q: string): Prisma.UserWhereInput => {
 };
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
-
-const randomCustomerPassword = (): string =>
-  `Icc${randomUUID().replace(/-/g, "").slice(0, 18)}!1`;
 
 const paginationPayload = (input: {
   page: number;
@@ -126,6 +122,11 @@ export const createAdminCustomer = async (
     return;
   }
 
+  if (!body.password?.trim()) {
+    res.status(400).json({ message: "password is required" });
+    return;
+  }
+
   const normalizedEmail = normalizeEmail(body.email);
   const existing = await prisma.user.findUnique({
     where: { email: normalizedEmail },
@@ -136,7 +137,7 @@ export const createAdminCustomer = async (
     return;
   }
 
-  const password = body.password?.trim() || randomCustomerPassword();
+  const password = body.password.trim();
   const strengthError = validatePasswordStrength(password);
   if (strengthError) {
     res.status(400).json({ message: strengthError });

@@ -33,7 +33,7 @@ export type CreateAdminCustomerBody = {
   city?: string;
   address?: string;
   postalCode?: string;
-  password?: string;
+  password: string;
 };
 
 export function fetchAdminCustomers(params: AdminCustomersQuery = {}) {
