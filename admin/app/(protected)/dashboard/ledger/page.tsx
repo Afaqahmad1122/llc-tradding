@@ -200,6 +200,25 @@ function triggerFileDownload(url: string, fileName: string) {
   link.remove();
 }
 
+function triggerBatchDownloads(files: Array<{ url: string; fileName: string }>) {
+  files.forEach((file, index) => {
+    window.setTimeout(() => {
+      triggerFileDownload(file.url, file.fileName);
+    }, index * 150);
+  });
+}
+
+function fileNameFromUrl(url: string, fallback: string) {
+  try {
+    const fileName = decodeURIComponent(
+      new URL(url).pathname.split("/").filter(Boolean).pop() ?? "",
+    );
+    return fileName || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function getPasswordError(password: string) {
   if (password.length < 8) return "Password must be at least 8 characters.";
   if (!/[a-z]/.test(password)) return "Password must include a lowercase letter.";
@@ -1892,9 +1911,48 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
 
 function CarImagesTab({ deal }: { deal: LedgerDeal }) {
   const images = deal.car.images;
+  const imageFileName = (url: string, index: number) =>
+    fileNameFromUrl(
+      url,
+      `${deal.car.referenceNo.replace(/[^\w.-]+/g, "-")}-image-${index + 1}.jpg`,
+    );
+
+  function downloadImage(url: string, index: number) {
+    triggerFileDownload(url, imageFileName(url, index));
+  }
+
+  function downloadAllImages() {
+    triggerBatchDownloads(
+      images.map((image, index) => ({
+        url: image.url,
+        fileName: imageFileName(image.url, index),
+      })),
+    );
+    toast.success(
+      `Started ${images.length} image download${images.length === 1 ? "" : "s"}.`,
+    );
+  }
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="font-semibold">Car images</h3>
+          <p className="text-muted-foreground text-xs">
+            {images.length} image{images.length === 1 ? "" : "s"} attached
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={images.length === 0}
+          onClick={downloadAllImages}
+        >
+          <Download className="size-4" />
+          Download all
+        </Button>
+      </div>
       {images.length === 0 ? (
         <div className="text-muted-foreground rounded-lg border p-6 text-sm">
           No car images uploaded for this ledger car.
@@ -1902,11 +1960,8 @@ function CarImagesTab({ deal }: { deal: LedgerDeal }) {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image, index) => (
-            <a
+            <div
               key={image.id}
-              href={image.url}
-              target="_blank"
-              rel="noopener noreferrer"
               className="group overflow-hidden rounded-lg border bg-background"
             >
               <div
@@ -1915,13 +1970,25 @@ function CarImagesTab({ deal }: { deal: LedgerDeal }) {
                 className="aspect-4/3 w-full bg-muted bg-cover bg-center transition-transform group-hover:scale-[1.02]"
                 style={{ backgroundImage: `url(${image.url})` }}
               />
-              <div className="flex items-center justify-between gap-3 p-3">
-                <p className="truncate text-sm font-medium">Image {index + 1}</p>
-                <Badge variant={index === 0 ? "default" : "secondary"}>
-                  {index === 0 ? "Primary" : "Car image"}
-                </Badge>
+              <div className="space-y-3 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate text-sm font-medium">Image {index + 1}</p>
+                  <Badge variant={index === 0 ? "default" : "secondary"}>
+                    {index === 0 ? "Primary" : "Car image"}
+                  </Badge>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => downloadImage(image.url, index)}
+                >
+                  <Download className="size-4" />
+                  Download
+                </Button>
               </div>
-            </a>
+            </div>
           ))}
         </div>
       )}
@@ -2256,11 +2323,12 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
         downloads.length === 1 ? "" : "s"
       }.`,
     onSuccess: (downloads) => {
-      downloads.forEach(({ document, download }, index) => {
-        window.setTimeout(() => {
-          triggerFileDownload(download.downloadUrl, document.fileName);
-        }, index * 150);
-      });
+      triggerBatchDownloads(
+        downloads.map(({ document, download }) => ({
+          url: download.downloadUrl,
+          fileName: document.fileName,
+        })),
+      );
     },
   });
 
