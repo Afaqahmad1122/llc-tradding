@@ -4,17 +4,20 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { format } from "date-fns";
 import {
   Banknote,
+  CalendarIcon,
   Check,
   ChevronsUpDown,
   Download,
   FileUp,
+  ImageIcon,
+  Pencil,
   Plus,
   ReceiptText,
   SearchIcon,
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ForbiddenPage } from "@/components/auth/permission-guard";
@@ -35,6 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -69,7 +74,14 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useAdminAuthStore } from "@/stores/auth-store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { ApiError } from "@/lib/api/client";
-import { fetchAdminCars } from "@/lib/api/cars";
+import {
+  createAdminCar,
+  fetchAdminCars,
+  fetchAdminModels,
+  uploadCarImage,
+  type AdminCar,
+  type CarImageInput,
+} from "@/lib/api/cars";
 import {
   createAdminCustomer,
   fetchAdminCustomers,
@@ -92,6 +104,7 @@ import {
   type LedgerDocumentType,
   type LedgerPaymentMethod,
   type LedgerPaymentType,
+  updateLedgerDeal,
   uploadLedgerDocumentFile,
 } from "@/lib/api/ledger";
 
@@ -140,6 +153,14 @@ type CreateDealDocumentDraft = {
   file: File | null;
 };
 
+type LedgerCarImageDraft = {
+  id: string;
+  url: string;
+  key: string;
+  fileName: string;
+  isPrimary: boolean;
+};
+
 function createDocumentDraft(type: LedgerDocumentType = "OTHER"): CreateDealDocumentDraft {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -166,6 +187,17 @@ function formatMoney(amount: number | null | undefined, currency: string) {
   return `${currency} ${amount.toLocaleString(undefined, {
     maximumFractionDigits: 2,
   })}`;
+}
+
+function triggerFileDownload(url: string, fileName: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function getPasswordError(password: string) {
@@ -202,7 +234,7 @@ async function uploadLedgerDocumentDraft(dealId: string, document: CreateDealDoc
   if (!meta) throw new ApiError("Only PDF, JPG, PNG, or WEBP files are supported.");
   return uploadLedgerDocumentFile(dealId, {
     type: document.type,
-    title: document.title.trim() || document.file.name,
+    title: document.type === "OTHER" ? document.file.name : label(document.type),
     file: document.file,
   });
 }
@@ -217,6 +249,7 @@ function LedgerPageContent() {
   >("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
+  const [selectedDealMode, setSelectedDealMode] = useState<"view" | "edit">("view");
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
 
   const dealsQuery = useQuery({
@@ -344,7 +377,14 @@ function LedgerPageContent() {
             deletingId={deleteMutation.isPending ? deleteMutation.variables : null}
             rows={rows}
             onDelete={(id) => deleteMutation.mutate(id)}
-            onSelect={setSelectedDealId}
+            onEdit={(id) => {
+              setSelectedDealMode("edit");
+              setSelectedDealId(id);
+            }}
+            onSelect={(id) => {
+              setSelectedDealMode("view");
+              setSelectedDealId(id);
+            }}
           />
         }
         pagination={{
@@ -367,6 +407,7 @@ function LedgerPageContent() {
       />
       <DealDetailDialog
         dealId={selectedDealId}
+        mode={selectedDealMode}
         onOpenChange={(open) => {
           if (!open) setSelectedDealId(null);
         }}
@@ -379,11 +420,13 @@ function LedgerPageContent() {
 function LedgerTable({
   deletingId,
   onDelete,
+  onEdit,
   rows,
   onSelect,
 }: {
   deletingId: string | null | undefined;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
   rows: LedgerDeal[];
   onSelect: (id: string) => void;
 }) {
@@ -394,6 +437,7 @@ function LedgerTable({
           <TableHead className="pl-4 sm:pl-5">Customer</TableHead>
           <TableHead>Car</TableHead>
           <TableHead className="hidden lg:table-cell">Total</TableHead>
+          <TableHead>Down payment</TableHead>
           <TableHead>Balance</TableHead>
           <TableHead className="hidden md:table-cell">Status</TableHead>
           <TableHead className="pr-4 text-right sm:pr-5">Actions</TableHead>
@@ -419,6 +463,12 @@ function LedgerTable({
               <p className="text-muted-foreground mt-1 text-xs">
                 Paid {formatMoney(deal.paymentSummary.paidAmount, deal.currency)}
               </p>
+            </TableCell>
+            <TableCell className="min-w-32 tabular-nums">
+              <p className="font-semibold">
+                {formatMoney(deal.downPaymentRequired, deal.currency)}
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs">Required</p>
             </TableCell>
             <TableCell className="min-w-36">
               <p className="font-semibold tabular-nums">
@@ -446,6 +496,14 @@ function LedgerTable({
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
                   Open
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label={`Edit ${deal.orderNumber}`}
+                  onClick={() => onEdit(deal.id)}
+                >
+                  <Pencil className="size-4" />
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -499,8 +557,13 @@ function CreateDealDialog({
   const [carSearch, setCarSearch] = useState("");
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [carPickerOpen, setCarPickerOpen] = useState(false);
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
+  const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [createdCustomer, setCreatedCustomer] = useState<AdminCustomer | null>(null);
+  const [createdCar, setCreatedCar] = useState<AdminCar | null>(null);
   const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
+  const [carCreateOpen, setCarCreateOpen] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     email: "",
@@ -510,6 +573,20 @@ function CreateDealDialog({
     country: "",
     city: "",
   });
+  const [newCar, setNewCar] = useState({
+    referenceNo: "",
+    title: "",
+    modelId: "",
+    year: String(new Date().getFullYear()),
+    chassisNo: "",
+    priceUsd: "",
+    priceJpy: "",
+    pricePkr: "",
+    isPublished: false,
+  });
+  const [newCarImages, setNewCarImages] = useState<LedgerCarImageDraft[]>([]);
+  const [carImageUploadBusy, setCarImageUploadBusy] = useState(false);
+  const carImageInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState({
     userId: "",
     carId: "",
@@ -545,6 +622,11 @@ function CreateDealDialog({
         ...(debouncedCarSearch ? { search: debouncedCarSearch } : {}),
       }),
     enabled: open,
+  });
+  const modelsQuery = useQuery({
+    queryKey: ["ledger-car-models"],
+    queryFn: fetchAdminModels,
+    enabled: open || carCreateOpen,
   });
 
   const createMutation = useApiMutation({
@@ -613,7 +695,127 @@ function CreateDealDialog({
     },
   });
 
-  const selectedCar = carsQuery.data?.data.find((car) => car.id === form.carId);
+  const createCarMutation = useApiMutation({
+    mutationFn: () => {
+      const referenceNo = newCar.referenceNo.trim().toUpperCase();
+      const year = Number(newCar.year);
+      if (!referenceNo || !newCar.modelId || !Number.isInteger(year)) {
+        throw new ApiError("Reference number, model, and year are required.");
+      }
+      return createAdminCar({
+        referenceNo,
+        title: newCar.title.trim() || undefined,
+        modelId: newCar.modelId,
+        year,
+        chassisNo: newCar.chassisNo.trim() || undefined,
+        priceUsd: newCar.priceUsd ? Number(newCar.priceUsd) : null,
+        priceJpy: newCar.priceJpy ? Number(newCar.priceJpy) : null,
+        pricePkr: newCar.pricePkr ? Number(newCar.pricePkr) : null,
+        isPublished: newCar.isPublished,
+        ...(newCarImages.length > 0
+          ? {
+              images: newCarImages.map<CarImageInput>((image, index) => ({
+                url: image.url,
+                key: image.key,
+                altText: newCar.referenceNo.trim().toUpperCase(),
+                position: index,
+                isPrimary: image.isPrimary || index === 0,
+              })),
+            }
+          : {}),
+      });
+    },
+    successToast: (data) =>
+      data.car.isPublished
+        ? "Car added and listed on website."
+        : "Ledger car added.",
+    onSuccess: (data) => {
+      setCreatedCar(data.car);
+      setForm((state) => ({ ...state, carId: data.car.id }));
+      setCarSearch(data.car.referenceNo);
+      setNewCar({
+        referenceNo: "",
+        title: "",
+        modelId: "",
+        year: String(new Date().getFullYear()),
+        chassisNo: "",
+        priceUsd: "",
+        priceJpy: "",
+        pricePkr: "",
+        isPublished: false,
+      });
+      setModelSearch("");
+      setNewCarImages([]);
+      setCarCreateOpen(false);
+      setCarPickerOpen(false);
+      void carsQuery.refetch();
+    },
+  });
+
+  async function uploadLedgerCarImages(files: FileList | null) {
+    const selectedFiles = Array.from(files ?? []).filter((file) =>
+      ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+    );
+    if (selectedFiles.length === 0) {
+      toast.error("Choose JPG, PNG, or WEBP images.");
+      return;
+    }
+
+    setCarImageUploadBusy(true);
+    try {
+      const uploadedImages: LedgerCarImageDraft[] = [];
+      for (const file of selectedFiles) {
+        const uploaded = await uploadCarImage(file);
+        uploadedImages.push({
+          id: crypto.randomUUID(),
+          url: uploaded.publicUrl,
+          key: uploaded.key,
+          fileName: file.name,
+          isPrimary: false,
+        });
+      }
+      setNewCarImages((state) => {
+        const hasPrimary = state.some((image) => image.isPrimary);
+        const nextImages = uploadedImages.map((image, index) => ({
+          ...image,
+          isPrimary: !hasPrimary && state.length === 0 && index === 0,
+        }));
+        return [...state, ...nextImages];
+      });
+      toast.success(
+        `${uploadedImages.length} image${uploadedImages.length === 1 ? "" : "s"} uploaded.`,
+      );
+    } catch (error) {
+      console.error("Ledger car image upload failed", error);
+      toast.error("Image upload failed. Try again.");
+    } finally {
+      setCarImageUploadBusy(false);
+    }
+  }
+
+  function openLedgerCarCreate() {
+    setNewCar((state) => ({
+      ...state,
+      referenceNo: carSearch.trim()
+        ? carSearch.trim().toUpperCase()
+        : state.referenceNo,
+    }));
+    setCarPickerOpen(false);
+    setCarCreateOpen(true);
+  }
+
+  const selectedCar =
+    carsQuery.data?.data.find((car) => car.id === form.carId) ??
+    (createdCar?.id === form.carId ? createdCar : undefined);
+  const modelRows = modelsQuery.data?.models ?? [];
+  const selectedNewCarModel = modelRows.find((model) => model.id === newCar.modelId);
+  const filteredModelRows = useMemo(() => {
+    const query = modelSearch.trim().toLowerCase();
+    if (!query) return modelRows;
+    return modelRows.filter((model) =>
+      `${model.brand} ${model.name}`.toLowerCase().includes(query),
+    );
+  }, [modelRows, modelSearch]);
   const selectedCustomer =
     customersQuery.data?.data.find((customer) => customer.id === form.userId) ??
     (createdCustomer?.id === form.userId ? createdCustomer : undefined);
@@ -773,7 +975,19 @@ function CreateDealDialog({
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>Car</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label>Car</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={openLedgerCarCreate}
+                >
+                  <Plus className="size-3.5" />
+                  Add ledger car
+                </Button>
+              </div>
               <Popover open={carPickerOpen} onOpenChange={setCarPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -857,6 +1071,17 @@ function CreateDealDialog({
                         No cars found.
                       </p>
                     )}
+                  </div>
+                  <div className="border-t bg-muted/20 p-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full justify-center"
+                      onClick={openLedgerCarCreate}
+                    >
+                      <Plus className="size-4" />
+                      Add ledger car
+                    </Button>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -989,19 +1214,6 @@ function CreateDealDialog({
                           </NativeSelectOption>
                         ))}
                       </NativeSelect>
-                      <Input
-                        placeholder="Document title"
-                        value={document.title}
-                        onChange={(event) =>
-                          setDocuments((state) =>
-                            state.map((item) =>
-                              item.id === document.id
-                                ? { ...item, title: event.target.value }
-                                : item,
-                            ),
-                          )
-                        }
-                      />
                     </div>
                     <div className="space-y-2">
                       <div className="space-y-1.5">
@@ -1169,6 +1381,364 @@ function CreateDealDialog({
             </form>
           </DialogContent>
         </Dialog>
+        <Dialog
+          open={carCreateOpen}
+          onOpenChange={(nextOpen) => {
+            setCarCreateOpen(nextOpen);
+            if (!nextOpen) setNewCarImages([]);
+          }}
+        >
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add ledger car</DialogTitle>
+              <DialogDescription>
+                Create a car for this customer ledger. It stays hidden from the public
+                website unless listing is enabled.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createCarMutation.mutate(undefined);
+              }}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="ledger-car-reference">Reference no</Label>
+                  <Input
+                    id="ledger-car-reference"
+                    value={newCar.referenceNo}
+                    onChange={(event) =>
+                      setNewCar((state) => ({
+                        ...state,
+                        referenceNo: event.target.value.toUpperCase(),
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <Popover open={modelPickerOpen} onOpenChange={setModelPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={modelPickerOpen}
+                        className={cn(
+                          "h-10 w-full justify-between rounded-md px-3 text-left font-normal",
+                          !selectedNewCarModel && "text-muted-foreground",
+                        )}
+                      >
+                        <span className="truncate">
+                          {selectedNewCarModel
+                            ? `${selectedNewCarModel.brand} ${selectedNewCarModel.name}`
+                            : "Search and select model"}
+                        </span>
+                        <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+                    >
+                      <div className="border-b p-3">
+                        <div className="relative">
+                          <SearchIcon
+                            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
+                            aria-hidden
+                          />
+                          <Input
+                            autoFocus
+                            placeholder="Search brand or model"
+                            className="pl-9"
+                            value={modelSearch}
+                            onChange={(event) => setModelSearch(event.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="max-h-72 overflow-y-auto p-2">
+                        {modelsQuery.isPending ? (
+                          <p className="text-muted-foreground px-2 py-6 text-center text-sm">
+                            Loading models...
+                          </p>
+                        ) : filteredModelRows.length > 0 ? (
+                          filteredModelRows.map((model) => (
+                            <button
+                              key={model.id}
+                              type="button"
+                              className="hover:bg-muted flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm"
+                              onClick={() => {
+                                setNewCar((state) => ({
+                                  ...state,
+                                  modelId: model.id,
+                                }));
+                                setModelSearch("");
+                                setModelPickerOpen(false);
+                              }}
+                            >
+                              <span className="min-w-0 flex-1 truncate">
+                                {model.brand} {model.name}
+                              </span>
+                              {newCar.modelId === model.id ? (
+                                <Check className="text-primary size-4 shrink-0" />
+                              ) : null}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground px-2 py-6 text-center text-sm">
+                            No models found.
+                          </p>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label>Year</Label>
+                  <Popover open={yearPickerOpen} onOpenChange={setYearPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "h-10 w-full justify-between rounded-md px-3 text-left font-normal",
+                          !newCar.year && "text-muted-foreground",
+                        )}
+                      >
+                        <span>{newCar.year || "Select year"}</span>
+                        <CalendarIcon className="text-muted-foreground size-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="w-auto max-w-[calc(100vw-2rem)] p-0"
+                    >
+                      <Calendar
+                        mode="single"
+                        captionLayout="dropdown"
+                        selected={
+                          newCar.year ? new Date(Number(newCar.year), 0, 1) : undefined
+                        }
+                        defaultMonth={
+                          newCar.year
+                            ? new Date(Number(newCar.year), 0, 1)
+                            : new Date()
+                        }
+                        startMonth={new Date(1900, 0)}
+                        endMonth={new Date(2100, 11)}
+                        onSelect={(date) => {
+                          if (!date) return;
+                          setNewCar((state) => ({
+                            ...state,
+                            year: String(date.getFullYear()),
+                          }));
+                          setYearPickerOpen(false);
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ledger-car-chassis">Chassis no</Label>
+                  <Input
+                    id="ledger-car-chassis"
+                    value={newCar.chassisNo}
+                    onChange={(event) =>
+                      setNewCar((state) => ({ ...state, chassisNo: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="ledger-car-title">Title</Label>
+                  <Input
+                    id="ledger-car-title"
+                    placeholder="Optional display title"
+                    value={newCar.title}
+                    onChange={(event) =>
+                      setNewCar((state) => ({ ...state, title: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ledger-car-usd">USD price</Label>
+                  <Input
+                    id="ledger-car-usd"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newCar.priceUsd}
+                    onChange={(event) =>
+                      setNewCar((state) => ({ ...state, priceUsd: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ledger-car-jpy">JPY price</Label>
+                  <Input
+                    id="ledger-car-jpy"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={newCar.priceJpy}
+                    onChange={(event) =>
+                      setNewCar((state) => ({ ...state, priceJpy: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ledger-car-pkr">PKR price</Label>
+                  <Input
+                    id="ledger-car-pkr"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={newCar.pricePkr}
+                    onChange={(event) =>
+                      setNewCar((state) => ({ ...state, pricePkr: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-3 rounded-md border bg-muted/20 p-3 sm:col-span-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold">Car images</h3>
+                        <Badge variant="secondary">{newCarImages.length}</Badge>
+                      </div>
+                      <p className="text-muted-foreground mt-0.5 text-xs">
+                        Optional. Upload exterior, interior, or document photos for this
+                        ledger car.
+                      </p>
+                    </div>
+                    <div>
+                      <input
+                        id="ledger-car-images"
+                        ref={carImageInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        className="hidden"
+                        onChange={(event) => {
+                          void uploadLedgerCarImages(event.target.files);
+                          event.target.value = "";
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                        disabled={carImageUploadBusy}
+                        onClick={() => carImageInputRef.current?.click()}
+                      >
+                        <FileUp className="size-4" />
+                        {carImageUploadBusy ? "Uploading..." : "Upload images"}
+                      </Button>
+                    </div>
+                  </div>
+                  {newCarImages.length === 0 ? (
+                    <div className="text-muted-foreground rounded-md border border-dashed bg-background px-3 py-5 text-center text-sm">
+                      No car images yet. Click upload images to attach photos before
+                      saving the car.
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {newCarImages.map((image) => (
+                        <div
+                          key={image.id}
+                          className="flex gap-3 rounded-md border bg-background p-2"
+                        >
+                          <div
+                            role="img"
+                            aria-label={image.fileName}
+                            className="size-20 shrink-0 rounded-md bg-muted bg-cover bg-center"
+                            style={{ backgroundImage: `url(${image.url})` }}
+                          />
+                          <div className="flex min-w-0 flex-1 flex-col gap-2">
+                            <p className="truncate text-sm font-medium">{image.fileName}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant={image.isPrimary ? "secondary" : "outline"}
+                                size="sm"
+                                onClick={() =>
+                                  setNewCarImages((state) =>
+                                    state.map((item) => ({
+                                      ...item,
+                                      isPrimary: item.id === image.id,
+                                    })),
+                                  )
+                                }
+                              >
+                                {image.isPrimary ? "Primary" : "Set primary"}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  setNewCarImages((state) => {
+                                    const next = state.filter((item) => item.id !== image.id);
+                                    if (image.isPrimary && next[0]) {
+                                      return next.map((item, index) => ({
+                                        ...item,
+                                        isPrimary: index === 0,
+                                      }));
+                                    }
+                                    return next;
+                                  })
+                                }
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
+                  <Checkbox
+                    id="ledger-car-published"
+                    checked={newCar.isPublished}
+                    onCheckedChange={(checked) =>
+                      setNewCar((state) => ({ ...state, isPublished: checked === true }))
+                    }
+                  />
+                  <Label htmlFor="ledger-car-published" className="font-normal">
+                    List this car on website
+                  </Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCarCreateOpen(false);
+                    setNewCarImages([]);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    createCarMutation.isPending ||
+                    carImageUploadBusy ||
+                    !newCar.referenceNo.trim() ||
+                    !newCar.modelId ||
+                    !newCar.year
+                  }
+                >
+                  {createCarMutation.isPending ? "Adding..." : "Add and select car"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
@@ -1176,20 +1746,27 @@ function CreateDealDialog({
 
 function DealDetailDialog({
   dealId,
+  mode,
   onOpenChange,
   onChanged,
 }: {
   dealId: string | null;
+  mode: "view" | "edit";
   onOpenChange: (open: boolean) => void;
   onChanged: () => void;
 }) {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("payments");
   const detailQuery = useQuery({
     queryKey: ["admin-ledger-deal", dealId],
     queryFn: () => fetchLedgerDeal(dealId as string),
     enabled: Boolean(dealId),
   });
   const deal = detailQuery.data?.deal;
+
+  useEffect(() => {
+    if (dealId) setActiveTab(mode === "edit" ? "edit" : "payments");
+  }, [dealId, mode]);
 
   const refresh = () => {
     if (dealId) {
@@ -1214,8 +1791,12 @@ function DealDetailDialog({
         ) : (
           <div className="space-y-5">
             <DealSummary deal={deal} />
-            <Tabs defaultValue="payments">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full justify-start overflow-x-auto">
+                <TabsTrigger value="edit">
+                  <Pencil className="size-4" />
+                  Edit
+                </TabsTrigger>
                 <TabsTrigger value="payments">
                   <Banknote className="size-4" />
                   Payments
@@ -1224,13 +1805,23 @@ function DealDetailDialog({
                   <FileUp className="size-4" />
                   Documents
                 </TabsTrigger>
+                <TabsTrigger value="images">
+                  <ImageIcon className="size-4" />
+                  Images
+                </TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
               </TabsList>
+              <TabsContent value="edit">
+                <EditDealTab deal={deal} onChanged={refresh} />
+              </TabsContent>
               <TabsContent value="payments">
                 <PaymentsTab deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="documents">
                 <DocumentsTab deal={deal} onChanged={refresh} />
+              </TabsContent>
+              <TabsContent value="images">
+                <CarImagesTab deal={deal} />
               </TabsContent>
               <TabsContent value="notes">
                 <NotesTab deal={deal} onChanged={refresh} />
@@ -1244,8 +1835,10 @@ function DealDetailDialog({
 }
 
 function DealSummary({ deal }: { deal: LedgerDeal }) {
+  const primaryImage = deal.car.images[0];
+
   return (
-    <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 md:grid-cols-4">
+    <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 md:grid-cols-5">
       <div>
         <p className="text-muted-foreground text-xs uppercase">Customer</p>
         <p className="mt-1 font-semibold">{deal.user.name}</p>
@@ -1253,8 +1846,29 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
       </div>
       <div>
         <p className="text-muted-foreground text-xs uppercase">Car</p>
-        <p className="mt-1 font-semibold">{deal.car.model.brand} {deal.car.model.name}</p>
-        <p className="text-muted-foreground text-xs">{deal.car.referenceNo}</p>
+        <div className="mt-1 flex items-center gap-3">
+          {primaryImage ? (
+            <div
+              role="img"
+              aria-label={primaryImage.altText ?? deal.car.referenceNo}
+              className="size-12 shrink-0 rounded-md border bg-muted bg-cover bg-center"
+              style={{ backgroundImage: `url(${primaryImage.url})` }}
+            />
+          ) : null}
+          <div className="min-w-0">
+            <p className="truncate font-semibold">
+              {deal.car.model.brand} {deal.car.model.name}
+            </p>
+            <p className="text-muted-foreground text-xs">{deal.car.referenceNo}</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p className="text-muted-foreground text-xs uppercase">Down payment</p>
+        <p className="mt-1 font-semibold">
+          {formatMoney(deal.downPaymentRequired, deal.currency)}
+        </p>
+        <p className="text-muted-foreground mt-1 text-xs">Required</p>
       </div>
       <div>
         <p className="text-muted-foreground text-xs uppercase">Paid</p>
@@ -1276,10 +1890,214 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
   );
 }
 
+function CarImagesTab({ deal }: { deal: LedgerDeal }) {
+  const images = deal.car.images;
+
+  return (
+    <div className="mt-4">
+      {images.length === 0 ? (
+        <div className="text-muted-foreground rounded-lg border p-6 text-sm">
+          No car images uploaded for this ledger car.
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {images.map((image, index) => (
+            <a
+              key={image.id}
+              href={image.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group overflow-hidden rounded-lg border bg-background"
+            >
+              <div
+                role="img"
+                aria-label={image.altText ?? `Car image ${index + 1}`}
+                className="aspect-4/3 w-full bg-muted bg-cover bg-center transition-transform group-hover:scale-[1.02]"
+                style={{ backgroundImage: `url(${image.url})` }}
+              />
+              <div className="flex items-center justify-between gap-3 p-3">
+                <p className="truncate text-sm font-medium">Image {index + 1}</p>
+                <Badge variant={index === 0 ? "default" : "secondary"}>
+                  {index === 0 ? "Primary" : "Car image"}
+                </Badge>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+  const [form, setForm] = useState({
+    orderNumber: deal.orderNumber,
+    totalAmount: String(deal.totalAmount),
+    currency: deal.currency,
+    downPaymentRequired:
+      deal.downPaymentRequired == null ? "" : String(deal.downPaymentRequired),
+    dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+    status: deal.status,
+    note: deal.note ?? "",
+  });
+
+  useEffect(() => {
+    setForm({
+      orderNumber: deal.orderNumber,
+      totalAmount: String(deal.totalAmount),
+      currency: deal.currency,
+      downPaymentRequired:
+        deal.downPaymentRequired == null ? "" : String(deal.downPaymentRequired),
+      dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+      status: deal.status,
+      note: deal.note ?? "",
+    });
+  }, [deal]);
+
+  const mutation = useApiMutation({
+    mutationFn: () => {
+      if (!form.orderNumber.trim()) throw new ApiError("Order number is required.");
+      if (!form.totalAmount) throw new ApiError("Total amount is required.");
+      return updateLedgerDeal(deal.id, {
+        orderNumber: form.orderNumber.trim(),
+        totalAmount: Number(form.totalAmount),
+        currency: form.currency,
+        downPaymentRequired: form.downPaymentRequired
+          ? Number(form.downPaymentRequired)
+          : null,
+        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+        status: form.status,
+        note: form.note.trim() || null,
+      });
+    },
+    successToast: "Ledger deal updated.",
+    onSuccess: onChanged,
+  });
+
+  return (
+    <form
+      className="mt-4 grid gap-4 rounded-lg border p-4 sm:grid-cols-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        mutation.mutate(undefined);
+      }}
+    >
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-order">Order no</Label>
+        <Input
+          id="ledger-edit-order"
+          value={form.orderNumber}
+          onChange={(event) =>
+            setForm((state) => ({ ...state, orderNumber: event.target.value }))
+          }
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-total">Total amount</Label>
+        <Input
+          id="ledger-edit-total"
+          type="number"
+          min="0"
+          step="0.01"
+          value={form.totalAmount}
+          onChange={(event) =>
+            setForm((state) => ({ ...state, totalAmount: event.target.value }))
+          }
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-currency">Currency</Label>
+        <NativeSelect
+          id="ledger-edit-currency"
+          value={form.currency}
+          onChange={(event) =>
+            setForm((state) => ({
+              ...state,
+              currency: event.target.value as LedgerCurrency,
+            }))
+          }
+        >
+          {currencies.map((currency) => (
+            <NativeSelectOption key={currency} value={currency}>
+              {currency}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-down">Down payment required</Label>
+        <Input
+          id="ledger-edit-down"
+          type="number"
+          min="0"
+          step="0.01"
+          value={form.downPaymentRequired}
+          onChange={(event) =>
+            setForm((state) => ({
+              ...state,
+              downPaymentRequired: event.target.value,
+            }))
+          }
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-due">Due date</Label>
+        <Input
+          id="ledger-edit-due"
+          type="date"
+          value={form.dueDate}
+          onChange={(event) =>
+            setForm((state) => ({ ...state, dueDate: event.target.value }))
+          }
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-status">Status</Label>
+        <NativeSelect
+          id="ledger-edit-status"
+          value={form.status}
+          onChange={(event) =>
+            setForm((state) => ({
+              ...state,
+              status: event.target.value as LedgerDealStatus,
+            }))
+          }
+        >
+          {dealStatuses.map((status) => (
+            <NativeSelectOption key={status} value={status}>
+              {label(status)}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+      <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor="ledger-edit-note">Note</Label>
+        <Textarea
+          id="ledger-edit-note"
+          value={form.note}
+          onChange={(event) =>
+            setForm((state) => ({ ...state, note: event.target.value }))
+          }
+        />
+      </div>
+      <div className="flex justify-end sm:col-span-2">
+        <Button
+          type="submit"
+          disabled={mutation.isPending || !form.orderNumber.trim() || !form.totalAmount}
+        >
+          {mutation.isPending ? "Saving..." : "Save changes"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+  const hasInitialDownPayment =
+    deal.downPaymentRequired != null && deal.downPaymentRequired > 0;
   const [form, setForm] = useState({
     amount: "",
-    type: "DOWN_PAYMENT" as LedgerPaymentType,
+    type: (hasInitialDownPayment ? "INSTALLMENT" : "DOWN_PAYMENT") as LedgerPaymentType,
     method: "BANK_TRANSFER" as LedgerPaymentMethod,
     paidAt: new Date().toISOString().slice(0, 10),
     referenceNo: "",
@@ -1371,6 +2189,16 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
             </TableRow>
           </TableHeader>
           <TableBody>
+            {hasInitialDownPayment ? (
+              <TableRow>
+                <TableCell>Down Payment</TableCell>
+                <TableCell>
+                  {formatMoney(deal.downPaymentRequired, deal.currency)}
+                </TableCell>
+                <TableCell>{format(new Date(deal.createdAt), "MMM d, yyyy")}</TableCell>
+                <TableCell>Initial down payment</TableCell>
+              </TableRow>
+            ) : null}
             {deal.payments.map((payment) => (
               <TableRow key={payment.id}>
                 <TableCell>{label(payment.type)}</TableCell>
@@ -1415,6 +2243,27 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
       onChanged();
     },
   });
+  const downloadAllMutation = useApiMutation({
+    mutationFn: async () =>
+      Promise.all(
+        deal.documents.map(async (document) => ({
+          document,
+          download: await getLedgerDocumentDownload(deal.id, document.id),
+        })),
+      ),
+    successToast: (downloads) =>
+      `Started ${downloads.length} document download${
+        downloads.length === 1 ? "" : "s"
+      }.`,
+    onSuccess: (downloads) => {
+      downloads.forEach(({ document, download }, index) => {
+        window.setTimeout(() => {
+          triggerFileDownload(download.downloadUrl, document.fileName);
+        }, index * 150);
+      });
+    },
+  });
+
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
       <form
@@ -1477,15 +2326,35 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
           {uploadMutation.isPending ? "Uploading..." : "Upload document"}
         </Button>
       </form>
-      <div className="grid gap-3">
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-semibold">Uploaded documents</h3>
+            <p className="text-muted-foreground text-xs">
+              {deal.documents.length} document{deal.documents.length === 1 ? "" : "s"} attached
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={deal.documents.length === 0 || downloadAllMutation.isPending}
+            onClick={() => downloadAllMutation.mutate(undefined)}
+          >
+            <Download className="size-4" />
+            {downloadAllMutation.isPending ? "Preparing..." : "Download all"}
+          </Button>
+        </div>
         {deal.documents.length === 0 ? (
           <div className="text-muted-foreground rounded-lg border p-6 text-sm">
             No documents uploaded for this deal.
           </div>
         ) : (
-          deal.documents.map((document) => (
-            <DocumentRow key={document.id} dealId={deal.id} document={document} />
-          ))
+          <div className="grid gap-3">
+            {deal.documents.map((document) => (
+              <DocumentRow key={document.id} dealId={deal.id} document={document} />
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -1502,7 +2371,7 @@ function DocumentRow({
   const downloadMutation = useApiMutation({
     mutationFn: () => getLedgerDocumentDownload(dealId, document.id),
     onSuccess: (data) => {
-      window.open(data.downloadUrl, "_blank", "noopener,noreferrer");
+      triggerFileDownload(data.downloadUrl, document.fileName);
     },
   });
 

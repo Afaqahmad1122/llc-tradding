@@ -161,6 +161,13 @@ export type CreateLedgerDealBody = {
   note?: string | null;
 };
 
+export type UpdateLedgerDealBody = Partial<
+  Omit<CreateLedgerDealBody, "userId" | "carId">
+> & {
+  userId?: string;
+  carId?: string;
+};
+
 export type AddLedgerPaymentBody = {
   amount: number;
   currency?: LedgerCurrency;
@@ -221,6 +228,13 @@ export function createLedgerDeal(body: CreateLedgerDealBody) {
 
 export function fetchLedgerDeal(id: string) {
   return http.get<{ deal: LedgerDeal }>(`/ledger/admin/${encodeURIComponent(id)}`);
+}
+
+export function updateLedgerDeal(id: string, body: UpdateLedgerDealBody) {
+  return http.patch<{ deal: LedgerDeal }, UpdateLedgerDealBody>(
+    `/ledger/admin/${encodeURIComponent(id)}`,
+    body,
+  );
 }
 
 export function deleteLedgerDeal(id: string) {

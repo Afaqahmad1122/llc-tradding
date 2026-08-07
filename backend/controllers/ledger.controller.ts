@@ -112,7 +112,6 @@ const LEDGER_DEAL_INCLUDE = {
       },
       images: {
         orderBy: [{ isPrimary: "desc" as const }, { position: "asc" as const }],
-        take: 1,
         select: {
           id: true,
           url: true,
@@ -225,17 +224,20 @@ const decodeUploadHeader = (value: string | undefined): string =>
 const buildPaymentSummary = (
   totalAmount: Prisma.Decimal,
   payments: Array<{ amount: Prisma.Decimal; type: LedgerPaymentType }>,
+  downPaymentRequired?: Prisma.Decimal | null,
   dueDate?: Date | null,
 ) => {
   const total = decimalToNumber(totalAmount) ?? 0;
-  const paidAmount = payments.reduce((sum, payment) => {
+  const downPaymentAmount = decimalToNumber(downPaymentRequired) ?? 0;
+  const paymentEntriesAmount = payments.reduce((sum, payment) => {
     const amount = decimalToNumber(payment.amount) ?? 0;
     return payment.type === LedgerPaymentType.REFUND ? sum - amount : sum + amount;
   }, 0);
+  const paidAmount = Math.max(paymentEntriesAmount + downPaymentAmount, 0);
   const remainingBalance = Math.max(total - paidAmount, 0);
   const hasDownPayment = payments.some(
     (payment) => payment.type === LedgerPaymentType.DOWN_PAYMENT,
-  );
+  ) || downPaymentAmount > 0;
   const isOverdue = Boolean(dueDate && remainingBalance > 0 && dueDate.getTime() < Date.now());
 
   const paymentStatus =
@@ -260,7 +262,12 @@ const buildPaymentSummary = (
 const toLedgerDealPayload = (
   deal: Prisma.LedgerDealGetPayload<{ include: typeof LEDGER_DEAL_INCLUDE }>,
 ) => {
-  const summary = buildPaymentSummary(deal.totalAmount, deal.payments, deal.dueDate);
+  const summary = buildPaymentSummary(
+    deal.totalAmount,
+    deal.payments,
+    deal.downPaymentRequired,
+    deal.dueDate,
+  );
   return {
     ...deal,
     totalAmount: decimalToNumber(deal.totalAmount),
