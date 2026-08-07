@@ -9,6 +9,7 @@ import {
   deleteAdminLedgerDocument,
   deleteAdminLedgerPayment,
   getAdminLedgerDealById,
+  getAdminLedgerCarImageDownload,
   getAdminLedgerDeals,
   getAdminLedgerDocumentDownload,
   presignAdminLedgerDocumentUpload,
@@ -86,4 +87,8 @@ ledgerRouter.delete("/admin/:id/documents/:documentId", deleteAdminLedgerDocumen
 ledgerRouter.get(
   "/admin/:id/documents/:documentId/download",
   getAdminLedgerDocumentDownload,
+);
+ledgerRouter.get(
+  "/admin/:id/images/:imageId/download",
+  getAdminLedgerCarImageDownload,
 );

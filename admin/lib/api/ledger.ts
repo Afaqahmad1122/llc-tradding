@@ -304,3 +304,9 @@ export function getLedgerDocumentDownload(dealId: string, documentId: string) {
     `/ledger/admin/${encodeURIComponent(dealId)}/documents/${encodeURIComponent(documentId)}/download`,
   );
 }
+
+export function getLedgerCarImageDownload(dealId: string, imageId: string) {
+  return http.get<{ downloadUrl: string; fileName: string; expiresIn: number }>(
+    `/ledger/admin/${encodeURIComponent(dealId)}/images/${encodeURIComponent(imageId)}/download`,
+  );
+}

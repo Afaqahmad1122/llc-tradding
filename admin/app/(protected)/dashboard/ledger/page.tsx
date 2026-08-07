@@ -95,6 +95,7 @@ import {
   deleteLedgerDeal,
   fetchLedgerDeal,
   fetchLedgerDeals,
+  getLedgerCarImageDownload,
   getLedgerDocumentDownload,
   type CreateLedgerDealBody,
   type LedgerCurrency,
@@ -206,17 +207,6 @@ function triggerBatchDownloads(files: Array<{ url: string; fileName: string }>) 
       triggerFileDownload(file.url, file.fileName);
     }, index * 150);
   });
-}
-
-function fileNameFromUrl(url: string, fallback: string) {
-  try {
-    const fileName = decodeURIComponent(
-      new URL(url).pathname.split("/").filter(Boolean).pop() ?? "",
-    );
-    return fileName || fallback;
-  } catch {
-    return fallback;
-  }
 }
 
 function getPasswordError(password: string) {
@@ -1911,26 +1901,43 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
 
 function CarImagesTab({ deal }: { deal: LedgerDeal }) {
   const images = deal.car.images;
-  const imageFileName = (url: string, index: number) =>
-    fileNameFromUrl(
-      url,
-      `${deal.car.referenceNo.replace(/[^\w.-]+/g, "-")}-image-${index + 1}.jpg`,
-    );
+  const [downloadingImageId, setDownloadingImageId] = useState<string | null>(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
-  function downloadImage(url: string, index: number) {
-    triggerFileDownload(url, imageFileName(url, index));
+  async function downloadImage(imageId: string) {
+    setDownloadingImageId(imageId);
+    try {
+      const download = await getLedgerCarImageDownload(deal.id, imageId);
+      triggerFileDownload(download.downloadUrl, download.fileName);
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setDownloadingImageId(null);
+    }
   }
 
-  function downloadAllImages() {
-    triggerBatchDownloads(
-      images.map((image, index) => ({
-        url: image.url,
-        fileName: imageFileName(image.url, index),
-      })),
-    );
-    toast.success(
-      `Started ${images.length} image download${images.length === 1 ? "" : "s"}.`,
-    );
+  async function downloadAllImages() {
+    setDownloadingAll(true);
+    try {
+      const downloads = await Promise.all(
+        images.map((image) => getLedgerCarImageDownload(deal.id, image.id)),
+      );
+      triggerBatchDownloads(
+        downloads.map((download) => ({
+          url: download.downloadUrl,
+          fileName: download.fileName,
+        })),
+      );
+      toast.success(
+        `Started ${downloads.length} image download${
+          downloads.length === 1 ? "" : "s"
+        }.`,
+      );
+    } catch (error) {
+      toast.error(formatErrorMessage(error));
+    } finally {
+      setDownloadingAll(false);
+    }
   }
 
   return (
@@ -1946,11 +1953,11 @@ function CarImagesTab({ deal }: { deal: LedgerDeal }) {
           type="button"
           variant="outline"
           size="sm"
-          disabled={images.length === 0}
-          onClick={downloadAllImages}
+          disabled={images.length === 0 || downloadingAll}
+          onClick={() => void downloadAllImages()}
         >
           <Download className="size-4" />
-          Download all
+          {downloadingAll ? "Preparing..." : "Download all"}
         </Button>
       </div>
       {images.length === 0 ? (
@@ -1982,10 +1989,11 @@ function CarImagesTab({ deal }: { deal: LedgerDeal }) {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => downloadImage(image.url, index)}
+                  disabled={downloadingImageId === image.id}
+                  onClick={() => void downloadImage(image.id)}
                 >
                   <Download className="size-4" />
-                  Download
+                  {downloadingImageId === image.id ? "Preparing..." : "Download"}
                 </Button>
               </div>
             </div>

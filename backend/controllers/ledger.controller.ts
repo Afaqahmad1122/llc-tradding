@@ -221,6 +221,9 @@ const getLedgerDocumentExt = (
 const decodeUploadHeader = (value: string | undefined): string =>
   value ? decodeURIComponent(value).trim() : "";
 
+const sanitizeDownloadName = (value: string): string =>
+  value.replace(/["/\\?%*:|<>]/g, "-").trim() || "download";
+
 const buildPaymentSummary = (
   totalAmount: Prisma.Decimal,
   payments: Array<{ amount: Prisma.Decimal; type: LedgerPaymentType }>,
@@ -997,6 +1000,72 @@ export const getAdminLedgerDocumentDownload = async (
 
   res.status(200).json({
     downloadUrl,
+    expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+  });
+};
+
+export const getAdminLedgerCarImageDownload = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const dealId = getRequiredParam(req, res, "id");
+  const imageId = getRequiredParam(req, res, "imageId");
+  if (!dealId || !imageId) return;
+
+  const deal = await requireActiveDeal(dealId);
+  if (!deal) {
+    res.status(404).json({ message: "ledger deal not found" });
+    return;
+  }
+
+  const image = await prisma.carImage.findFirst({
+    where: { id: imageId, carId: deal.carId },
+    select: {
+      id: true,
+      url: true,
+      key: true,
+      position: true,
+      car: { select: { referenceNo: true } },
+    },
+  });
+  if (!image) {
+    res.status(404).json({ message: "car image not found" });
+    return;
+  }
+
+  let ext = "jpg";
+  try {
+    const urlPath = new URL(image.url).pathname;
+    ext = urlPath.split(".").pop()?.split("?")[0] || ext;
+  } catch {
+    const urlPath = image.url.split("?")[0] ?? "";
+    ext = urlPath.split(".").pop() || ext;
+  }
+  const fileName = sanitizeDownloadName(
+    `${image.car.referenceNo}-image-${image.position + 1}.${ext}`,
+  );
+
+  if (!image.key) {
+    res.status(200).json({
+      downloadUrl: image.url,
+      fileName,
+      expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+    });
+    return;
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: s3Bucket,
+    Key: image.key,
+    ResponseContentDisposition: `attachment; filename="${fileName}"`,
+  });
+  const downloadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
+  });
+
+  res.status(200).json({
+    downloadUrl,
+    fileName,
     expiresIn: DOWNLOAD_EXPIRES_IN_SEC,
   });
 };
