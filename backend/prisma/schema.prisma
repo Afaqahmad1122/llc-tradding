@@ -330,6 +330,13 @@ model LedgerDeal {
   currency            LedgerCurrency      @default(JPY)
   downPaymentRequired Decimal?            @db.Decimal(14, 2)
   dueDate             DateTime?
+  shipmentOrigin      String?
+  shipmentDestination String?
+  vesselName          String?
+  bookingNo           String?
+  billOfLadingNo      String?
+  currentLocation     String?
+  shipmentNote        String?
   status              LedgerDealStatus    @default(PENDING_CONFIRMATION)
   note                String?
   payments            LedgerPayment[]

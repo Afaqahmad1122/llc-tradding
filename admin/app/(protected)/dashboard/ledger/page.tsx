@@ -14,6 +14,7 @@ import {
   Plus,
   ReceiptText,
   SearchIcon,
+  Ship,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -78,6 +79,7 @@ import {
   createAdminCar,
   fetchAdminCars,
   fetchAdminModels,
+  updateAdminCar,
   uploadCarImage,
   type AdminCar,
   type CarImageInput,
@@ -188,6 +190,20 @@ function formatMoney(amount: number | null | undefined, currency: string) {
   return `${currency} ${amount.toLocaleString(undefined, {
     maximumFractionDigits: 2,
   })}`;
+}
+
+function paymentBalanceLabel(deal: LedgerDeal) {
+  if (deal.paymentSummary.isOverdue) return "Overdue";
+  if (deal.paymentSummary.remainingBalance <= 0) return "Fully Paid";
+  if (deal.paymentSummary.paidAmount > 0) return "Balance Pending";
+  return "No Payment";
+}
+
+function paymentBalanceVariant(deal: LedgerDeal): "default" | "secondary" | "destructive" | "outline" {
+  if (deal.paymentSummary.isOverdue) return "destructive";
+  if (deal.paymentSummary.remainingBalance <= 0) return "default";
+  if (deal.paymentSummary.paidAmount > 0) return "secondary";
+  return "outline";
 }
 
 function triggerFileDownload(url: string, fileName: string) {
@@ -496,8 +512,8 @@ function LedgerTable({
                 <Badge variant={deal.status === "CANCELLED" ? "destructive" : "outline"}>
                   {label(deal.status)}
                 </Badge>
-                <Badge variant={deal.paymentSummary.remainingBalance <= 0 ? "default" : "secondary"}>
-                  {label(deal.paymentSummary.paymentStatus)}
+                <Badge variant={paymentBalanceVariant(deal)}>
+                  {paymentBalanceLabel(deal)}
                 </Badge>
               </div>
             </TableCell>
@@ -984,19 +1000,7 @@ function CreateDealDialog({
               </Popover>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label>Car</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={openLedgerCarCreate}
-                >
-                  <Plus className="size-3.5" />
-                  Add ledger car
-                </Button>
-              </div>
+              <Label>Car</Label>
               <Popover open={carPickerOpen} onOpenChange={setCarPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -1810,6 +1814,10 @@ function DealDetailDialog({
                   <Banknote className="size-4" />
                   Payments
                 </TabsTrigger>
+                <TabsTrigger value="shipment">
+                  <Ship className="size-4" />
+                  Shipment
+                </TabsTrigger>
                 <TabsTrigger value="documents">
                   <FileUp className="size-4" />
                   Documents
@@ -1825,6 +1833,9 @@ function DealDetailDialog({
               </TabsContent>
               <TabsContent value="payments">
                 <PaymentsTab deal={deal} onChanged={refresh} />
+              </TabsContent>
+              <TabsContent value="shipment">
+                <ShipmentTab deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="documents">
                 <DocumentsTab deal={deal} onChanged={refresh} />
@@ -1869,6 +1880,9 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
               {deal.car.model.brand} {deal.car.model.name}
             </p>
             <p className="text-muted-foreground text-xs">{deal.car.referenceNo}</p>
+            <p className="text-muted-foreground text-xs">
+              {deal.car.chassisNo ?? "No chassis"}
+            </p>
           </div>
         </div>
       </div>
@@ -1891,8 +1905,8 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
         <p className="mt-1 font-semibold">
           {formatMoney(deal.paymentSummary.remainingBalance, deal.currency)}
         </p>
-        <Badge className="mt-2" variant={deal.paymentSummary.isOverdue ? "destructive" : "outline"}>
-          {deal.paymentSummary.isOverdue ? "Overdue" : label(deal.paymentSummary.paymentStatus)}
+        <Badge className="mt-2" variant={paymentBalanceVariant(deal)}>
+          {paymentBalanceLabel(deal)}
         </Badge>
       </div>
     </div>
@@ -2014,6 +2028,7 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
     dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
     status: deal.status,
     note: deal.note ?? "",
+    chassisNo: deal.car.chassisNo ?? "",
   });
 
   useEffect(() => {
@@ -2026,13 +2041,18 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
       dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
       status: deal.status,
       note: deal.note ?? "",
+      chassisNo: deal.car.chassisNo ?? "",
     });
   }, [deal]);
 
   const mutation = useApiMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!form.orderNumber.trim()) throw new ApiError("Order number is required.");
       if (!form.totalAmount) throw new ApiError("Total amount is required.");
+      const trimmedChassis = form.chassisNo.trim();
+      if (trimmedChassis !== (deal.car.chassisNo ?? "")) {
+        await updateAdminCar(deal.car.id, { chassisNo: trimmedChassis });
+      }
       return updateLedgerDeal(deal.id, {
         orderNumber: form.orderNumber.trim(),
         totalAmount: Number(form.totalAmount),
@@ -2064,6 +2084,17 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
           value={form.orderNumber}
           onChange={(event) =>
             setForm((state) => ({ ...state, orderNumber: event.target.value }))
+          }
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-chassis">Chassis no</Label>
+        <Input
+          id="ledger-edit-chassis"
+          value={form.chassisNo}
+          placeholder="VIN or chassis number"
+          onChange={(event) =>
+            setForm((state) => ({ ...state, chassisNo: event.target.value }))
           }
         />
       </div>
@@ -2285,6 +2316,322 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
           </TableBody>
         </Table>
       </div>
+    </div>
+  );
+}
+
+function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+  const [form, setForm] = useState({
+    status: deal.status,
+    dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+    shipmentOrigin: deal.shipmentOrigin ?? "",
+    shipmentDestination: deal.shipmentDestination ?? "",
+    vesselName: deal.vesselName ?? "",
+    bookingNo: deal.bookingNo ?? "",
+    billOfLadingNo: deal.billOfLadingNo ?? "",
+    currentLocation: deal.currentLocation ?? "",
+    shipmentNote: deal.shipmentNote ?? "",
+  });
+
+  useEffect(() => {
+    setForm({
+      status: deal.status,
+      dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+      shipmentOrigin: deal.shipmentOrigin ?? "",
+      shipmentDestination: deal.shipmentDestination ?? "",
+      vesselName: deal.vesselName ?? "",
+      bookingNo: deal.bookingNo ?? "",
+      billOfLadingNo: deal.billOfLadingNo ?? "",
+      currentLocation: deal.currentLocation ?? "",
+      shipmentNote: deal.shipmentNote ?? "",
+    });
+  }, [deal]);
+
+  const mutation = useApiMutation({
+    mutationFn: () =>
+      updateLedgerDeal(deal.id, {
+        status: form.status,
+        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+        shipmentOrigin: form.shipmentOrigin.trim() || null,
+        shipmentDestination: form.shipmentDestination.trim() || null,
+        vesselName: form.vesselName.trim() || null,
+        bookingNo: form.bookingNo.trim() || null,
+        billOfLadingNo: form.billOfLadingNo.trim() || null,
+        currentLocation: form.currentLocation.trim() || null,
+        shipmentNote: form.shipmentNote.trim() || null,
+      }),
+    successToast: "Shipment updated.",
+    onSuccess: onChanged,
+  });
+
+  const previewOrigin = form.shipmentOrigin.trim() || "Origin pending";
+  const previewDestination =
+    form.shipmentDestination.trim() ||
+    [deal.user.city, deal.user.country].filter(Boolean).join(", ") ||
+    "Destination pending";
+  const previewEta = form.dueDate
+    ? format(new Date(form.dueDate), "MMM d, yyyy")
+    : "Awaiting schedule";
+  const previewVessel = form.vesselName.trim() || "Not added";
+  const previewCurrentLeg = form.currentLocation.trim() || label(form.status);
+  const previewNote = form.shipmentNote.trim() || "No shipment note added.";
+
+  return (
+    <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(460px,0.95fr)_minmax(0,1.05fr)]">
+      <form
+        className="space-y-4 rounded-lg border bg-background p-4 shadow-sm"
+        onSubmit={(event) => {
+          event.preventDefault();
+          mutation.mutate(undefined);
+        }}
+      >
+        <div className="flex items-start gap-3 rounded-lg bg-muted/30 p-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <Ship className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="font-semibold">Update shipment</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Saved values appear on the customer shipment tracking page.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <h4 className="text-sm font-semibold">Tracking status</h4>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-status">
+                Status
+              </Label>
+              <NativeSelect
+                id="ledger-shipment-status"
+                value={form.status}
+                onChange={(event) =>
+                  setForm((state) => ({
+                    ...state,
+                    status: event.target.value as LedgerDealStatus,
+                  }))
+                }
+              >
+                {dealStatuses.map((status) => (
+                  <NativeSelectOption key={status} value={status}>
+                    {label(status)}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-eta">
+                ETA
+              </Label>
+              <Input
+                id="ledger-shipment-eta"
+                type="date"
+                value={form.dueDate}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, dueDate: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <h4 className="text-sm font-semibold">Route</h4>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-origin">
+                Origin
+              </Label>
+              <Input
+                id="ledger-shipment-origin"
+                placeholder="Yokohama, Japan"
+                value={form.shipmentOrigin}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, shipmentOrigin: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-destination">
+                Destination
+              </Label>
+              <Input
+                id="ledger-shipment-destination"
+                placeholder="Karachi, Pakistan"
+                value={form.shipmentDestination}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, shipmentDestination: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <h4 className="text-sm font-semibold">Carrier details</h4>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-vessel">
+                Vessel
+              </Label>
+              <Input
+                id="ledger-shipment-vessel"
+                placeholder="Ocean Sakura"
+                value={form.vesselName}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, vesselName: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-current">
+                Current leg
+              </Label>
+              <Input
+                id="ledger-shipment-current"
+                placeholder="Loaded on vessel"
+                value={form.currentLocation}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, currentLocation: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-booking">
+                Booking no
+              </Label>
+              <Input
+                id="ledger-shipment-booking"
+                placeholder="BK-ICC-77320"
+                value={form.bookingNo}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, bookingNo: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-bl">
+                BL no
+              </Label>
+              <Input
+                id="ledger-shipment-bl"
+                placeholder="Bill of lading number"
+                value={form.billOfLadingNo}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, billOfLadingNo: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border p-3">
+          <div className="space-y-2">
+            <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-note">
+              Customer note
+            </Label>
+            <Textarea
+              id="ledger-shipment-note"
+              className="min-h-24"
+              placeholder="Short customer-visible shipment update"
+              value={form.shipmentNote}
+              onChange={(event) =>
+                setForm((state) => ({ ...state, shipmentNote: event.target.value }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 -mx-4 -mb-4 border-t bg-background/95 p-4 backdrop-blur">
+          <Button type="submit" className="w-full" disabled={mutation.isPending}>
+            {mutation.isPending ? "Updating..." : "Update shipment"}
+          </Button>
+        </div>
+      </form>
+
+      <div className="space-y-4 rounded-lg border bg-background p-4 shadow-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="font-semibold">Customer view preview</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              This is what the customer will see in shipment tracking.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit">
+            {label(form.status)}
+          </Badge>
+        </div>
+
+        <div className="rounded-lg border bg-muted/20 p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-muted-foreground text-xs uppercase">Order</p>
+              <p className="mt-1 truncate text-lg font-semibold">{deal.orderNumber}</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {deal.car.model.brand} {deal.car.model.name} · {deal.car.referenceNo}
+              </p>
+            </div>
+            <div className="shrink-0 rounded-md border bg-background px-3 py-2 text-right">
+              <p className="text-muted-foreground text-xs uppercase">ETA</p>
+              <p className="font-semibold">{previewEta}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <PreviewMetric label="Vessel" value={previewVessel} />
+          <PreviewMetric label="Current leg" value={previewCurrentLeg} />
+          <PreviewMetric label="Documents" value={`${deal.documents.length} attached`} />
+        </div>
+
+        <div className="rounded-lg border p-4">
+          <h4 className="text-sm font-semibold">Route</h4>
+          <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+            <RoutePoint label="Origin" value={previewOrigin} />
+            <span className="hidden h-px w-10 bg-border sm:block" />
+            <RoutePoint label="Destination" value={previewDestination} />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <PreviewDetail label="Booking no" value={form.bookingNo.trim() || "Not added"} />
+          <PreviewDetail label="BL no" value={form.billOfLadingNo.trim() || "Not added"} />
+        </div>
+
+        <div className="rounded-lg border bg-muted/20 p-4">
+          <p className="text-muted-foreground text-xs uppercase">Shipment note</p>
+          <p className="mt-2 text-sm leading-6">{previewNote}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewMetric({ label: metricLabel, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border bg-muted/20 p-3">
+      <p className="text-muted-foreground text-xs uppercase">{metricLabel}</p>
+      <p className="mt-1 truncate font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function PreviewDetail({ label: detailLabel, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border p-3">
+      <p className="text-muted-foreground text-xs uppercase">{detailLabel}</p>
+      <p className="mt-1 break-words font-medium">{value}</p>
+    </div>
+  );
+}
+
+function RoutePoint({ label: pointLabel, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-muted/30 p-3">
+      <p className="text-muted-foreground text-xs uppercase">{pointLabel}</p>
+      <p className="mt-1 font-semibold">{value}</p>
     </div>
   );
 }

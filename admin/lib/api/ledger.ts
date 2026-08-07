@@ -103,7 +103,6 @@ export type LedgerPaymentSummary = {
   paymentStatus:
     | "NO_PAYMENT"
     | "FULLY_PAID"
-    | "DOWN_PAYMENT_PAID"
     | "PARTIALLY_PAID";
   isOverdue: boolean;
   paidPercent: number;
@@ -118,6 +117,13 @@ export type LedgerDeal = {
   currency: LedgerCurrency;
   downPaymentRequired: number | null;
   dueDate: string | null;
+  shipmentOrigin: string | null;
+  shipmentDestination: string | null;
+  vesselName: string | null;
+  bookingNo: string | null;
+  billOfLadingNo: string | null;
+  currentLocation: string | null;
+  shipmentNote: string | null;
   status: LedgerDealStatus;
   note: string | null;
   createdAt: string;
@@ -157,6 +163,13 @@ export type CreateLedgerDealBody = {
   currency: LedgerCurrency;
   downPaymentRequired?: number | null;
   dueDate?: string | null;
+  shipmentOrigin?: string | null;
+  shipmentDestination?: string | null;
+  vesselName?: string | null;
+  bookingNo?: string | null;
+  billOfLadingNo?: string | null;
+  currentLocation?: string | null;
+  shipmentNote?: string | null;
   status?: LedgerDealStatus;
   note?: string | null;
 };

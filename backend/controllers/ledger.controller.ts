@@ -31,6 +31,13 @@ type CreateLedgerDealBody = {
   currency: LedgerCurrency;
   downPaymentRequired?: number | null;
   dueDate?: string | null;
+  shipmentOrigin?: string | null;
+  shipmentDestination?: string | null;
+  vesselName?: string | null;
+  bookingNo?: string | null;
+  billOfLadingNo?: string | null;
+  currentLocation?: string | null;
+  shipmentNote?: string | null;
   status?: LedgerDealStatus;
   note?: string | null;
 };
@@ -238,19 +245,20 @@ const buildPaymentSummary = (
   }, 0);
   const paidAmount = Math.max(paymentEntriesAmount + downPaymentAmount, 0);
   const remainingBalance = Math.max(total - paidAmount, 0);
-  const hasDownPayment = payments.some(
-    (payment) => payment.type === LedgerPaymentType.DOWN_PAYMENT,
-  ) || downPaymentAmount > 0;
-  const isOverdue = Boolean(dueDate && remainingBalance > 0 && dueDate.getTime() < Date.now());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDateOnly = dueDate ? new Date(dueDate) : null;
+  dueDateOnly?.setHours(0, 0, 0, 0);
+  const isOverdue = Boolean(
+    dueDateOnly && remainingBalance > 0 && dueDateOnly.getTime() < today.getTime(),
+  );
 
   const paymentStatus =
     paidAmount <= 0
       ? "NO_PAYMENT"
       : remainingBalance <= 0
         ? "FULLY_PAID"
-        : hasDownPayment
-          ? "DOWN_PAYMENT_PAID"
-          : "PARTIALLY_PAID";
+        : "PARTIALLY_PAID";
 
   return {
     totalAmount: total,
@@ -289,6 +297,79 @@ const toLedgerDealPayload = (
   };
 };
 
+const CUSTOMER_VISIBLE_EVENT_TYPES = new Set<LedgerEventType>([
+  LedgerEventType.DEAL_CREATED,
+  LedgerEventType.DEAL_UPDATED,
+  LedgerEventType.PAYMENT_ADDED,
+  LedgerEventType.DOCUMENT_ADDED,
+  LedgerEventType.DOCUMENT_UPDATED,
+]);
+
+const isCustomerVisibleDocumentEvent = (
+  event: Prisma.LedgerDealGetPayload<{ include: typeof LEDGER_DEAL_INCLUDE }>["events"][number],
+): boolean => {
+  if (
+    event.type !== LedgerEventType.DOCUMENT_ADDED &&
+    event.type !== LedgerEventType.DOCUMENT_UPDATED
+  ) {
+    return true;
+  }
+
+  const metadata = event.metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return true;
+  }
+
+  return (metadata as { visibleToCustomer?: unknown }).visibleToCustomer !== false;
+};
+
+const toCustomerLedgerDealPayload = (
+  deal: Prisma.LedgerDealGetPayload<{ include: typeof LEDGER_DEAL_INCLUDE }>,
+) => {
+  const payload = toLedgerDealPayload(deal);
+  const { note, createdBy, createdById, deletedAt, ...customerDeal } = payload;
+  void note;
+  void createdBy;
+  void createdById;
+  void deletedAt;
+
+  return {
+    ...customerDeal,
+    payments: payload.payments.map((payment) => ({
+      id: payment.id,
+      amount: payment.amount,
+      currency: payment.currency,
+      type: payment.type,
+      method: payment.method,
+      paidAt: payment.paidAt,
+      referenceNo: payment.referenceNo,
+      createdAt: payment.createdAt,
+    })),
+    documents: payload.documents
+      .filter((document) => document.visibleToCustomer)
+      .map((document) => ({
+        id: document.id,
+        type: document.type,
+        title: document.title,
+        fileName: document.fileName,
+        mimeType: document.mimeType,
+        fileSize: document.fileSize,
+        createdAt: document.createdAt,
+        updatedAt: document.updatedAt,
+      })),
+    events: payload.events
+      .filter((event) => CUSTOMER_VISIBLE_EVENT_TYPES.has(event.type))
+      .filter(isCustomerVisibleDocumentEvent)
+      .map((event) => ({
+        id: event.id,
+        type: event.type,
+        message: event.message,
+        metadata: event.metadata,
+        createdAt: event.createdAt,
+      })),
+  };
+};
+
 const paginationPayload = ({
   page,
   pageSize,
@@ -305,14 +386,12 @@ const paginationPayload = ({
 });
 
 const generateOrderNumber = async (): Promise<string> => {
-  const date = new Date();
-  const stamp = `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, "0")}${String(
-    date.getUTCDate(),
-  ).padStart(2, "0")}`;
+  const prefix = "ICC-ORD-";
+  const count = await prisma.ledgerDeal.count();
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const suffix = randomBytes(3).toString("hex").toUpperCase();
-    const candidate = `ICC-ORD-${stamp}-${suffix}`;
+    const sequence = String(count + 1 + attempt).padStart(4, "0");
+    const candidate = `${prefix}${sequence}`;
     const exists = await prisma.ledgerDeal.findUnique({
       where: { orderNumber: candidate },
       select: { id: true },
@@ -320,7 +399,7 @@ const generateOrderNumber = async (): Promise<string> => {
     if (!exists) return candidate;
   }
 
-  return `ICC-ORD-${stamp}-${Date.now()}`;
+  return `${prefix}${Date.now()}`;
 };
 
 const requireActiveDeal = async (dealId: string) => {
@@ -435,6 +514,34 @@ export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<
   });
 };
 
+export const getMyLedgerDeals = async (_req: Request, res: Response): Promise<void> => {
+  const authUserId = res.locals.authUserId as string | undefined;
+  const authUserRole = res.locals.authUserRole as UserRole | undefined;
+
+  if (!authUserId) {
+    res.status(401).json({ message: "authorization token required" });
+    return;
+  }
+
+  if (authUserRole !== UserRole.USER) {
+    res.status(403).json({ message: "customer account required" });
+    return;
+  }
+
+  const deals = await prisma.ledgerDeal.findMany({
+    where: {
+      userId: authUserId,
+      deletedAt: null,
+    },
+    orderBy: { createdAt: "desc" },
+    include: LEDGER_DEAL_INCLUDE,
+  });
+
+  res.status(200).json({
+    data: deals.map(toCustomerLedgerDealPayload),
+  });
+};
+
 export const createAdminLedgerDeal = async (req: Request, res: Response): Promise<void> => {
   const body = req.body as CreateLedgerDealBody;
   const { user, car } = await assertCustomerAndCar(body.userId, body.carId);
@@ -474,6 +581,13 @@ export const createAdminLedgerDeal = async (req: Request, res: Response): Promis
           ? null
           : money(body.downPaymentRequired),
       dueDate: body.dueDate ? new Date(body.dueDate) : null,
+      shipmentOrigin: body.shipmentOrigin?.trim() || null,
+      shipmentDestination: body.shipmentDestination?.trim() || null,
+      vesselName: body.vesselName?.trim() || null,
+      bookingNo: body.bookingNo?.trim() || null,
+      billOfLadingNo: body.billOfLadingNo?.trim() || null,
+      currentLocation: body.currentLocation?.trim() || null,
+      shipmentNote: body.shipmentNote?.trim() || null,
       status: body.status ?? LedgerDealStatus.PENDING_CONFIRMATION,
       note: body.note?.trim() || null,
       events: {
@@ -561,6 +675,27 @@ export const updateAdminLedgerDeal = async (req: Request, res: Response): Promis
           }
         : {}),
       ...(body.dueDate !== undefined ? { dueDate: body.dueDate ? new Date(body.dueDate) : null } : {}),
+      ...(body.shipmentOrigin !== undefined
+        ? { shipmentOrigin: body.shipmentOrigin?.trim() || null }
+        : {}),
+      ...(body.shipmentDestination !== undefined
+        ? { shipmentDestination: body.shipmentDestination?.trim() || null }
+        : {}),
+      ...(body.vesselName !== undefined
+        ? { vesselName: body.vesselName?.trim() || null }
+        : {}),
+      ...(body.bookingNo !== undefined
+        ? { bookingNo: body.bookingNo?.trim() || null }
+        : {}),
+      ...(body.billOfLadingNo !== undefined
+        ? { billOfLadingNo: body.billOfLadingNo?.trim() || null }
+        : {}),
+      ...(body.currentLocation !== undefined
+        ? { currentLocation: body.currentLocation?.trim() || null }
+        : {}),
+      ...(body.shipmentNote !== undefined
+        ? { shipmentNote: body.shipmentNote?.trim() || null }
+        : {}),
       ...(body.status ? { status: body.status } : {}),
       ...(body.note !== undefined ? { note: body.note?.trim() || null } : {}),
     },

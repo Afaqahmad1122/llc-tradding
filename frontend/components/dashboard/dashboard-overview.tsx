@@ -1,25 +1,59 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, ImageIcon, MapPin } from "lucide-react";
+import { useMemo } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
 import {
-  dashboardOrders,
-  dashboardStats,
   eventIcons,
+  mapLedgerDealsToDashboardOrders,
   orderStatusStyles,
-  shipmentEvents,
+  statIcons,
+  type DashboardOrder,
 } from "@/components/dashboard/user-dashboard-data";
+import { useMyLedgerDealsQuery } from "@/hooks/use-my-ledger-deals-query";
 import { cn } from "@/lib/utils";
 
 export function DashboardOverview() {
-  const activeOrder = dashboardOrders[0];
+  const ledgerQuery = useMyLedgerDealsQuery();
+  const orders = useMemo(
+    () => mapLedgerDealsToDashboardOrders(ledgerQuery.data?.data ?? []),
+    [ledgerQuery.data?.data],
+  );
+  const activeOrder = orders.find((order) => order.isActive) ?? orders[0] ?? null;
+  const stats = useMemo(() => buildStats(orders, activeOrder), [orders, activeOrder]);
+
+  if (ledgerQuery.isLoading) {
+    return <DashboardOverviewState message="Loading your dashboard..." />;
+  }
+
+  if (ledgerQuery.isError) {
+    return <DashboardOverviewState message={ledgerQuery.error.message || "Unable to load dashboard."} />;
+  }
+
+  if (!activeOrder) {
+    return (
+      <Empty className="rounded-[8px] border border-[#452E5A]/12 bg-white py-14 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
+        <EmptyTitle>No active orders yet</EmptyTitle>
+        <EmptyDescription>
+          Once admin links a car order to your account, it will appear here.
+        </EmptyDescription>
+        <Button asChild className="h-10 rounded-[6px] bg-[#FF653F] text-white hover:bg-[#e85634]">
+          <Link href="/cars">Browse cars</Link>
+        </Button>
+      </Empty>
+    );
+  }
 
   return (
     <div className="space-y-4 lg:space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {dashboardStats.map((stat) => {
+        {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
@@ -67,13 +101,18 @@ export function DashboardOverview() {
 
           <div className="grid gap-0 p-4 sm:p-5 md:grid-cols-[220px_minmax(0,1fr)] md:gap-5">
             <div className="relative aspect-[16/10] overflow-hidden rounded-[8px] border border-[#452E5A]/10 bg-[#f6f2fb] md:aspect-[5/4]">
-              <Image
-                src={activeOrder.image}
-                alt={activeOrder.carName}
-                fill
-                sizes="(min-width: 768px) 220px, 100vw"
-                className="object-cover"
-              />
+              {activeOrder.image ? (
+                <img
+                  src={activeOrder.image}
+                  alt={activeOrder.carName}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[#7a6798]">
+                  <ImageIcon className="size-8" />
+                </div>
+              )}
             </div>
             <div className="mt-4 min-w-0 space-y-4 md:mt-0">
               <div className="flex flex-wrap items-start justify-between gap-3 rounded-[8px] bg-[#fbf9ff] p-4 dark:bg-white/5">
@@ -97,24 +136,9 @@ export function DashboardOverview() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[6px] border border-[#452E5A]/10 p-3 dark:border-white/10">
-                  <p className="text-xs text-[#7a6798] dark:text-white/50">Amount</p>
-                  <p className="mt-1 font-semibold text-[#1E104E] dark:text-white">
-                    {activeOrder.totalAmount}
-                  </p>
-                </div>
-                <div className="rounded-[6px] border border-[#452E5A]/10 p-3 dark:border-white/10">
-                  <p className="text-xs text-[#7a6798] dark:text-white/50">Payment</p>
-                  <p className="mt-1 font-semibold text-[#1E104E] dark:text-white">
-                    {activeOrder.paymentStatus}
-                  </p>
-                </div>
-                <div className="rounded-[6px] border border-[#452E5A]/10 p-3 dark:border-white/10">
-                  <p className="text-xs text-[#7a6798] dark:text-white/50">ETA</p>
-                  <p className="mt-1 font-semibold text-[#1E104E] dark:text-white">
-                    {activeOrder.eta}
-                  </p>
-                </div>
+                <SummaryBox label="Amount" value={activeOrder.totalAmount} />
+                <SummaryBox label="Payment" value={activeOrder.paymentStatus} />
+                <SummaryBox label="ETA" value={activeOrder.eta} />
               </div>
 
               <div>
@@ -158,11 +182,11 @@ export function DashboardOverview() {
           </div>
 
           <div className="mt-5 space-y-4">
-            {shipmentEvents.map((event) => {
+            {activeOrder.timeline.slice(0, 4).map((event) => {
               const Icon = eventIcons[event.state];
 
               return (
-                <div key={event.title} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3">
+                <div key={`${event.title}-${event.date}`} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3">
                   <span
                     className={cn(
                       "mt-0.5 grid size-8 place-items-center rounded-full border",
@@ -188,7 +212,59 @@ export function DashboardOverview() {
           </div>
         </div>
       </div>
-
     </div>
   );
+}
+
+function DashboardOverviewState({ message }: { message: string }) {
+  return (
+    <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-8 text-center text-sm text-[#6a5a84] shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
+      <span className="inline-flex items-center gap-2">
+        <Spinner className="size-4" />
+        {message}
+      </span>
+    </div>
+  );
+}
+
+function SummaryBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[6px] border border-[#452E5A]/10 p-3 dark:border-white/10">
+      <p className="text-xs text-[#7a6798] dark:text-white/50">{label}</p>
+      <p className="mt-1 font-semibold text-[#1E104E] dark:text-white">{value}</p>
+    </div>
+  );
+}
+
+function buildStats(orders: DashboardOrder[], activeOrder: DashboardOrder | null) {
+  const activeOrders = orders.filter((order) => order.isActive);
+  const inTransitCount = orders.filter((order) => order.isInTransit).length;
+  const docsReady = orders.reduce((sum, order) => sum + order.documentsReady, 0);
+
+  return [
+    {
+      label: "Active orders",
+      value: String(activeOrders.length),
+      detail: `${inTransitCount} currently in transit`,
+      icon: statIcons.activeOrders,
+    },
+    {
+      label: "Shipment ETA",
+      value: activeOrder?.eta ?? "Awaiting",
+      detail: activeOrder ? `${activeOrder.portFrom} to ${activeOrder.portTo}` : "No active shipment",
+      icon: statIcons.eta,
+    },
+    {
+      label: "Documents ready",
+      value: String(docsReady),
+      detail: "Customer-visible files uploaded by admin",
+      icon: statIcons.documents,
+    },
+    {
+      label: "Next action",
+      value: activeOrder?.remainingBalanceAmount ? "Balance" : "Track",
+      detail: activeOrder ? `${activeOrder.balance} remaining on active order` : "No action needed",
+      icon: statIcons.nextAction,
+    },
+  ];
 }

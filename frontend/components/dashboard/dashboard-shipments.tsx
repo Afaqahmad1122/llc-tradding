@@ -1,16 +1,52 @@
+"use client";
+
 import { Anchor, Clock3, MapPin, Navigation, Ship } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useMemo } from "react";
+
 import { Badge } from "@/components/ui/badge";
+import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
 import {
-  dashboardOrders,
   eventIcons,
-  shipmentEvents,
-  shipmentMeta,
+  mapLedgerDealsToDashboardOrders,
+  orderStatusStyles,
+  type DashboardOrder,
 } from "@/components/dashboard/user-dashboard-data";
+import { useMyLedgerDealsQuery } from "@/hooks/use-my-ledger-deals-query";
 import { cn } from "@/lib/utils";
 
 export function DashboardShipments() {
-  const activeOrder = dashboardOrders[0];
+  const ledgerQuery = useMyLedgerDealsQuery();
+  const orders = useMemo(
+    () => mapLedgerDealsToDashboardOrders(ledgerQuery.data?.data ?? []),
+    [ledgerQuery.data?.data],
+  );
+  const activeOrder =
+    orders.find((order) => order.isInTransit) ??
+    orders.find((order) => order.isActive) ??
+    orders[0] ??
+    null;
+
+  if (ledgerQuery.isLoading) {
+    return <DashboardShipmentsState message="Loading shipment details..." />;
+  }
+
+  if (ledgerQuery.isError) {
+    return <DashboardShipmentsState message={ledgerQuery.error.message || "Unable to load shipments."} />;
+  }
+
+  if (!activeOrder) {
+    return (
+      <Empty className="rounded-[8px] border border-[#452E5A]/12 bg-white py-14 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
+        <EmptyTitle>No shipments yet</EmptyTitle>
+        <EmptyDescription>
+          Shipment movement will appear once a car order is linked to your account.
+        </EmptyDescription>
+      </Empty>
+    );
+  }
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -30,17 +66,20 @@ export function DashboardShipments() {
             </div>
             <Badge
               variant="outline"
-              className="h-6 rounded-full border-indigo-200 bg-indigo-50 px-2.5 text-indigo-700"
+              className={cn("h-6 rounded-full border px-2.5", orderStatusStyles[activeOrder.status])}
             >
-              On vessel
+              {activeOrder.status}
             </Badge>
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <ShipmentMetric icon={Ship} label="Vessel" value="Ocean Sakura" />
-            <ShipmentMetric icon={Anchor} label="Current leg" value="Departed Yokohama" />
+            <ShipmentMetric icon={Ship} label="Vessel" value={activeOrder.vesselName} />
+            <ShipmentMetric icon={Anchor} label="Current leg" value={activeOrder.currentLocation} />
             <ShipmentMetric icon={Clock3} label="ETA" value={activeOrder.eta} />
           </div>
+          <p className="mt-4 rounded-[6px] bg-[#fbf9ff] p-3 text-sm leading-6 text-[#6a5a84] dark:bg-white/5 dark:text-white/60">
+            {activeOrder.shipmentNote}
+          </p>
 
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between text-sm">
@@ -56,12 +95,12 @@ export function DashboardShipments() {
             Tracking timeline
           </h2>
           <div className="mt-5 space-y-5">
-            {shipmentEvents.map((event, index) => {
+            {activeOrder.timeline.map((event, index) => {
               const Icon = eventIcons[event.state];
-              const showLine = index < shipmentEvents.length - 1;
+              const showLine = index < activeOrder.timeline.length - 1;
 
               return (
-                <div key={event.title} className="grid grid-cols-[36px_minmax(0,1fr)] gap-4">
+                <div key={`${event.title}-${event.date}-${index}`} className="grid grid-cols-[36px_minmax(0,1fr)] gap-4">
                   <div className="relative flex justify-center">
                     <span
                       className={cn(
@@ -99,7 +138,7 @@ export function DashboardShipments() {
             Shipment details
           </h2>
           <div className="mt-4 divide-y divide-[#eee8f7] dark:divide-white/10">
-            {shipmentMeta.map(([label, value]) => (
+            {buildShipmentMeta(activeOrder).map(([label, value]) => (
               <div key={label} className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-3 text-sm">
                 <span className="text-[#7a6798] dark:text-white/50">{label}</span>
                 <span className="font-medium text-[#1E104E] dark:text-white">{value}</span>
@@ -109,9 +148,7 @@ export function DashboardShipments() {
         </div>
 
         <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-5 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
-          <h2 className="text-lg font-semibold text-[#1E104E] dark:text-white">
-            Route
-          </h2>
+          <h2 className="text-lg font-semibold text-[#1E104E] dark:text-white">Route</h2>
           <div className="mt-4 space-y-4 text-sm">
             <p className="flex items-start gap-3 rounded-[6px] bg-[#fbf9ff] p-3 dark:bg-white/5">
               <MapPin className="mt-0.5 size-4 text-[#FF653F]" />
@@ -134,8 +171,35 @@ export function DashboardShipments() {
   );
 }
 
+function DashboardShipmentsState({ message }: { message: string }) {
+  return (
+    <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-8 text-center text-sm text-[#6a5a84] shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
+      <span className="inline-flex items-center gap-2">
+        <Spinner className="size-4" />
+        {message}
+      </span>
+    </div>
+  );
+}
+
+function buildShipmentMeta(order: DashboardOrder): Array<[string, string]> {
+  return [
+    ["Order No.", order.orderNumber],
+    ["Reference", order.referenceNo],
+    ["Chassis", order.chassisNo],
+    ["Vessel", order.vesselName],
+    ["Booking No.", order.bookingNo],
+    ["BL No.", order.billOfLadingNo],
+    ["Current", order.currentLocation],
+    ["Payment", order.paymentStatus],
+    ["Paid", order.paidAmount],
+    ["Balance", order.balance],
+    ["ETA", order.eta],
+  ];
+}
+
 type ShipmentMetricProps = {
-  icon: typeof Ship;
+  icon: LucideIcon;
   label: string;
   value: string;
 };

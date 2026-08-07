@@ -12,6 +12,7 @@ import {
   getAdminLedgerCarImageDownload,
   getAdminLedgerDeals,
   getAdminLedgerDocumentDownload,
+  getMyLedgerDeals,
   presignAdminLedgerDocumentUpload,
   updateAdminLedgerDeal,
   updateAdminLedgerDocument,
@@ -30,6 +31,8 @@ import {
 } from "../validations/ledger.validation.js";
 
 export const ledgerRouter = Router();
+
+ledgerRouter.get("/me", requireAuth, getMyLedgerDeals);
 
 ledgerRouter.use("/admin", requireAuth, requireAdminRole);
 

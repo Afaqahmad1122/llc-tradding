@@ -5,7 +5,6 @@ import {
   CircleUserRound,
   LayoutDashboard,
   LogOut,
-  Settings,
   ShieldCheck,
   Star,
 } from "lucide-react";
@@ -123,10 +122,6 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
                   </Link>
                 </DropdownMenuItem>
               ) : null}
-              <DropdownMenuItem>
-                <Settings className="size-4" />
-                Settings
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
@@ -184,10 +179,6 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
               </Link>
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem>
-            <Settings className="size-4" />
-            Settings
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleLogout}
