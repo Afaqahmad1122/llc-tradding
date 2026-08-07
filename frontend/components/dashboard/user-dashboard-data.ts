@@ -251,7 +251,7 @@ function buildTimeline(deal: MyLedgerDeal): DashboardShipmentEvent[] {
   );
   const isCompleteOrder =
     deal.status === "DELIVERED" || deal.status === "CANCELLED" || deal.status === "DOCUMENTS_DISPATCHED";
-  const events = sortedEvents.map((event, index) => {
+  const events: DashboardShipmentEvent[] = sortedEvents.map((event, index) => {
     const copy = eventCopy[event.type] ?? {
       title: event.message,
       description: event.message,
@@ -263,7 +263,7 @@ function buildTimeline(deal: MyLedgerDeal): DashboardShipmentEvent[] {
       description: copy.description,
       date: formatDashboardDate(event.createdAt),
       state: isLast && !isCompleteOrder ? "current" : "complete",
-    } satisfies DashboardShipmentEvent;
+    };
   });
 
   if (events.length === 0) {
