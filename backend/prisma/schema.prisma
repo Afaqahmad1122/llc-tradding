@@ -39,6 +39,11 @@ model User {
   reviewedContactMessages ContactMessage[] @relation("ContactMessageReviewer")
   jobApplications JobApplication[]
   staffPermission StaffPermission?
+  ledgerDeals LedgerDeal[] @relation("LedgerDealCustomer")
+  createdLedgerDeals LedgerDeal[] @relation("LedgerDealCreator")
+  receivedLedgerPayments LedgerPayment[] @relation("LedgerPaymentReceiver")
+  uploadedLedgerDocuments LedgerDocument[] @relation("LedgerDocumentUploader")
+  createdLedgerEvents LedgerEvent[] @relation("LedgerEventCreator")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -125,6 +130,7 @@ model Car {
   reviews        Review[]
   reviewEligibilities ReviewEligibility[]
   events         CarEvent[]
+  ledgerDeals    LedgerDeal[]
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -311,6 +317,99 @@ model JobApplication {
   @@index([userId, createdAt])
 }
 
+model LedgerDeal {
+  id                  String              @id @default(cuid())
+  orderNumber         String              @unique
+  userId              String
+  user                User                @relation("LedgerDealCustomer", fields: [userId], references: [id], onDelete: Restrict)
+  carId               String
+  car                 Car                 @relation(fields: [carId], references: [id], onDelete: Restrict)
+  createdById         String?
+  createdBy           User?               @relation("LedgerDealCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  totalAmount         Decimal             @db.Decimal(14, 2)
+  currency            LedgerCurrency      @default(JPY)
+  downPaymentRequired Decimal?            @db.Decimal(14, 2)
+  dueDate             DateTime?
+  status              LedgerDealStatus    @default(PENDING_CONFIRMATION)
+  note                String?
+  payments            LedgerPayment[]
+  documents           LedgerDocument[]
+  events              LedgerEvent[]
+  deletedAt           DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([carId])
+  @@index([status, createdAt])
+  @@index([currency])
+  @@index([deletedAt])
+}
+
+model LedgerPayment {
+  id           String              @id @default(cuid())
+  dealId       String
+  deal         LedgerDeal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  amount       Decimal             @db.Decimal(14, 2)
+  currency     LedgerCurrency
+  type         LedgerPaymentType   @default(INSTALLMENT)
+  method       LedgerPaymentMethod @default(OTHER)
+  paidAt       DateTime            @default(now())
+  referenceNo  String?
+  note         String?
+  receivedById String?
+  receivedBy   User?               @relation("LedgerPaymentReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
+  deletedAt    DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([dealId, paidAt])
+  @@index([receivedById])
+  @@index([type])
+  @@index([deletedAt])
+}
+
+model LedgerDocument {
+  id                String             @id @default(cuid())
+  dealId            String
+  deal              LedgerDeal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  type              LedgerDocumentType @default(OTHER)
+  title             String
+  fileKey           String
+  fileUrl           String?
+  fileName          String
+  mimeType          String
+  fileSize          Int?
+  visibleToCustomer Boolean            @default(false)
+  note              String?
+  uploadedById      String?
+  uploadedBy        User?              @relation("LedgerDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([dealId, type])
+  @@index([uploadedById])
+  @@index([visibleToCustomer])
+  @@index([deletedAt])
+}
+
+model LedgerEvent {
+  id          String          @id @default(cuid())
+  dealId      String
+  deal        LedgerDeal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  type        LedgerEventType
+  message     String
+  metadata    Json?
+  createdById String?
+  createdBy   User?           @relation("LedgerEventCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime        @default(now())
+
+  @@index([dealId, createdAt])
+  @@index([createdById])
+  @@index([type])
+}
+
 enum FuelType {
   GASOLINE
   DIESEL
@@ -356,4 +455,58 @@ enum CarEventType {
   DETAIL_VIEW
   WHATSAPP_CLICK
   EMAIL_CLICK
+}
+
+enum LedgerCurrency {
+  JPY
+  USD
+  PKR
+  AED
+}
+
+enum LedgerDealStatus {
+  PENDING_CONFIRMATION
+  CONFIRMED
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+  CANCELLED
+}
+
+enum LedgerPaymentType {
+  DOWN_PAYMENT
+  INSTALLMENT
+  FINAL_PAYMENT
+  REFUND
+  ADJUSTMENT
+}
+
+enum LedgerPaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CARD
+  ONLINE
+  OTHER
+}
+
+enum LedgerDocumentType {
+  INVOICE
+  PURCHASE_RECEIPT
+  INSPECTION_SHEET
+  EXPORT_CERTIFICATE
+  BILL_OF_LADING
+  SHIPPING_INVOICE
+  PAYMENT_RECEIPT
+  OTHER
+}
+
+enum LedgerEventType {
+  DEAL_CREATED
+  DEAL_UPDATED
+  PAYMENT_ADDED
+  PAYMENT_DELETED
+  DOCUMENT_ADDED
+  DOCUMENT_UPDATED
+  DOCUMENT_DELETED
+  NOTE_ADDED
 }

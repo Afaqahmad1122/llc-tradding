@@ -25,6 +25,17 @@ export type AdminCustomersQuery = {
   pageSize?: number;
 };
 
+export type CreateAdminCustomerBody = {
+  name: string;
+  email: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  postalCode?: string;
+  password?: string;
+};
+
 export function fetchAdminCustomers(params: AdminCustomersQuery = {}) {
   const search = new URLSearchParams();
   if (params.page != null) search.set("page", String(params.page));
@@ -34,6 +45,13 @@ export function fetchAdminCustomers(params: AdminCustomersQuery = {}) {
   const qs = search.toString();
   return http.get<AdminCustomersResponse>(
     `/users/admin/customers${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export function createAdminCustomer(body: CreateAdminCustomerBody) {
+  return http.post<{ customer: AdminCustomer }, CreateAdminCustomerBody>(
+    "/users/admin/customers",
+    body,
   );
 }
 

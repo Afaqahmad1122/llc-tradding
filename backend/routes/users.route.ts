@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { listAdminCustomers, listAllUsers } from "../controllers/users.controller.js";
+import {
+  createAdminCustomer,
+  listAdminCustomers,
+  listAllUsers,
+} from "../controllers/users.controller.js";
 import {
   createStaffUser,
   deleteStaffUser,
@@ -12,6 +16,7 @@ import { requireAuth, requireAdminRole } from "../middlewares/auth.middleware.js
 export const usersRouter = Router();
 
 usersRouter.get("/admin/customers", requireAuth, listAdminCustomers);
+usersRouter.post("/admin/customers", requireAuth, requireAdminRole, createAdminCustomer);
 usersRouter.get("/admin/all", requireAuth, listAllUsers);
 
 usersRouter.get("/admin/staff", requireAuth, requireAdminRole, listStaffUsers);

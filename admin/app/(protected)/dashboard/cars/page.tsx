@@ -166,7 +166,7 @@ function AdminCarsPageContent() {
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editCar || !editDraft) throw new Error("No car selected.");
-      const msg = validateCarDraft(editDraft, editImages, false);
+      const msg = validateCarDraft(editDraft, editImages, true);
       if (msg) throw new Error(msg);
 
       try {
@@ -174,7 +174,6 @@ function AdminCarsPageContent() {
           string,
           unknown
         >;
-        delete base.referenceNo;
         Object.keys(base).forEach((k) => {
           if (base[k] === undefined) delete base[k];
         });
