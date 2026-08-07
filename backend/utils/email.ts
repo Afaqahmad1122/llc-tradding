@@ -139,9 +139,9 @@ export const sendVerificationOtpEmail = async (
     email,
     name,
     code,
-    "Your LLC Trading verification code",
+    "Your ICC Trading verification code",
     "Email verification code",
-    "Your OTP for LLC Trading account verification is:",
+    "Your OTP for ICC Trading account verification is:",
   );
 };
 
