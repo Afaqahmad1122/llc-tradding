@@ -1,0 +1,153 @@
+import { Anchor, Clock3, MapPin, Navigation, Ship } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  dashboardOrders,
+  eventIcons,
+  shipmentEvents,
+  shipmentMeta,
+} from "@/components/dashboard/user-dashboard-data";
+import { cn } from "@/lib/utils";
+
+export function DashboardShipments() {
+  const activeOrder = dashboardOrders[0];
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="space-y-5">
+        <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-5 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a6798] dark:text-white/50">
+                {activeOrder.orderNumber}
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-[#1E104E] dark:text-white">
+                {activeOrder.carName}
+              </h2>
+              <p className="mt-1 text-sm text-[#6a5a84] dark:text-white/60">
+                {activeOrder.portFrom} to {activeOrder.portTo}
+              </p>
+            </div>
+            <Badge
+              variant="outline"
+              className="h-6 rounded-full border-indigo-200 bg-indigo-50 px-2.5 text-indigo-700"
+            >
+              On vessel
+            </Badge>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <ShipmentMetric icon={Ship} label="Vessel" value="Ocean Sakura" />
+            <ShipmentMetric icon={Anchor} label="Current leg" value="Departed Yokohama" />
+            <ShipmentMetric icon={Clock3} label="ETA" value={activeOrder.eta} />
+          </div>
+
+          <div className="mt-6">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-medium text-[#1E104E] dark:text-white">Shipment progress</span>
+              <span className="text-[#6a5a84] dark:text-white/60">{activeOrder.progress}%</span>
+            </div>
+            <Progress value={activeOrder.progress} className="h-2 bg-[#eee8f7] [&>div]:bg-[#FF653F]" />
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-5 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
+          <h2 className="text-lg font-semibold text-[#1E104E] dark:text-white">
+            Tracking timeline
+          </h2>
+          <div className="mt-5 space-y-5">
+            {shipmentEvents.map((event, index) => {
+              const Icon = eventIcons[event.state];
+              const showLine = index < shipmentEvents.length - 1;
+
+              return (
+                <div key={event.title} className="grid grid-cols-[36px_minmax(0,1fr)] gap-4">
+                  <div className="relative flex justify-center">
+                    <span
+                      className={cn(
+                        "z-10 grid size-9 place-items-center rounded-full border bg-white dark:bg-[#150e2e]",
+                        event.state === "complete" && "border-emerald-200 text-emerald-700",
+                        event.state === "current" && "border-[#FF653F]/40 text-[#FF653F]",
+                        event.state === "upcoming" && "border-[#452E5A]/15 text-[#7a6798]",
+                      )}
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                    {showLine ? (
+                      <span className="absolute top-9 bottom-[-20px] w-px bg-[#e3d9f1] dark:bg-white/10" />
+                    ) : null}
+                  </div>
+                  <div className="pb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-[#1E104E] dark:text-white">{event.title}</p>
+                      <p className="text-xs text-[#7a6798] dark:text-white/50">{event.date}</p>
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-[#6a5a84] dark:text-white/60">
+                      {event.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <aside className="space-y-5">
+        <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-5 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
+          <h2 className="text-lg font-semibold text-[#1E104E] dark:text-white">
+            Shipment details
+          </h2>
+          <div className="mt-4 divide-y divide-[#eee8f7] dark:divide-white/10">
+            {shipmentMeta.map(([label, value]) => (
+              <div key={label} className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-3 text-sm">
+                <span className="text-[#7a6798] dark:text-white/50">{label}</span>
+                <span className="font-medium text-[#1E104E] dark:text-white">{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-5 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5">
+          <h2 className="text-lg font-semibold text-[#1E104E] dark:text-white">
+            Route
+          </h2>
+          <div className="mt-4 space-y-4 text-sm">
+            <p className="flex items-start gap-3 rounded-[6px] bg-[#fbf9ff] p-3 dark:bg-white/5">
+              <MapPin className="mt-0.5 size-4 text-[#FF653F]" />
+              <span>
+                <span className="block font-semibold text-[#1E104E] dark:text-white">Origin</span>
+                <span className="text-[#6a5a84] dark:text-white/60">{activeOrder.portFrom}</span>
+              </span>
+            </p>
+            <p className="flex items-start gap-3 rounded-[6px] bg-[#fbf9ff] p-3 dark:bg-white/5">
+              <Navigation className="mt-0.5 size-4 text-[#FF653F]" />
+              <span>
+                <span className="block font-semibold text-[#1E104E] dark:text-white">Destination</span>
+                <span className="text-[#6a5a84] dark:text-white/60">{activeOrder.portTo}</span>
+              </span>
+            </p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+type ShipmentMetricProps = {
+  icon: typeof Ship;
+  label: string;
+  value: string;
+};
+
+function ShipmentMetric({ icon: Icon, label, value }: ShipmentMetricProps) {
+  return (
+    <div className="rounded-[6px] border border-[#452E5A]/10 bg-[#fbf9ff] p-4 dark:border-white/10 dark:bg-white/5">
+      <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-[#7a6798] dark:text-white/50">
+        <Icon className="size-3.5" />
+        {label}
+      </p>
+      <p className="mt-2 font-semibold text-[#1E104E] dark:text-white">{value}</p>
+    </div>
+  );
+}

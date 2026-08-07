@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   CircleUserRound,
+  LayoutDashboard,
   LogOut,
   Settings,
   ShieldCheck,
@@ -31,6 +32,7 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
     Boolean(user?.id) &&
     eligibilityLoaded &&
     (eligibilityData?.data?.length ?? 0) > 0;
+  const showCustomerDashboard = user?.role === "USER";
 
   const handleLogout = async () => {
     try {
@@ -98,6 +100,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {showCustomerDashboard ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="size-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem asChild>
                 <Link href="/profile">
                   <User className="size-4" />
@@ -157,6 +167,14 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {showCustomerDashboard ? (
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard">
+                <LayoutDashboard className="size-4" />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem asChild>
             <Link href="/profile">
               <User className="size-4" />
