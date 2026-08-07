@@ -64,6 +64,12 @@ type CreateLedgerDocumentBody = {
   note?: string | null;
 };
 
+type SupportedLedgerDocumentMimeType =
+  | "application/pdf"
+  | "image/jpeg"
+  | "image/png"
+  | "image/webp";
+
 type UpdateLedgerDocumentBody = {
   type?: LedgerDocumentType;
   title?: string;
@@ -198,6 +204,23 @@ const normalizeOrderNumber = (value: string): string => value.trim().toUpperCase
 
 const s3ObjectUrl = (key: string): string =>
   `https://${s3Bucket}.s3.${env.AWS_REGION}.amazonaws.com/${key}`;
+
+const getLedgerDocumentExt = (
+  contentType: string | undefined,
+  fileName: string,
+): PresignLedgerDocumentBody["ext"] | null => {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  if (contentType === "application/pdf" && ext === "pdf") return "pdf";
+  if (contentType === "image/jpeg" && (ext === "jpg" || ext === "jpeg")) {
+    return ext;
+  }
+  if (contentType === "image/png" && ext === "png") return "png";
+  if (contentType === "image/webp" && ext === "webp") return "webp";
+  return null;
+};
+
+const decodeUploadHeader = (value: string | undefined): string =>
+  value ? decodeURIComponent(value).trim() : "";
 
 const buildPaymentSummary = (
   totalAmount: Prisma.Decimal,
@@ -738,6 +761,91 @@ export const createAdminLedgerDocument = async (
       fileSize: body.fileSize ?? null,
       visibleToCustomer: body.visibleToCustomer,
       note: body.note?.trim() || null,
+      uploadedById: adminId,
+    },
+    include: {
+      uploadedBy: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  await createLedgerEvent({
+    dealId: deal.id,
+    type: LedgerEventType.DOCUMENT_ADDED,
+    message: "Ledger document uploaded",
+    createdById: adminId,
+    metadata: {
+      documentId: document.id,
+      type: document.type,
+      visibleToCustomer: document.visibleToCustomer,
+    },
+  });
+
+  res.status(201).json({ document });
+};
+
+export const uploadAdminLedgerDocumentFile = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const dealId = getRequiredParam(req, res, "id");
+  if (!dealId) return;
+
+  const deal = await requireActiveDeal(dealId);
+  if (!deal) {
+    res.status(404).json({ message: "ledger deal not found" });
+    return;
+  }
+
+  const contentType = req.header("content-type") as SupportedLedgerDocumentMimeType | undefined;
+  const fileName = decodeUploadHeader(req.header("x-file-name"));
+  const title = decodeUploadHeader(req.header("x-document-title")) || fileName;
+  const note = decodeUploadHeader(req.header("x-document-note"));
+  const visibleToCustomer = req.header("x-visible-to-customer") !== "false";
+  const documentTypeHeader = req.header("x-document-type");
+  const documentType =
+    documentTypeHeader && (Object.values(LedgerDocumentType) as string[]).includes(documentTypeHeader)
+      ? (documentTypeHeader as LedgerDocumentType)
+      : LedgerDocumentType.OTHER;
+  const ext = getLedgerDocumentExt(contentType, fileName);
+
+  if (!contentType || !ext) {
+    res.status(400).json({ message: "Only PDF, JPG, PNG, or WEBP files are supported." });
+    return;
+  }
+
+  if (!fileName) {
+    res.status(400).json({ message: "file name is required" });
+    return;
+  }
+
+  if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+    res.status(400).json({ message: "document file is required" });
+    return;
+  }
+
+  const key = `${DOCUMENT_UPLOAD_PREFIX}/${deal.id}/documents/${randomBytes(16).toString("hex")}.${ext}`;
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: s3Bucket,
+      Key: key,
+      Body: req.body,
+      ContentType: contentType,
+    }),
+  );
+
+  const adminId = getAdminId(res);
+  const document = await prisma.ledgerDocument.create({
+    data: {
+      dealId: deal.id,
+      type: documentType,
+      title,
+      fileKey: key,
+      fileUrl: s3ObjectUrl(key),
+      fileName,
+      mimeType: contentType,
+      fileSize: req.body.length,
+      visibleToCustomer,
+      note: note || null,
       uploadedById: adminId,
     },
     include: {

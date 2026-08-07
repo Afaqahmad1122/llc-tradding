@@ -10,6 +10,8 @@ const ledgerDealStatusEnum = z.enum([
   "CONFIRMED",
   "IN_TRANSIT",
   "ARRIVED",
+  "PAYMENT_COMPLETED",
+  "DOCUMENTS_DISPATCHED",
   "DELIVERED",
   "CANCELLED",
 ]);

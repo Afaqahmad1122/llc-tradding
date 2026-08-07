@@ -11,6 +11,7 @@ import {
   Plus,
   ReceiptText,
   SearchIcon,
+  Trash2,
   UserPlus,
 } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
@@ -21,6 +22,17 @@ import {
   AdminDataPageHeader,
   AdminDataPanel,
 } from "@/components/layout/admin-data-page";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,12 +79,11 @@ import { cn } from "@/lib/utils";
 import {
   addLedgerPayment,
   createLedgerDeal,
-  createLedgerDocument,
   createLedgerNote,
+  deleteLedgerDeal,
   fetchLedgerDeal,
   fetchLedgerDeals,
   getLedgerDocumentDownload,
-  presignLedgerDocument,
   type CreateLedgerDealBody,
   type LedgerCurrency,
   type LedgerDeal,
@@ -81,6 +92,7 @@ import {
   type LedgerDocumentType,
   type LedgerPaymentMethod,
   type LedgerPaymentType,
+  uploadLedgerDocumentFile,
 } from "@/lib/api/ledger";
 
 const PAGE_SIZE = 15;
@@ -92,6 +104,8 @@ const dealStatuses: LedgerDealStatus[] = [
   "CONFIRMED",
   "IN_TRANSIT",
   "ARRIVED",
+  "PAYMENT_COMPLETED",
+  "DOCUMENTS_DISPATCHED",
   "DELIVERED",
   "CANCELLED",
 ];
@@ -119,6 +133,30 @@ const documentTypes: LedgerDocumentType[] = [
   "PAYMENT_RECEIPT",
   "OTHER",
 ];
+const standardCreateDocumentTypes: LedgerDocumentType[] = [
+  "INVOICE",
+  "PURCHASE_RECEIPT",
+  "INSPECTION_SHEET",
+  "EXPORT_CERTIFICATE",
+  "BILL_OF_LADING",
+  "SHIPPING_INVOICE",
+];
+
+type CreateDealDocumentDraft = {
+  id: string;
+  title: string;
+  type: LedgerDocumentType;
+  file: File | null;
+};
+
+function createDocumentDraft(type: LedgerDocumentType = "OTHER"): CreateDealDocumentDraft {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    title: type === "OTHER" ? "" : label(type),
+    type,
+    file: null,
+  };
+}
 
 function formatErrorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -167,6 +205,17 @@ function getFileMeta(file: File) {
   return null;
 }
 
+async function uploadLedgerDocumentDraft(dealId: string, document: CreateDealDocumentDraft) {
+  if (!document.file) return null;
+  const meta = getFileMeta(document.file);
+  if (!meta) throw new ApiError("Only PDF, JPG, PNG, or WEBP files are supported.");
+  return uploadLedgerDocumentFile(dealId, {
+    type: document.type,
+    title: document.title.trim() || document.file.name,
+    file: document.file,
+  });
+}
+
 function LedgerPageContent() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -198,6 +247,13 @@ function LedgerPageContent() {
 
   const refreshDeals = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-ledger-deals"] });
+  const deleteMutation = useApiMutation({
+    mutationFn: (id: string) => deleteLedgerDeal(id),
+    successToast: "Ledger deal deleted.",
+    onSuccess: () => {
+      void refreshDeals();
+    },
+  });
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 pb-12 pt-8 sm:px-7 sm:pt-10">
@@ -292,7 +348,14 @@ function LedgerPageContent() {
         isFetching={dealsQuery.isFetching}
         isPending={dealsQuery.isPending}
         loadingLabel="Loading ledger…"
-        table={<LedgerTable rows={rows} onSelect={setSelectedDealId} />}
+        table={
+          <LedgerTable
+            deletingId={deleteMutation.isPending ? deleteMutation.variables : null}
+            rows={rows}
+            onDelete={(id) => deleteMutation.mutate(id)}
+            onSelect={setSelectedDealId}
+          />
+        }
         pagination={{
           isFetching: dealsQuery.isFetching,
           onPageChange: setPage,
@@ -323,9 +386,13 @@ function LedgerPageContent() {
 }
 
 function LedgerTable({
+  deletingId,
+  onDelete,
   rows,
   onSelect,
 }: {
+  deletingId: string | null | undefined;
+  onDelete: (id: string) => void;
   rows: LedgerDeal[];
   onSelect: (id: string) => void;
 }) {
@@ -338,16 +405,18 @@ function LedgerTable({
           <TableHead className="hidden lg:table-cell">Total</TableHead>
           <TableHead>Balance</TableHead>
           <TableHead className="hidden md:table-cell">Status</TableHead>
-          <TableHead className="pr-4 text-right sm:pr-5">Action</TableHead>
+          <TableHead className="pr-4 text-right sm:pr-5">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((deal) => (
-          <TableRow key={deal.id}>
+          <TableRow key={deal.id} className="align-top hover:bg-muted/30">
             <TableCell className="pl-4 sm:pl-5">
               <p className="font-medium">{deal.user.name}</p>
               <p className="text-muted-foreground mt-0.5 break-all text-xs">{deal.user.email}</p>
-              <p className="text-muted-foreground mt-0.5 text-xs">{deal.orderNumber}</p>
+              <Badge variant="secondary" className="mt-2 font-normal">
+                {deal.orderNumber}
+              </Badge>
             </TableCell>
             <TableCell>
               <p className="font-medium">{deal.car.model.brand} {deal.car.model.name}</p>
@@ -373,7 +442,7 @@ function LedgerTable({
               </p>
             </TableCell>
             <TableCell className="hidden md:table-cell">
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col items-start gap-1.5">
                 <Badge variant={deal.status === "CANCELLED" ? "destructive" : "outline"}>
                   {label(deal.status)}
                 </Badge>
@@ -383,9 +452,41 @@ function LedgerTable({
               </div>
             </TableCell>
             <TableCell className="pr-4 text-right sm:pr-5">
-              <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
-                Open
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
+                  Open
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="icon-sm"
+                      aria-label={`Delete ${deal.orderNumber}`}
+                      disabled={deletingId === deal.id}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete ledger deal?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove {deal.orderNumber} from the ledger list. Existing
+                        customer and car records will stay unchanged.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        variant="destructive"
+                        onClick={() => onDelete(deal.id)}
+                      >
+                        {deletingId === deal.id ? "Deleting..." : "Delete deal"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </TableCell>
           </TableRow>
         ))}
@@ -408,7 +509,7 @@ function CreateDealDialog({
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [carPickerOpen, setCarPickerOpen] = useState(false);
   const [createdCustomer, setCreatedCustomer] = useState<AdminCustomer | null>(null);
-  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     email: "",
@@ -428,6 +529,9 @@ function CreateDealDialog({
     status: "CONFIRMED" as LedgerDealStatus,
     note: "",
   });
+  const [documents, setDocuments] = useState<CreateDealDocumentDraft[]>(
+    () => standardCreateDocumentTypes.map((type) => createDocumentDraft(type)),
+  );
   const debouncedCustomerSearch = useDebouncedValue(customerSearch, SEARCH_DEBOUNCE_MS);
   const debouncedCarSearch = useDebouncedValue(carSearch, SEARCH_DEBOUNCE_MS);
 
@@ -453,9 +557,39 @@ function CreateDealDialog({
   });
 
   const createMutation = useApiMutation({
-    mutationFn: (body: CreateLedgerDealBody) => createLedgerDeal(body),
-    successToast: "Ledger deal created.",
-    onSuccess: onCreated,
+    mutationFn: async (body: CreateLedgerDealBody) => {
+      const response = await createLedgerDeal(body);
+      const documentsToUpload = documents.filter((document) => document.file);
+      let failedDocumentUploads = 0;
+      for (const document of documentsToUpload) {
+        try {
+          await uploadLedgerDocumentDraft(response.deal.id, document);
+        } catch (error) {
+          failedDocumentUploads += 1;
+          console.error("Ledger document upload failed", error);
+        }
+      }
+      return {
+        ...response,
+        documentUploadCount: documentsToUpload.length,
+        failedDocumentUploads,
+      };
+    },
+    successToast: (data) => {
+      const uploadedCount = data.documentUploadCount - data.failedDocumentUploads;
+      return data.documentUploadCount > 0
+        ? `Ledger deal created with ${uploadedCount} document${uploadedCount === 1 ? "" : "s"} uploaded.`
+        : "Ledger deal created.";
+    },
+    onSuccess: (data) => {
+      if (data.failedDocumentUploads > 0) {
+        toast.warning(
+          `${data.failedDocumentUploads} document upload${data.failedDocumentUploads === 1 ? "" : "s"} failed. Open the deal and retry from Documents.`,
+        );
+      }
+      setDocuments(standardCreateDocumentTypes.map((type) => createDocumentDraft(type)));
+      onCreated();
+    },
   });
 
   const createCustomerMutation = useApiMutation({
@@ -482,7 +616,7 @@ function CreateDealDialog({
         country: "",
         city: "",
       });
-      setShowNewCustomer(false);
+      setCustomerCreateOpen(false);
       setCustomerPickerOpen(false);
       void customersQuery.refetch();
     },
@@ -586,10 +720,7 @@ function CreateDealDialog({
                         placeholder="Search name or email"
                         className="pl-9"
                         value={customerSearch}
-                        onChange={(event) => {
-                          setCustomerSearch(event.target.value);
-                          setShowNewCustomer(false);
-                        }}
+                        onChange={(event) => setCustomerSearch(event.target.value)}
                       />
                     </div>
                   </div>
@@ -608,7 +739,6 @@ function CreateDealDialog({
                           onClick={() => {
                             setForm((state) => ({ ...state, userId: customer.id }));
                             setCustomerPickerOpen(false);
-                            setShowNewCustomer(false);
                           }}
                         >
                           <span className="flex min-w-0 flex-1 flex-col">
@@ -630,129 +760,23 @@ function CreateDealDialog({
                   </div>
 
                   <div className="border-t bg-muted/20 p-3">
-                    {!showNewCustomer ? (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="w-full justify-center"
-                        onClick={() => {
-                          setShowNewCustomer(true);
-                          setNewCustomer((state) => ({
-                            ...state,
-                            email: customerSearch.includes("@")
-                              ? customerSearch
-                              : state.email,
-                            name: !customerSearch.includes("@")
-                              ? customerSearch
-                              : state.name,
-                          }));
-                        }}
-                      >
-                        <UserPlus className="size-4" />
-                        Add new customer
-                      </Button>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-medium">Add new customer</p>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-xs"
-                            onClick={() => setShowNewCustomer(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                        <Input
-                          placeholder="Full name"
-                          value={newCustomer.name}
-                          onChange={(event) =>
-                            setNewCustomer((state) => ({ ...state, name: event.target.value }))
-                          }
-                        />
-                        <Input
-                          type="email"
-                          placeholder="Email"
-                          value={newCustomer.email}
-                          onChange={(event) =>
-                            setNewCustomer((state) => ({ ...state, email: event.target.value }))
-                          }
-                        />
-                        <Input
-                          type="password"
-                          autoComplete="new-password"
-                          placeholder="Set password"
-                          value={newCustomer.password}
-                          onChange={(event) =>
-                            setNewCustomer((state) => ({
-                              ...state,
-                              password: event.target.value,
-                            }))
-                          }
-                        />
-                        {newCustomerPasswordError ? (
-                          <p className="text-destructive text-xs">
-                            {newCustomerPasswordError}
-                          </p>
-                        ) : null}
-                        <Input
-                          type="password"
-                          autoComplete="new-password"
-                          placeholder="Confirm password"
-                          value={newCustomer.confirmPassword}
-                          onChange={(event) =>
-                            setNewCustomer((state) => ({
-                              ...state,
-                              confirmPassword: event.target.value,
-                            }))
-                          }
-                        />
-                        {newCustomerConfirmError ? (
-                          <p className="text-destructive text-xs">
-                            {newCustomerConfirmError}
-                          </p>
-                        ) : null}
-                        <Input
-                          placeholder="Phone"
-                          value={newCustomer.phone}
-                          onChange={(event) =>
-                            setNewCustomer((state) => ({ ...state, phone: event.target.value }))
-                          }
-                        />
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <Input
-                            placeholder="Country"
-                            value={newCustomer.country}
-                            onChange={(event) =>
-                              setNewCustomer((state) => ({
-                                ...state,
-                                country: event.target.value,
-                              }))
-                            }
-                          />
-                          <Input
-                            placeholder="City"
-                            value={newCustomer.city}
-                            onChange={(event) =>
-                              setNewCustomer((state) => ({ ...state, city: event.target.value }))
-                            }
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="w-full"
-                          disabled={createCustomerMutation.isPending || !canCreateCustomer}
-                          onClick={() => createCustomerMutation.mutate(undefined)}
-                        >
-                          {createCustomerMutation.isPending
-                            ? "Adding customer..."
-                            : "Add and select customer"}
-                        </Button>
-                      </div>
-                    )}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full justify-center"
+                      onClick={() => {
+                        setNewCustomer((state) => ({
+                          ...state,
+                          email: customerSearch.includes("@") ? customerSearch : state.email,
+                          name: !customerSearch.includes("@") ? customerSearch : state.name,
+                        }));
+                        setCustomerPickerOpen(false);
+                        setCustomerCreateOpen(true);
+                      }}
+                    >
+                      <UserPlus className="size-4" />
+                      Add new customer
+                    </Button>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -918,16 +942,242 @@ function CreateDealDialog({
                 onChange={(event) => setForm((s) => ({ ...s, note: event.target.value }))}
               />
             </div>
+            <div className="space-y-3 rounded-lg border bg-muted/20 p-3 sm:col-span-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold">Car documents</h3>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    Optional. Selected files will upload after the deal is created.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={() =>
+                    setDocuments((state) => [...state, createDocumentDraft()])
+                  }
+                >
+                  <Plus className="size-4" />
+                  Add document
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {documents.map((document, index) => (
+                  <div
+                    key={document.id}
+                    className="grid gap-2 rounded-md border bg-background p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+                  >
+                    <div className="space-y-2">
+                      <NativeSelect
+                        value={document.type}
+                        onChange={(event) => {
+                          const nextType = event.target.value as LedgerDocumentType;
+                          setDocuments((state) =>
+                            state.map((item) =>
+                              item.id === document.id
+                                ? {
+                                    ...item,
+                                    type: nextType,
+                                    title:
+                                      item.title && item.title !== label(item.type)
+                                        ? item.title
+                                        : nextType === "OTHER"
+                                          ? ""
+                                          : label(nextType),
+                                  }
+                                : item,
+                            ),
+                          );
+                        }}
+                      >
+                        {documentTypes.map((type) => (
+                          <NativeSelectOption key={type} value={type}>
+                            {label(type)}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                      <Input
+                        placeholder="Document title"
+                        value={document.title}
+                        onChange={(event) =>
+                          setDocuments((state) =>
+                            state.map((item) =>
+                              item.id === document.id
+                                ? { ...item, title: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="space-y-1.5">
+                        <input
+                          id={`ledger-document-file-${document.id}`}
+                          type="file"
+                          accept="application/pdf,image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          onChange={(event) =>
+                            setDocuments((state) =>
+                              state.map((item) =>
+                                item.id === document.id
+                                  ? { ...item, file: event.target.files?.[0] ?? null }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                        <Button asChild variant="outline" className="w-full">
+                          <label htmlFor={`ledger-document-file-${document.id}`}>
+                            <FileUp className="size-4" />
+                            Upload document
+                          </label>
+                        </Button>
+                        <p className="text-muted-foreground truncate text-xs">
+                          {document.file ? document.file.name : "No file selected"}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-muted-foreground text-xs">Document {index + 1}</p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={documents.length === 1}
+                          onClick={() =>
+                            setDocuments((state) =>
+                              state.filter((item) => item.id !== document.id),
+                            )
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? "Creating..." : "Create deal"}
+              {createMutation.isPending ? "Saving..." : "Create deal"}
             </Button>
           </DialogFooter>
         </form>
+        <Dialog open={customerCreateOpen} onOpenChange={setCustomerCreateOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add new customer</DialogTitle>
+              <DialogDescription>
+                Create a customer account and select it for this ledger deal.
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              className="space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!canCreateCustomer) {
+                  toast.error("Name, email and matching password are required.");
+                  return;
+                }
+                createCustomerMutation.mutate(undefined);
+              }}
+            >
+              <Input
+                placeholder="Full name"
+                value={newCustomer.name}
+                onChange={(event) =>
+                  setNewCustomer((state) => ({ ...state, name: event.target.value }))
+                }
+              />
+              <Input
+                type="email"
+                placeholder="Email"
+                value={newCustomer.email}
+                onChange={(event) =>
+                  setNewCustomer((state) => ({ ...state, email: event.target.value }))
+                }
+              />
+              <Input
+                type="password"
+                autoComplete="new-password"
+                placeholder="Set password"
+                value={newCustomer.password}
+                onChange={(event) =>
+                  setNewCustomer((state) => ({
+                    ...state,
+                    password: event.target.value,
+                  }))
+                }
+              />
+              {newCustomerPasswordError ? (
+                <p className="text-destructive text-xs">{newCustomerPasswordError}</p>
+              ) : null}
+              <Input
+                type="password"
+                autoComplete="new-password"
+                placeholder="Confirm password"
+                value={newCustomer.confirmPassword}
+                onChange={(event) =>
+                  setNewCustomer((state) => ({
+                    ...state,
+                    confirmPassword: event.target.value,
+                  }))
+                }
+              />
+              {newCustomerConfirmError ? (
+                <p className="text-destructive text-xs">{newCustomerConfirmError}</p>
+              ) : null}
+              <Input
+                placeholder="Phone"
+                value={newCustomer.phone}
+                onChange={(event) =>
+                  setNewCustomer((state) => ({ ...state, phone: event.target.value }))
+                }
+              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input
+                  placeholder="Country"
+                  value={newCustomer.country}
+                  onChange={(event) =>
+                    setNewCustomer((state) => ({
+                      ...state,
+                      country: event.target.value,
+                    }))
+                  }
+                />
+                <Input
+                  placeholder="City"
+                  value={newCustomer.city}
+                  onChange={(event) =>
+                    setNewCustomer((state) => ({ ...state, city: event.target.value }))
+                  }
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCustomerCreateOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createCustomerMutation.isPending || !canCreateCustomer}
+                >
+                  {createCustomerMutation.isPending ? "Adding..." : "Add and select"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
@@ -1159,23 +1409,10 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
       if (!file) throw new ApiError("Select a file first.");
       const meta = getFileMeta(file);
       if (!meta) throw new ApiError("Only PDF, JPG, PNG, or WEBP files are supported.");
-      const presigned = await presignLedgerDocument(deal.id, meta);
-      const uploadResponse = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": meta.contentType },
-        body: file,
-      });
-      if (!uploadResponse.ok) {
-        throw new ApiError("Document upload failed.");
-      }
-      return createLedgerDocument(deal.id, {
+      return uploadLedgerDocumentFile(deal.id, {
         type: form.type,
         title: form.title.trim() || file.name,
-        fileKey: presigned.key,
-        fileUrl: presigned.fileUrl,
-        fileName: file.name,
-        mimeType: meta.contentType,
-        fileSize: file.size,
+        file,
         visibleToCustomer: form.visibleToCustomer === "true",
         note: form.note.trim() || null,
       });
@@ -1187,9 +1424,8 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
       onChanged();
     },
   });
-
   return (
-    <div className="mt-4 grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+    <div className="mt-4 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
       <form
         className="space-y-3 rounded-lg border p-4"
         onSubmit={(event) => {
@@ -1197,7 +1433,12 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
           uploadMutation.mutate(undefined);
         }}
       >
-        <h3 className="font-semibold">Upload document</h3>
+        <div>
+          <h3 className="font-semibold">Upload car document</h3>
+          <p className="text-muted-foreground mt-1 text-xs">
+            PDF or image files are supported. Upload one document at a time.
+          </p>
+        </div>
         <Input
           value={form.title}
           placeholder="Document title"
@@ -1218,11 +1459,24 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
           <NativeSelectOption value="true">Visible to customer</NativeSelectOption>
           <NativeSelectOption value="false">Admin only</NativeSelectOption>
         </NativeSelect>
-        <Input
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp"
-          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-        />
+        <div className="space-y-1.5">
+          <input
+            id="ledger-detail-document-file"
+            type="file"
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+            className="sr-only"
+            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+          />
+          <Button asChild variant="outline" className="w-full">
+            <label htmlFor="ledger-detail-document-file">
+              <FileUp className="size-4" />
+              Upload document
+            </label>
+          </Button>
+          <p className="text-muted-foreground truncate text-xs">
+            {file ? file.name : "No file selected"}
+          </p>
+        </div>
         <Textarea
           placeholder="Document note"
           value={form.note}

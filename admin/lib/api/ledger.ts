@@ -1,4 +1,5 @@
 import { http } from "@/lib/api/http";
+import { apiClient } from "@/lib/api/client";
 
 export type LedgerCurrency = "JPY" | "USD" | "PKR" | "AED";
 export type LedgerDealStatus =
@@ -6,6 +7,8 @@ export type LedgerDealStatus =
   | "CONFIRMED"
   | "IN_TRANSIT"
   | "ARRIVED"
+  | "PAYMENT_COMPLETED"
+  | "DOCUMENTS_DISPATCHED"
   | "DELIVERED"
   | "CANCELLED";
 export type LedgerPaymentType =
@@ -192,6 +195,14 @@ export type CreateLedgerDocumentBody = {
   note?: string | null;
 };
 
+export type UploadLedgerDocumentFileBody = {
+  type: LedgerDocumentType;
+  title: string;
+  file: File;
+  visibleToCustomer?: boolean;
+  note?: string | null;
+};
+
 export function fetchLedgerDeals(params: LedgerDealsQuery = {}) {
   const search = new URLSearchParams();
   if (params.page != null) search.set("page", String(params.page));
@@ -210,6 +221,10 @@ export function createLedgerDeal(body: CreateLedgerDealBody) {
 
 export function fetchLedgerDeal(id: string) {
   return http.get<{ deal: LedgerDeal }>(`/ledger/admin/${encodeURIComponent(id)}`);
+}
+
+export function deleteLedgerDeal(id: string) {
+  return http.delete<{ success: boolean }>(`/ledger/admin/${encodeURIComponent(id)}`);
 }
 
 export function addLedgerPayment(dealId: string, body: AddLedgerPaymentBody) {
@@ -244,6 +259,30 @@ export function createLedgerDocument(
     `/ledger/admin/${encodeURIComponent(dealId)}/documents`,
     body,
   );
+}
+
+export async function uploadLedgerDocumentFile(
+  dealId: string,
+  body: UploadLedgerDocumentFileBody,
+) {
+  const response = await apiClient.post<{ document: LedgerDocument }>(
+    `/ledger/admin/${encodeURIComponent(dealId)}/documents/upload`,
+    body.file,
+    {
+      headers: {
+        "Content-Type": body.file.type,
+        "x-document-type": body.type,
+        "x-document-title": encodeURIComponent(body.title),
+        "x-file-name": encodeURIComponent(body.file.name),
+        "x-visible-to-customer": String(body.visibleToCustomer ?? true),
+        ...(body.note?.trim()
+          ? { "x-document-note": encodeURIComponent(body.note.trim()) }
+          : {}),
+      },
+      timeout: 60_000,
+    },
+  );
+  return response.data;
 }
 
 export function getLedgerDocumentDownload(dealId: string, documentId: string) {

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from "express";
 import {
   addAdminLedgerPayment,
   createAdminLedgerDeal,
@@ -13,6 +14,7 @@ import {
   presignAdminLedgerDocumentUpload,
   updateAdminLedgerDeal,
   updateAdminLedgerDocument,
+  uploadAdminLedgerDocumentFile,
 } from "../controllers/ledger.controller.js";
 import { requireAuth, requireAdminRole } from "../middlewares/auth.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
@@ -66,6 +68,14 @@ ledgerRouter.post(
   "/admin/:id/documents",
   validateRequestBody(createLedgerDocumentSchema),
   createAdminLedgerDocument,
+);
+ledgerRouter.post(
+  "/admin/:id/documents/upload",
+  express.raw({
+    type: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+    limit: "50mb",
+  }),
+  uploadAdminLedgerDocumentFile,
 );
 ledgerRouter.patch(
   "/admin/:id/documents/:documentId",
