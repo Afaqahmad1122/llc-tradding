@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  dashboardDocuments,
   dashboardOrders,
   dashboardStats,
   eventIcons,
@@ -16,7 +15,6 @@ import { cn } from "@/lib/utils";
 
 export function DashboardOverview() {
   const activeOrder = dashboardOrders[0];
-  const readyDocuments = dashboardDocuments.filter((document) => document.status === "Ready");
 
   return (
     <div className="space-y-4 lg:space-y-5">
@@ -191,37 +189,6 @@ export function DashboardOverview() {
         </div>
       </div>
 
-      <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-4 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-[#1E104E] dark:text-white">
-              Ready documents
-            </h2>
-            <p className="mt-1 text-sm text-[#6a5a84] dark:text-white/60">
-              Files prepared by the ICC operations team.
-            </p>
-          </div>
-          <Button asChild variant="outline" className="h-9 rounded-[6px]">
-            <Link href="/dashboard/documents">
-              View documents
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {readyDocuments.map((document) => (
-            <div
-              key={`${document.title}-${document.orderNumber}`}
-              className="rounded-[6px] border border-[#452E5A]/10 bg-[#fbf9ff] p-4 dark:border-white/10 dark:bg-white/5"
-            >
-              <p className="font-medium text-[#1E104E] dark:text-white">{document.title}</p>
-              <p className="mt-1 text-sm text-[#6a5a84] dark:text-white/60">
-                {document.orderNumber} · Updated {document.updatedAt}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

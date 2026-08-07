@@ -1,7 +1,6 @@
 import {
   CheckCircle2,
   Clock3,
-  FileCheck2,
   Ship,
   Truck,
 } from "lucide-react";
@@ -34,13 +33,6 @@ export type DashboardShipmentEvent = {
   description: string;
   date: string;
   state: "complete" | "current" | "upcoming";
-};
-
-export type DashboardDocument = {
-  title: string;
-  orderNumber: string;
-  status: "Ready" | "Pending" | "Review";
-  updatedAt: string;
 };
 
 export const dashboardOrders: DashboardOrder[] = [
@@ -103,33 +95,6 @@ export const shipmentEvents: DashboardShipmentEvent[] = [
   },
 ];
 
-export const dashboardDocuments: DashboardDocument[] = [
-  {
-    title: "Commercial invoice",
-    orderNumber: "ICC-ORD-24018",
-    status: "Ready",
-    updatedAt: "31 Jul 2026",
-  },
-  {
-    title: "Inspection sheet",
-    orderNumber: "ICC-ORD-24018",
-    status: "Ready",
-    updatedAt: "29 Jul 2026",
-  },
-  {
-    title: "Bill of lading",
-    orderNumber: "ICC-ORD-24018",
-    status: "Pending",
-    updatedAt: "Expected after vessel departure",
-  },
-  {
-    title: "Export certificate",
-    orderNumber: "ICC-ORD-24011",
-    status: "Review",
-    updatedAt: "In admin review",
-  },
-];
-
 export const dashboardStats = [
   {
     label: "Active orders",
@@ -142,12 +107,6 @@ export const dashboardStats = [
     value: "18 Sep",
     detail: "Yokohama to Karachi",
     icon: Ship,
-  },
-  {
-    label: "Documents ready",
-    value: "2",
-    detail: "2 still pending or in review",
-    icon: FileCheck2,
   },
   {
     label: "Next action",
@@ -172,12 +131,6 @@ export const orderStatusStyles: Record<DashboardOrderStatus, string> = {
   "In transit": "border-indigo-200 bg-indigo-50 text-indigo-700",
   Arrived: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Delivered: "border-green-200 bg-green-50 text-green-700",
-};
-
-export const documentStatusStyles: Record<DashboardDocument["status"], string> = {
-  Ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  Pending: "border-amber-200 bg-amber-50 text-amber-700",
-  Review: "border-sky-200 bg-sky-50 text-sky-700",
 };
 
 export const eventIcons = {

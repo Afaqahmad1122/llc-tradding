@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import {
-  FileText,
   LayoutDashboard,
   PackageCheck,
   Ship,
@@ -17,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
-type DashboardSection = "overview" | "orders" | "shipments" | "documents" | "profile";
+type DashboardSection = "overview" | "orders" | "shipments" | "profile";
 
 type UserDashboardShellProps = {
   activeSection: DashboardSection;
@@ -30,7 +29,6 @@ const navItems = [
   { label: "Overview", href: "/dashboard", section: "overview", icon: LayoutDashboard },
   { label: "My Orders", href: "/dashboard/orders", section: "orders", icon: PackageCheck },
   { label: "Shipments", href: "/dashboard/shipments", section: "shipments", icon: Ship },
-  { label: "Documents", href: "/dashboard/documents", section: "documents", icon: FileText },
   { label: "Profile", href: "/dashboard/profile", section: "profile", icon: UserRound },
 ] as const;
 

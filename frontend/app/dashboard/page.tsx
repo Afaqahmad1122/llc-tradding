@@ -6,7 +6,7 @@ export default function DashboardPage() {
     <UserDashboardShell
       activeSection="overview"
       title="Dashboard overview"
-      description="Track your active car orders, shipment movement, payment status, and documents from one place."
+      description="Track your active car orders, shipment movement, payment status, and next action from one place."
     >
       <DashboardOverview />
     </UserDashboardShell>
