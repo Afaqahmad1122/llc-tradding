@@ -8,7 +8,6 @@ import {
   Settings,
   ShieldCheck,
   Star,
-  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -108,12 +107,6 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
                   </Link>
                 </DropdownMenuItem>
               ) : null}
-              <DropdownMenuItem asChild>
-                <Link href="/profile">
-                  <User className="size-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
               {showWriteReview ? (
                 <DropdownMenuItem asChild>
                   <Link href="/reviews/submit">
@@ -175,12 +168,6 @@ export function NavbarAuthActions({ mobile = false }: { mobile?: boolean }) {
               </Link>
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem asChild>
-            <Link href="/profile">
-              <User className="size-4" />
-              Profile
-            </Link>
-          </DropdownMenuItem>
           {showWriteReview ? (
             <DropdownMenuItem asChild>
               <Link href="/reviews/submit">
