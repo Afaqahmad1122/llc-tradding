@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertTriangle, Banknote, CreditCard, Receipt } from "lucide-react";
 import { useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -43,50 +42,11 @@ export function DashboardPayments() {
     );
   }
 
-  const totalTransactions = orders.reduce((sum, order) => sum + order.payments.length, 0);
-  const balancePendingCount = orders.filter((order) => order.remainingBalanceAmount > 0).length;
-  const overdueCount = orders.filter((order) => order.isOverdue).length;
-
-  const stats = [
-    { label: "Linked orders", value: String(orders.length), icon: Receipt },
-    { label: "Payments recorded", value: String(totalTransactions), icon: CreditCard },
-    { label: "Balance pending", value: String(balancePendingCount), icon: Banknote },
-    { label: "Overdue", value: String(overdueCount), icon: AlertTriangle },
-  ];
-
   return (
     <div className="space-y-4 lg:space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className="min-h-[100px] rounded-[8px] border border-[#452E5A]/12 bg-white p-4 shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-[#7a6798] dark:text-white/50">
-                    {stat.label}
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-[#1E104E] dark:text-white">
-                    {stat.value}
-                  </p>
-                </div>
-                <span className="grid size-9 shrink-0 place-items-center rounded-[6px] bg-[#f4efff] text-[#452E5A] dark:bg-white/10 dark:text-white">
-                  <Icon className="size-4" />
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="space-y-4 lg:space-y-5">
-        {orders.map((order) => (
-          <OrderPaymentsCard key={order.id} order={order} />
-        ))}
-      </div>
+      {orders.map((order) => (
+        <OrderPaymentsCard key={order.id} order={order} />
+      ))}
     </div>
   );
 }
