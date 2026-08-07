@@ -10,6 +10,7 @@ import {
 import type {
   LedgerDealStatus,
   LedgerEventType,
+  LedgerPaymentType,
   MyLedgerDeal,
 } from "@/lib/api/ledger";
 
@@ -44,6 +45,40 @@ export type DashboardOrderImage = {
   altText: string | null;
 };
 
+export type DashboardPayment = {
+  id: string;
+  amount: string;
+  type: LedgerPaymentType;
+  typeLabel: string;
+  method: string;
+  paidAt: string;
+  referenceNo: string | null;
+};
+
+export const paymentTypeLabels: Record<LedgerPaymentType, string> = {
+  DOWN_PAYMENT: "Down payment",
+  INSTALLMENT: "Installment",
+  FINAL_PAYMENT: "Final payment",
+  REFUND: "Refund",
+  ADJUSTMENT: "Adjustment",
+};
+
+export const paymentTypeStyles: Record<LedgerPaymentType, string> = {
+  DOWN_PAYMENT: "border-sky-200 bg-sky-50 text-sky-700",
+  INSTALLMENT: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  FINAL_PAYMENT: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  REFUND: "border-amber-200 bg-amber-50 text-amber-700",
+  ADJUSTMENT: "border-violet-200 bg-violet-50 text-violet-700",
+};
+
+function formatMethodLabel(method: string) {
+  return method
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export type DashboardOrder = {
   id: string;
   orderNumber: string;
@@ -73,6 +108,8 @@ export type DashboardOrder = {
   shipmentNote: string;
   documentsReady: number;
   documents: DashboardOrderDocument[];
+  currency: string;
+  payments: DashboardPayment[];
   timeline: DashboardShipmentEvent[];
   isActive: boolean;
   isInTransit: boolean;
@@ -290,6 +327,18 @@ export function mapLedgerDealToDashboardOrder(deal: MyLedgerDeal): DashboardOrde
       fileName: document.fileName,
       createdAt: formatDashboardDate(document.createdAt),
     })),
+    currency: deal.currency,
+    payments: [...deal.payments]
+      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime())
+      .map((payment) => ({
+        id: payment.id,
+        amount: formatMoney(payment.amount, payment.currency),
+        type: payment.type,
+        typeLabel: paymentTypeLabels[payment.type] ?? payment.type,
+        method: formatMethodLabel(payment.method),
+        paidAt: formatDashboardDate(payment.paidAt),
+        referenceNo: payment.referenceNo,
+      })),
     timeline: buildTimeline(deal),
     isActive: deal.status !== "DELIVERED" && deal.status !== "CANCELLED",
     isInTransit: deal.status === "IN_TRANSIT",

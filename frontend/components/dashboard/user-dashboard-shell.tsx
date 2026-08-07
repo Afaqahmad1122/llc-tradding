@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import {
+  CreditCard,
   LayoutDashboard,
   PackageCheck,
   Ship,
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
-type DashboardSection = "overview" | "orders" | "shipments" | "profile";
+type DashboardSection = "overview" | "orders" | "shipments" | "payments" | "profile";
 
 type UserDashboardShellProps = {
   activeSection: DashboardSection;
@@ -29,6 +30,7 @@ const navItems = [
   { label: "Overview", href: "/dashboard", section: "overview", icon: LayoutDashboard },
   { label: "My Orders", href: "/dashboard/orders", section: "orders", icon: PackageCheck },
   { label: "Shipments", href: "/dashboard/shipments", section: "shipments", icon: Ship },
+  { label: "Payments", href: "/dashboard/payments", section: "payments", icon: CreditCard },
   { label: "Profile", href: "/dashboard/profile", section: "profile", icon: UserRound },
 ] as const;
 
@@ -72,7 +74,7 @@ export function UserDashboardShell({
               {user.email}
             </p>
           </div>
-          <nav className="grid grid-cols-2 gap-1 sm:grid-cols-4 lg:grid-cols-1">
+          <nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.section === activeSection;
