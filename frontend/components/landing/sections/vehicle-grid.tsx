@@ -167,14 +167,14 @@ export function VehicleGrid({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 w-full rounded-xl border-[#452E5A]/25 text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white/85 dark:hover:bg-white/10"
+                className="h-12 w-full rounded-[4px] border-[#452E5A]/25 text-[#452E5A] transition-colors hover:bg-[#452E5A]/8 dark:border-white/15 dark:bg-transparent dark:text-white/85 dark:hover:bg-white/10"
                 asChild
               >
                 <Link href={detailHref}>View Details</Link>
               </Button>
               <Button
                 size="sm"
-                className="h-9 w-full rounded-xl border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] shadow-sm transition-all hover:brightness-95"
+                className="h-12 w-full rounded-[4px] border-0 bg-linear-to-r from-[#FF653F] to-[#FFC85C] text-[#1E104E] shadow-sm transition-all hover:brightness-95"
                 asChild
               >
                 <a
@@ -222,8 +222,8 @@ export function VehicleGridSkeleton({
             </div>
           </CardContent>
           <CardFooter className="grid grid-cols-2 gap-2.5 border-t border-[#452E5A]/10 bg-[#F8F5FF]/70 p-3.5 dark:border-white/10 dark:bg-white/5">
-            <Skeleton className="h-9 w-full rounded-xl" />
-            <Skeleton className="h-9 w-full rounded-xl" />
+            <Skeleton className="h-12 w-full rounded-[4px]" />
+            <Skeleton className="h-12 w-full rounded-[4px]" />
           </CardFooter>
         </Card>
       ))}

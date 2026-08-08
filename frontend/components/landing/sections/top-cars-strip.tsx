@@ -156,7 +156,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                         <Button
                           asChild
                           size="sm"
-                          className="h-9 flex-1 border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
+                          className="h-12 flex-1 rounded-[4px] border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
                         >
                           <Link href={waUrl} target="_blank" rel="noreferrer">
                             Inquire Now
@@ -165,7 +165,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                         <Button
                           asChild
                           size="icon-sm"
-                          className="size-9 shrink-0 border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
+                          className="size-12 shrink-0 rounded-[4px] border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
                         >
                           <Link
                             href={waUrl}
