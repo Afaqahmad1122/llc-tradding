@@ -12,6 +12,15 @@ model SystemMeta {
   updatedAt DateTime @updatedAt
 }
 
+model SiteSettings {
+  id             Int      @id @default(1)
+  contactEmail   String   @default("icctradingjp@gmail.com")
+  contactPhone   String   @default("+81 70-6436-2003")
+  whatsappNumber String   @default("+81 70-6436-2003")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -77,6 +86,11 @@ model StaffPermission {
   careersRead   Boolean @default(false)
   careersUpdate Boolean @default(false)
   careersDelete Boolean @default(false)
+
+  ledgerCreate Boolean @default(false)
+  ledgerRead   Boolean @default(false)
+  ledgerUpdate Boolean @default(false)
+  ledgerDelete Boolean @default(false)
 
   usersCreate Boolean @default(false)
   usersRead   Boolean @default(false)
@@ -339,7 +353,10 @@ model LedgerDeal {
   dueDate             DateTime?
   shipmentOrigin      String?
   shipmentDestination String?
+  shippingLine        String?
   vesselName          String?
+  estimatedDeparture  DateTime?
+  estimatedArrival    DateTime?
   bookingNo           String?
   billOfLadingNo      String?
   currentLocation     String?

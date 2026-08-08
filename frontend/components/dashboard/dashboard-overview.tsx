@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
+import { DashboardLoadingState } from "@/components/dashboard/dashboard-loading-state";
 import {
   eventIcons,
   mapLedgerDealsToDashboardOrders,
@@ -35,7 +35,7 @@ export function DashboardOverview() {
   }
 
   if (ledgerQuery.isError) {
-    return <DashboardOverviewState message={ledgerQuery.error.message || "Unable to load dashboard."} />;
+    return <DashboardLoadingState message={ledgerQuery.error.message || "Unable to load dashboard."} />;
   }
 
   if (!activeOrder) {
@@ -314,17 +314,6 @@ function DashboardOverviewSkeleton() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function DashboardOverviewState({ message }: { message: string }) {
-  return (
-    <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-8 text-center text-sm text-[#6a5a84] shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
-      <span className="inline-flex items-center gap-2">
-        <Spinner className="size-4" />
-        {message}
-      </span>
     </div>
   );
 }

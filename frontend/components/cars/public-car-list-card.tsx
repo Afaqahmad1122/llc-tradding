@@ -35,6 +35,7 @@ import {
   inventoryTitle,
   primaryPriceLabel,
 } from "@/lib/car-display";
+import { useContactSettings } from "@/hooks/use-site-settings-query";
 
 function SpecCell({
   icon: Icon,
@@ -67,14 +68,15 @@ function SpecCell({
 
 export function PublicCarListCard({ car }: { car: PublicCar }) {
   const [favorited, setFavorited] = useState(false);
+  const { settings } = useContactSettings();
 
   const detailHref = `/cars/${encodeURIComponent(car.referenceNo)}`;
 
   const imageUrl =
     car.images.find((i) => i.isPrimary)?.url ?? car.images[0]?.url ?? null;
 
-  const waHref = buildInquiryWhatsAppUrl(car);
-  const mailHref = buildInquireMailto(car);
+  const waHref = buildInquiryWhatsAppUrl(car, undefined, settings);
+  const mailHref = buildInquireMailto(car, undefined, settings);
 
   const mileageDisplay =
     car.mileage != null

@@ -100,6 +100,15 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
     },
   },
   {
+    label: "Ledger",
+    keys: {
+      create: "ledgerCreate",
+      read: "ledgerRead",
+      update: "ledgerUpdate",
+      delete: "ledgerDelete",
+    },
+  },
+  {
     label: "Users",
     keys: {
       create: "usersCreate",
@@ -131,6 +140,10 @@ const emptyPermissions = (): StaffPermissions => ({
   careersRead: false,
   careersUpdate: false,
   careersDelete: false,
+  ledgerCreate: false,
+  ledgerRead: false,
+  ledgerUpdate: false,
+  ledgerDelete: false,
   usersCreate: false,
   usersRead: false,
   usersUpdate: false,
@@ -569,8 +582,6 @@ export default function AdminUsersPage() {
   const isAdmin = useAdminAuthStore((state) => state.isAdmin);
   const qc = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
-
-  if (!isAdmin()) return <ForbiddenPage />;
   const [editUser, setEditUser] = useState<StaffUser | null>(null);
   const [permissionsUser, setPermissionsUser] = useState<StaffUser | null>(null);
   const [deleteUser, setDeleteUser] = useState<StaffUser | null>(null);
@@ -582,6 +593,8 @@ export default function AdminUsersPage() {
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: ["admin-staff-users"] });
+
+  if (!isAdmin()) return <ForbiddenPage />;
 
   const users = data?.users ?? [];
 

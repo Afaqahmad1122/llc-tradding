@@ -22,6 +22,10 @@ export type StaffPermissionsPayload = {
   careersRead: boolean;
   careersUpdate: boolean;
   careersDelete: boolean;
+  ledgerCreate: boolean;
+  ledgerRead: boolean;
+  ledgerUpdate: boolean;
+  ledgerDelete: boolean;
   usersCreate: boolean;
   usersRead: boolean;
   usersUpdate: boolean;

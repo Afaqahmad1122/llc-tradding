@@ -33,7 +33,10 @@ type CreateLedgerDealBody = {
   dueDate?: string | null;
   shipmentOrigin?: string | null;
   shipmentDestination?: string | null;
+  shippingLine?: string | null;
   vesselName?: string | null;
+  estimatedDeparture?: string | null;
+  estimatedArrival?: string | null;
   bookingNo?: string | null;
   billOfLadingNo?: string | null;
   currentLocation?: string | null;
@@ -192,6 +195,23 @@ const money = (value: number): Prisma.Decimal => new Prisma.Decimal(value);
 
 const getAdminId = (res: Response): string | null =>
   typeof res.locals.authUserId === "string" ? res.locals.authUserId : null;
+
+const requireCustomerAuth = (res: Response): string | null => {
+  const authUserId = res.locals.authUserId as string | undefined;
+  const authUserRole = res.locals.authUserRole as UserRole | undefined;
+
+  if (!authUserId) {
+    res.status(401).json({ message: "authorization token required" });
+    return null;
+  }
+
+  if (authUserRole !== UserRole.USER) {
+    res.status(403).json({ message: "customer account required" });
+    return null;
+  }
+
+  return authUserId;
+};
 
 const getRequiredParam = (
   req: Request,
@@ -409,6 +429,58 @@ const requireActiveDeal = async (dealId: string) => {
   });
 };
 
+const getActiveDealFromRequest = async (req: Request, res: Response) => {
+  const dealId = getRequiredParam(req, res, "id");
+  if (!dealId) return null;
+
+  const deal = await requireActiveDeal(dealId);
+  if (!deal) {
+    res.status(404).json({ message: "ledger deal not found" });
+    return null;
+  }
+
+  return deal;
+};
+
+const ledgerDealSearchWhere = (search: string): Prisma.LedgerDealWhereInput => {
+  if (!search) return {};
+
+  const contains = { contains: search, mode: Prisma.QueryMode.insensitive };
+
+  return {
+    OR: [
+      { orderNumber: contains },
+      { user: { name: contains } },
+      { user: { email: contains } },
+      { user: { phone: contains } },
+      { car: { referenceNo: contains } },
+      { car: { title: contains } },
+      { car: { chassisNo: contains } },
+      { car: { model: { name: contains } } },
+      { car: { model: { brand: contains } } },
+    ],
+  };
+};
+
+const parseAdminLedgerListQuery = (req: Request) => {
+  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+  const requestedPageSize = parsePositiveInt(req.query.pageSize, DEFAULT_PAGE_SIZE);
+  const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const status =
+    typeof req.query.status === "string" &&
+    (Object.values(LedgerDealStatus) as string[]).includes(req.query.status)
+      ? (req.query.status as LedgerDealStatus)
+      : undefined;
+  const currency =
+    typeof req.query.currency === "string" &&
+    (Object.values(LedgerCurrency) as string[]).includes(req.query.currency)
+      ? (req.query.currency as LedgerCurrency)
+      : undefined;
+
+  return { currency, page, pageSize, search, status };
+};
+
 const assertCustomerAndCar = async (userId: string, carId: string) => {
   const [user, car] = await Promise.all([
     prisma.user.findFirst({
@@ -451,40 +523,13 @@ const createLedgerEvent = async ({
 };
 
 export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<void> => {
-  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
-  const requestedPageSize = parsePositiveInt(req.query.pageSize, DEFAULT_PAGE_SIZE);
-  const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
-  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
-  const status =
-    typeof req.query.status === "string" &&
-    (Object.values(LedgerDealStatus) as string[]).includes(req.query.status)
-      ? (req.query.status as LedgerDealStatus)
-      : undefined;
-  const currency =
-    typeof req.query.currency === "string" &&
-    (Object.values(LedgerCurrency) as string[]).includes(req.query.currency)
-      ? (req.query.currency as LedgerCurrency)
-      : undefined;
+  const { currency, page, pageSize, search, status } = parseAdminLedgerListQuery(req);
 
   const where: Prisma.LedgerDealWhereInput = {
     deletedAt: null,
     ...(status ? { status } : {}),
     ...(currency ? { currency } : {}),
-    ...(search
-      ? {
-          OR: [
-            { orderNumber: { contains: search, mode: Prisma.QueryMode.insensitive } },
-            { user: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-            { user: { email: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-            { user: { phone: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-            { car: { referenceNo: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-            { car: { title: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-            { car: { chassisNo: { contains: search, mode: Prisma.QueryMode.insensitive } } },
-            { car: { model: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
-            { car: { model: { brand: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
-          ],
-        }
-      : {}),
+    ...ledgerDealSearchWhere(search),
   };
 
   const [total, deals] = await Promise.all([
@@ -514,19 +559,84 @@ export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<
   });
 };
 
+export const getAdminLedgerShipments = async (req: Request, res: Response): Promise<void> => {
+  const { page, pageSize, search, status } = parseAdminLedgerListQuery(req);
+
+  const where: Prisma.LedgerDealWhereInput = {
+    deletedAt: null,
+    ...(status ? { status } : {}),
+    ...ledgerDealSearchWhere(search),
+  };
+
+  const [total, shipments] = await Promise.all([
+    prisma.ledgerDeal.count({ where }),
+    prisma.ledgerDeal.findMany({
+      where,
+      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        orderNumber: true,
+        dueDate: true,
+        shipmentOrigin: true,
+        shipmentDestination: true,
+        shippingLine: true,
+        vesselName: true,
+        estimatedDeparture: true,
+        estimatedArrival: true,
+        bookingNo: true,
+        billOfLadingNo: true,
+        currentLocation: true,
+        shipmentNote: true,
+        status: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            country: true,
+            city: true,
+          },
+        },
+        car: {
+          select: {
+            id: true,
+            referenceNo: true,
+            title: true,
+            chassisNo: true,
+            model: {
+              select: {
+                name: true,
+                brand: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            documents: { where: { deletedAt: null } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  res.status(200).json({
+    data: shipments.map((shipment) => ({
+      ...shipment,
+      documentCount: shipment._count.documents,
+      _count: undefined,
+    })),
+    pagination: paginationPayload({ page, pageSize, total }),
+  });
+};
+
 export const getMyLedgerDeals = async (_req: Request, res: Response): Promise<void> => {
-  const authUserId = res.locals.authUserId as string | undefined;
-  const authUserRole = res.locals.authUserRole as UserRole | undefined;
-
-  if (!authUserId) {
-    res.status(401).json({ message: "authorization token required" });
-    return;
-  }
-
-  if (authUserRole !== UserRole.USER) {
-    res.status(403).json({ message: "customer account required" });
-    return;
-  }
+  const authUserId = requireCustomerAuth(res);
+  if (!authUserId) return;
 
   const deals = await prisma.ledgerDeal.findMany({
     where: {
@@ -543,17 +653,8 @@ export const getMyLedgerDeals = async (_req: Request, res: Response): Promise<vo
 };
 
 export const getMyLedgerDocumentDownload = async (req: Request, res: Response): Promise<void> => {
-  const authUserId = res.locals.authUserId as string | undefined;
-  const authUserRole = res.locals.authUserRole as UserRole | undefined;
-
-  if (!authUserId) {
-    res.status(401).json({ message: "authorization token required" });
-    return;
-  }
-  if (authUserRole !== UserRole.USER) {
-    res.status(403).json({ message: "customer account required" });
-    return;
-  }
+  const authUserId = requireCustomerAuth(res);
+  if (!authUserId) return;
 
   const dealId = getRequiredParam(req, res, "id");
   const documentId = getRequiredParam(req, res, "documentId");
@@ -593,17 +694,8 @@ export const getMyLedgerDocumentDownload = async (req: Request, res: Response): 
 };
 
 export const getMyLedgerCarImageDownload = async (req: Request, res: Response): Promise<void> => {
-  const authUserId = res.locals.authUserId as string | undefined;
-  const authUserRole = res.locals.authUserRole as UserRole | undefined;
-
-  if (!authUserId) {
-    res.status(401).json({ message: "authorization token required" });
-    return;
-  }
-  if (authUserRole !== UserRole.USER) {
-    res.status(403).json({ message: "customer account required" });
-    return;
-  }
+  const authUserId = requireCustomerAuth(res);
+  if (!authUserId) return;
 
   const dealId = getRequiredParam(req, res, "id");
   const imageId = getRequiredParam(req, res, "imageId");
@@ -711,7 +803,10 @@ export const createAdminLedgerDeal = async (req: Request, res: Response): Promis
       dueDate: body.dueDate ? new Date(body.dueDate) : null,
       shipmentOrigin: body.shipmentOrigin?.trim() || null,
       shipmentDestination: body.shipmentDestination?.trim() || null,
+      shippingLine: body.shippingLine?.trim() || null,
       vesselName: body.vesselName?.trim() || null,
+      estimatedDeparture: body.estimatedDeparture ? new Date(body.estimatedDeparture) : null,
+      estimatedArrival: body.estimatedArrival ? new Date(body.estimatedArrival) : null,
       bookingNo: body.bookingNo?.trim() || null,
       billOfLadingNo: body.billOfLadingNo?.trim() || null,
       currentLocation: body.currentLocation?.trim() || null,
@@ -733,14 +828,8 @@ export const createAdminLedgerDeal = async (req: Request, res: Response): Promis
 };
 
 export const getAdminLedgerDealById = async (req: Request, res: Response): Promise<void> => {
-  const dealId = getRequiredParam(req, res, "id");
-  if (!dealId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal) return;
 
   res.status(200).json({ deal: toLedgerDealPayload(deal) });
 };
@@ -809,8 +898,23 @@ export const updateAdminLedgerDeal = async (req: Request, res: Response): Promis
       ...(body.shipmentDestination !== undefined
         ? { shipmentDestination: body.shipmentDestination?.trim() || null }
         : {}),
+      ...(body.shippingLine !== undefined
+        ? { shippingLine: body.shippingLine?.trim() || null }
+        : {}),
       ...(body.vesselName !== undefined
         ? { vesselName: body.vesselName?.trim() || null }
+        : {}),
+      ...(body.estimatedDeparture !== undefined
+        ? {
+            estimatedDeparture: body.estimatedDeparture
+              ? new Date(body.estimatedDeparture)
+              : null,
+          }
+        : {}),
+      ...(body.estimatedArrival !== undefined
+        ? {
+            estimatedArrival: body.estimatedArrival ? new Date(body.estimatedArrival) : null,
+          }
         : {}),
       ...(body.bookingNo !== undefined
         ? { bookingNo: body.bookingNo?.trim() || null }
@@ -863,14 +967,8 @@ export const deleteAdminLedgerDeal = async (req: Request, res: Response): Promis
 
 export const addAdminLedgerPayment = async (req: Request, res: Response): Promise<void> => {
   const body = req.body as AddLedgerPaymentBody;
-  const dealId = getRequiredParam(req, res, "id");
-  if (!dealId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal) return;
 
   const adminId = getAdminId(res);
   const payment = await prisma.ledgerPayment.create({
@@ -911,15 +1009,9 @@ export const addAdminLedgerPayment = async (req: Request, res: Response): Promis
 };
 
 export const deleteAdminLedgerPayment = async (req: Request, res: Response): Promise<void> => {
-  const dealId = getRequiredParam(req, res, "id");
   const paymentId = getRequiredParam(req, res, "paymentId");
-  if (!dealId || !paymentId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal || !paymentId) return;
 
   const payment = await prisma.ledgerPayment.findFirst({
     where: { id: paymentId, dealId: deal.id, deletedAt: null },
@@ -947,14 +1039,8 @@ export const deleteAdminLedgerPayment = async (req: Request, res: Response): Pro
 
 export const createAdminLedgerNote = async (req: Request, res: Response): Promise<void> => {
   const body = req.body as CreateLedgerNoteBody;
-  const dealId = getRequiredParam(req, res, "id");
-  if (!dealId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal) return;
 
   const event = await prisma.ledgerEvent.create({
     data: {
@@ -974,14 +1060,8 @@ export const presignAdminLedgerDocumentUpload = async (
   res: Response,
 ): Promise<void> => {
   const body = req.body as PresignLedgerDocumentBody;
-  const dealId = getRequiredParam(req, res, "id");
-  if (!dealId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal) return;
 
   const key = `${DOCUMENT_UPLOAD_PREFIX}/${deal.id}/documents/${randomBytes(16).toString("hex")}.${body.ext}`;
   const command = new PutObjectCommand({
@@ -1006,14 +1086,8 @@ export const createAdminLedgerDocument = async (
   res: Response,
 ): Promise<void> => {
   const body = req.body as CreateLedgerDocumentBody;
-  const dealId = getRequiredParam(req, res, "id");
-  if (!dealId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal) return;
 
   const expectedPrefix = `${DOCUMENT_UPLOAD_PREFIX}/${deal.id}/documents/`;
   if (!body.fileKey.startsWith(expectedPrefix)) {
@@ -1060,14 +1134,8 @@ export const uploadAdminLedgerDocumentFile = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const dealId = getRequiredParam(req, res, "id");
-  if (!dealId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal) return;
 
   const contentType = req.header("content-type") as SupportedLedgerDocumentMimeType | undefined;
   const fileName = decodeUploadHeader(req.header("x-file-name"));
@@ -1146,15 +1214,9 @@ export const updateAdminLedgerDocument = async (
   res: Response,
 ): Promise<void> => {
   const body = req.body as UpdateLedgerDocumentBody;
-  const dealId = getRequiredParam(req, res, "id");
   const documentId = getRequiredParam(req, res, "documentId");
-  if (!dealId || !documentId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal || !documentId) return;
 
   const document = await prisma.ledgerDocument.findFirst({
     where: { id: documentId, dealId: deal.id, deletedAt: null },
@@ -1195,15 +1257,9 @@ export const deleteAdminLedgerDocument = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const dealId = getRequiredParam(req, res, "id");
   const documentId = getRequiredParam(req, res, "documentId");
-  if (!dealId || !documentId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal || !documentId) return;
 
   const document = await prisma.ledgerDocument.findFirst({
     where: { id: documentId, dealId: deal.id, deletedAt: null },
@@ -1233,15 +1289,9 @@ export const getAdminLedgerDocumentDownload = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const dealId = getRequiredParam(req, res, "id");
   const documentId = getRequiredParam(req, res, "documentId");
-  if (!dealId || !documentId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal || !documentId) return;
 
   const document = await prisma.ledgerDocument.findFirst({
     where: { id: documentId, dealId: deal.id, deletedAt: null },
@@ -1271,15 +1321,9 @@ export const getAdminLedgerCarImageDownload = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const dealId = getRequiredParam(req, res, "id");
   const imageId = getRequiredParam(req, res, "imageId");
-  if (!dealId || !imageId) return;
-
-  const deal = await requireActiveDeal(dealId);
-  if (!deal) {
-    res.status(404).json({ message: "ledger deal not found" });
-    return;
-  }
+  const deal = await getActiveDealFromRequest(req, res);
+  if (!deal || !imageId) return;
 
   const image = await prisma.carImage.findFirst({
     where: { id: imageId, carId: deal.carId },

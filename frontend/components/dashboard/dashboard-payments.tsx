@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/spinner";
+import { DashboardLoadingState } from "@/components/dashboard/dashboard-loading-state";
 import {
   orderStatusStyles,
   paymentTypeStyles,
@@ -24,11 +24,11 @@ export function DashboardPayments() {
   );
 
   if (ledgerQuery.isLoading) {
-    return <DashboardPaymentsState message="Loading your payments..." />;
+    return <DashboardLoadingState message="Loading your payments..." />;
   }
 
   if (ledgerQuery.isError) {
-    return <DashboardPaymentsState message={ledgerQuery.error.message || "Unable to load payments."} />;
+    return <DashboardLoadingState message={ledgerQuery.error.message || "Unable to load payments."} />;
   }
 
   if (orders.length === 0) {
@@ -47,17 +47,6 @@ export function DashboardPayments() {
       {orders.map((order) => (
         <OrderPaymentsCard key={order.id} order={order} />
       ))}
-    </div>
-  );
-}
-
-function DashboardPaymentsState({ message }: { message: string }) {
-  return (
-    <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-8 text-center text-sm text-[#6a5a84] shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
-      <span className="inline-flex items-center gap-2">
-        <Spinner className="size-4" />
-        {message}
-      </span>
     </div>
   );
 }

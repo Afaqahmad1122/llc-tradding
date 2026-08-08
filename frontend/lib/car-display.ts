@@ -1,5 +1,10 @@
 import type { PublicCar } from "@/lib/api/cars";
-import { CONTACT_EMAIL, WHATSAPP_URL } from "@/lib/contact-info";
+import {
+  CONTACT_EMAIL,
+  WHATSAPP_URL,
+  contactLinks,
+  type PublicContactSettings,
+} from "@/lib/contact-info";
 
 export function inventoryTitle(car: PublicCar): string {
   return car.title?.trim()
@@ -59,6 +64,7 @@ export function displayStr(value: string | null | undefined): string {
 export function buildInquiryWhatsAppUrl(
   car: PublicCar,
   extra?: string,
+  settings?: PublicContactSettings,
 ): string {
   const title = inventoryTitle(car);
   let text = `Hi, I'm interested in ${car.referenceNo} — ${title}`;
@@ -67,12 +73,16 @@ export function buildInquiryWhatsAppUrl(
   }
   const params = new URLSearchParams();
   params.set("text", text);
-  const base = WHATSAPP_URL.replace(/\/$/, "");
+  const base = (settings ? contactLinks(settings).whatsappUrl : WHATSAPP_URL).replace(/\/$/, "");
   const sep = base.includes("?") ? "&" : "?";
   return `${base}${sep}${params.toString()}`;
 }
 
-export function buildInquireMailto(car: PublicCar, extra?: string): string {
+export function buildInquireMailto(
+  car: PublicCar,
+  extra?: string,
+  settings?: PublicContactSettings,
+): string {
   const title = inventoryTitle(car);
   const subject = `Inquiry: ${car.referenceNo} — ${title}`;
   let bodyText = `Hello,\n\nI'm interested in this vehicle:\nReference: ${car.referenceNo}\n${title}\nYear: ${car.year}\n\nPlease share details.\n`;
@@ -82,7 +92,7 @@ export function buildInquireMailto(car: PublicCar, extra?: string): string {
   const params = new URLSearchParams({
     view: "cm",
     fs: "1",
-    to: CONTACT_EMAIL,
+    to: settings ? contactLinks(settings).contactEmail : CONTACT_EMAIL,
     su: subject,
     body: bodyText,
   });

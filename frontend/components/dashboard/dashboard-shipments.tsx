@@ -1,13 +1,13 @@
 "use client";
 
-import { Anchor, Clock3, MapPin, Navigation, Ship } from "lucide-react";
+import { CalendarClock, Clock3, MapPin, Navigation, Ship } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/spinner";
+import { DashboardLoadingState } from "@/components/dashboard/dashboard-loading-state";
 import {
   eventIcons,
   mapLedgerDealsToDashboardOrders,
@@ -30,11 +30,11 @@ export function DashboardShipments() {
     null;
 
   if (ledgerQuery.isLoading) {
-    return <DashboardShipmentsState message="Loading shipment details..." />;
+    return <DashboardLoadingState message="Loading shipment details..." />;
   }
 
   if (ledgerQuery.isError) {
-    return <DashboardShipmentsState message={ledgerQuery.error.message || "Unable to load shipments."} />;
+    return <DashboardLoadingState message={ledgerQuery.error.message || "Unable to load shipments."} />;
   }
 
   if (!activeOrder) {
@@ -73,9 +73,21 @@ export function DashboardShipments() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <ShipmentMetric icon={Ship} label="Shipping line" value={activeOrder.shippingLine} />
             <ShipmentMetric icon={Ship} label="Vessel" value={activeOrder.vesselName} />
-            <ShipmentMetric icon={Anchor} label="Current leg" value={activeOrder.currentLocation} />
             <ShipmentMetric icon={Clock3} label="ETA" value={activeOrder.eta} />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <ShipmentMetric
+              icon={CalendarClock}
+              label="Estimated departure"
+              value={activeOrder.estimatedDeparture}
+            />
+            <ShipmentMetric
+              icon={CalendarClock}
+              label="Estimated arrival"
+              value={activeOrder.estimatedArrival}
+            />
           </div>
           <p className="mt-4 rounded-[6px] bg-[#fbf9ff] p-3 text-sm leading-6 text-[#6a5a84] dark:bg-white/5 dark:text-white/60">
             {activeOrder.shipmentNote}
@@ -171,26 +183,17 @@ export function DashboardShipments() {
   );
 }
 
-function DashboardShipmentsState({ message }: { message: string }) {
-  return (
-    <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-8 text-center text-sm text-[#6a5a84] shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
-      <span className="inline-flex items-center gap-2">
-        <Spinner className="size-4" />
-        {message}
-      </span>
-    </div>
-  );
-}
-
 function buildShipmentMeta(order: DashboardOrder): Array<[string, string]> {
   return [
     ["Order No.", order.orderNumber],
     ["Reference", order.referenceNo],
     ["Chassis", order.chassisNo],
+    ["Shipping line", order.shippingLine],
     ["Vessel", order.vesselName],
+    ["Estimated departure", order.estimatedDeparture],
+    ["Estimated arrival", order.estimatedArrival],
     ["Booking No.", order.bookingNo],
     ["BL No.", order.billOfLadingNo],
-    ["Current", order.currentLocation],
     ["Payment", order.paymentStatus],
     ["Paid", order.paidAmount],
     ["Balance", order.balance],

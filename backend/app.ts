@@ -17,6 +17,7 @@ import { ledgerRouter } from "./routes/ledger.route.js";
 import { referenceRouter } from "./routes/reference.route.js";
 import { reviewsRouter } from "./routes/reviews.route.js";
 import { shippingRouter } from "./routes/shipping.route.js";
+import { siteSettingsRouter } from "./routes/site-settings.route.js";
 import { usersRouter } from "./routes/users.route.js";
 
 export const app = express();
@@ -59,6 +60,7 @@ app.use("/ledger", ledgerRouter);
 app.use("/contact-messages", contactMessagesRouter);
 app.use("/reference", referenceRouter);
 app.use("/shipping", shippingRouter);
+app.use("/site-settings", siteSettingsRouter);
 app.use("/users", usersRouter);
 
 app.use((req: Request, res: Response) => {

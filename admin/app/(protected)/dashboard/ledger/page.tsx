@@ -18,7 +18,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ForbiddenPage } from "@/components/auth/permission-guard";
@@ -192,6 +192,51 @@ function formatMoney(amount: number | null | undefined, currency: string) {
   })}`;
 }
 
+function dateInputValue(value: string | null | undefined) {
+  return value ? new Date(value).toISOString().slice(0, 10) : "";
+}
+
+function SearchablePickerContent({
+  children,
+  footer,
+  listClassName = "max-h-72",
+  onSearchChange,
+  placeholder,
+  searchValue,
+}: {
+  children: ReactNode;
+  footer?: ReactNode;
+  listClassName?: string;
+  onSearchChange: (value: string) => void;
+  placeholder: string;
+  searchValue: string;
+}) {
+  return (
+    <PopoverContent
+      align="start"
+      className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+    >
+      <div className="border-b p-3">
+        <div className="relative">
+          <SearchIcon
+            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
+            aria-hidden
+          />
+          <Input
+            autoFocus
+            placeholder={placeholder}
+            className="pl-9"
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
+        </div>
+      </div>
+      <div className={cn("overflow-y-auto p-2", listClassName)}>{children}</div>
+      {footer}
+    </PopoverContent>
+  );
+}
+
 function paymentBalanceLabel(deal: LedgerDeal) {
   if (deal.paymentSummary.isOverdue) return "Overdue";
   if (deal.paymentSummary.remainingBalance <= 0) return "Fully Paid";
@@ -266,6 +311,10 @@ async function uploadLedgerDocumentDraft(dealId: string, document: CreateDealDoc
 
 function LedgerPageContent() {
   const queryClient = useQueryClient();
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
+  const canCreateLedger = hasPermission("ledgerCreate");
+  const canUpdateLedger = hasPermission("ledgerUpdate");
+  const canDeleteLedger = hasPermission("ledgerDelete");
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LedgerDealStatus>("all");
@@ -312,10 +361,12 @@ function LedgerPageContent() {
           title="Ledger"
           description="Track every customer car deal, down payment, balance, documents, and admin notes."
         />
-        <Button className="h-10 rounded-md" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          New deal
-        </Button>
+        {canCreateLedger ? (
+          <Button className="h-10 rounded-md" onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            New deal
+          </Button>
+        ) : null}
       </div>
 
       <AdminDataPanel
@@ -400,6 +451,8 @@ function LedgerPageContent() {
         table={
           <LedgerTable
             deletingId={deleteMutation.isPending ? deleteMutation.variables : null}
+            canDelete={canDeleteLedger}
+            canUpdate={canUpdateLedger}
             rows={rows}
             onDelete={(id) => deleteMutation.mutate(id)}
             onEdit={(id) => {
@@ -433,6 +486,7 @@ function LedgerPageContent() {
       <DealDetailDialog
         dealId={selectedDealId}
         mode={selectedDealMode}
+        canUpdate={canUpdateLedger}
         onOpenChange={(open) => {
           if (!open) setSelectedDealId(null);
         }}
@@ -443,12 +497,16 @@ function LedgerPageContent() {
 }
 
 function LedgerTable({
+  canDelete,
+  canUpdate,
   deletingId,
   onDelete,
   onEdit,
   rows,
   onSelect,
 }: {
+  canDelete: boolean;
+  canUpdate: boolean;
   deletingId: string | null | undefined;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
@@ -522,44 +580,48 @@ function LedgerTable({
                 <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
                   Open
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={`Edit ${deal.orderNumber}`}
-                  onClick={() => onEdit(deal.id)}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="icon-sm"
-                      aria-label={`Delete ${deal.orderNumber}`}
-                      disabled={deletingId === deal.id}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete ledger deal?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will remove {deal.orderNumber} from the ledger list. Existing
-                        customer and car records will stay unchanged.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
+                {canUpdate ? (
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Edit ${deal.orderNumber}`}
+                    onClick={() => onEdit(deal.id)}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                ) : null}
+                {canDelete ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
                         variant="destructive"
-                        onClick={() => onDelete(deal.id)}
+                        size="icon-sm"
+                        aria-label={`Delete ${deal.orderNumber}`}
+                        disabled={deletingId === deal.id}
                       >
-                        {deletingId === deal.id ? "Deleting..." : "Delete deal"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete ledger deal?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove {deal.orderNumber} from the ledger list. Existing
+                          customer and car records will stay unchanged.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => onDelete(deal.id)}
+                        >
+                          {deletingId === deal.id ? "Deleting..." : "Delete deal"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : null}
               </div>
             </TableCell>
           </TableRow>
@@ -923,27 +985,33 @@ function CreateDealDialog({
                     <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
-                >
-                  <div className="border-b p-3">
-                    <div className="relative">
-                      <SearchIcon
-                        className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                        aria-hidden
-                      />
-                      <Input
-                        autoFocus
-                        placeholder="Search name or email"
-                        className="pl-9"
-                        value={customerSearch}
-                        onChange={(event) => setCustomerSearch(event.target.value)}
-                      />
+                <SearchablePickerContent
+                  placeholder="Search name or email"
+                  searchValue={customerSearch}
+                  onSearchChange={setCustomerSearch}
+                  listClassName="max-h-60"
+                  footer={
+                    <div className="border-t bg-muted/20 p-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full justify-center"
+                        onClick={() => {
+                          setNewCustomer((state) => ({
+                            ...state,
+                            email: customerSearch.includes("@") ? customerSearch : state.email,
+                            name: !customerSearch.includes("@") ? customerSearch : state.name,
+                          }));
+                          setCustomerPickerOpen(false);
+                          setCustomerCreateOpen(true);
+                        }}
+                      >
+                        <UserPlus className="size-4" />
+                        Add new customer
+                      </Button>
                     </div>
-                  </div>
-
-                  <div className="max-h-60 overflow-y-auto p-2">
+                  }
+                >
                     {customersQuery.isPending ? (
                       <p className="text-muted-foreground px-2 py-6 text-center text-sm">
                         Loading customers...
@@ -975,28 +1043,7 @@ function CreateDealDialog({
                         No customers found.
                       </p>
                     )}
-                  </div>
-
-                  <div className="border-t bg-muted/20 p-3">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="w-full justify-center"
-                      onClick={() => {
-                        setNewCustomer((state) => ({
-                          ...state,
-                          email: customerSearch.includes("@") ? customerSearch : state.email,
-                          name: !customerSearch.includes("@") ? customerSearch : state.name,
-                        }));
-                        setCustomerPickerOpen(false);
-                        setCustomerCreateOpen(true);
-                      }}
-                    >
-                      <UserPlus className="size-4" />
-                      Add new customer
-                    </Button>
-                  </div>
-                </PopoverContent>
+                </SearchablePickerContent>
               </Popover>
             </div>
             <div className="space-y-2">
@@ -1031,26 +1078,24 @@ function CreateDealDialog({
                     <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
-                >
-                  <div className="border-b p-3">
-                    <div className="relative">
-                      <SearchIcon
-                        className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                        aria-hidden
-                      />
-                      <Input
-                        autoFocus
-                        placeholder="Search reference, title, chassis"
-                        className="pl-9"
-                        value={carSearch}
-                        onChange={(event) => setCarSearch(event.target.value)}
-                      />
+                <SearchablePickerContent
+                  placeholder="Search reference, title, chassis"
+                  searchValue={carSearch}
+                  onSearchChange={setCarSearch}
+                  footer={
+                    <div className="border-t bg-muted/20 p-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full justify-center"
+                        onClick={openLedgerCarCreate}
+                      >
+                        <Plus className="size-4" />
+                        Add ledger car
+                      </Button>
                     </div>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto p-2">
+                  }
+                >
                     {carsQuery.isPending ? (
                       <p className="text-muted-foreground px-2 py-6 text-center text-sm">
                         Loading cars...
@@ -1084,19 +1129,7 @@ function CreateDealDialog({
                         No cars found.
                       </p>
                     )}
-                  </div>
-                  <div className="border-t bg-muted/20 p-3">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="w-full justify-center"
-                      onClick={openLedgerCarCreate}
-                    >
-                      <Plus className="size-4" />
-                      Add ledger car
-                    </Button>
-                  </div>
-                </PopoverContent>
+                </SearchablePickerContent>
               </Popover>
             </div>
             <div className="space-y-2">
@@ -1452,26 +1485,11 @@ function CreateDealDialog({
                         <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+                    <SearchablePickerContent
+                      placeholder="Search brand or model"
+                      searchValue={modelSearch}
+                      onSearchChange={setModelSearch}
                     >
-                      <div className="border-b p-3">
-                        <div className="relative">
-                          <SearchIcon
-                            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                            aria-hidden
-                          />
-                          <Input
-                            autoFocus
-                            placeholder="Search brand or model"
-                            className="pl-9"
-                            value={modelSearch}
-                            onChange={(event) => setModelSearch(event.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="max-h-72 overflow-y-auto p-2">
                         {modelsQuery.isPending ? (
                           <p className="text-muted-foreground px-2 py-6 text-center text-sm">
                             Loading models...
@@ -1504,8 +1522,7 @@ function CreateDealDialog({
                             No models found.
                           </p>
                         )}
-                      </div>
-                    </PopoverContent>
+                    </SearchablePickerContent>
                   </Popover>
                 </div>
                 <div className="space-y-2">
@@ -1758,11 +1775,13 @@ function CreateDealDialog({
 }
 
 function DealDetailDialog({
+  canUpdate,
   dealId,
   mode,
   onOpenChange,
   onChanged,
 }: {
+  canUpdate: boolean;
   dealId: string | null;
   mode: "view" | "edit";
   onOpenChange: (open: boolean) => void;
@@ -1778,8 +1797,8 @@ function DealDetailDialog({
   const deal = detailQuery.data?.deal;
 
   useEffect(() => {
-    if (dealId) setActiveTab(mode === "edit" ? "edit" : "payments");
-  }, [dealId, mode]);
+    if (dealId) setActiveTab(mode === "edit" && canUpdate ? "edit" : "payments");
+  }, [canUpdate, dealId, mode]);
 
   const refresh = () => {
     if (dealId) {
@@ -1806,10 +1825,12 @@ function DealDetailDialog({
             <DealSummary deal={deal} />
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full justify-start overflow-x-auto">
-                <TabsTrigger value="edit">
-                  <Pencil className="size-4" />
-                  Edit
-                </TabsTrigger>
+                {canUpdate ? (
+                  <TabsTrigger value="edit">
+                    <Pencil className="size-4" />
+                    Edit
+                  </TabsTrigger>
+                ) : null}
                 <TabsTrigger value="payments">
                   <Banknote className="size-4" />
                   Payments
@@ -1828,23 +1849,25 @@ function DealDetailDialog({
                 </TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
               </TabsList>
-              <TabsContent value="edit">
-                <EditDealTab deal={deal} onChanged={refresh} />
-              </TabsContent>
+              {canUpdate ? (
+                <TabsContent value="edit">
+                  <EditDealTab deal={deal} onChanged={refresh} />
+                </TabsContent>
+              ) : null}
               <TabsContent value="payments">
-                <PaymentsTab deal={deal} onChanged={refresh} />
+                <PaymentsTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="shipment">
-                <ShipmentTab deal={deal} onChanged={refresh} />
+                <ShipmentTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="documents">
-                <DocumentsTab deal={deal} onChanged={refresh} />
+                <DocumentsTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="images">
                 <CarImagesTab deal={deal} />
               </TabsContent>
               <TabsContent value="notes">
-                <NotesTab deal={deal} onChanged={refresh} />
+                <NotesTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
             </Tabs>
           </div>
@@ -2198,7 +2221,15 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
   );
 }
 
-function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function PaymentsTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const hasInitialDownPayment =
     deal.downPaymentRequired != null && deal.downPaymentRequired > 0;
   const [form, setForm] = useState({
@@ -2229,17 +2260,18 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
 
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <form
-        className="space-y-3 rounded-lg border p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!form.amount) {
-            toast.error("Amount is required.");
-            return;
-          }
-          mutation.mutate(undefined);
-        }}
-      >
+      {canUpdate ? (
+        <form
+          className="space-y-3 rounded-lg border p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!form.amount) {
+              toast.error("Amount is required.");
+              return;
+            }
+            mutation.mutate(undefined);
+          }}
+        >
         <h3 className="font-semibold">Add payment</h3>
         <Input
           type="number"
@@ -2283,7 +2315,8 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         <Button className="w-full" disabled={mutation.isPending}>
           {mutation.isPending ? "Adding..." : "Add payment"}
         </Button>
-      </form>
+        </form>
+      ) : null}
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
@@ -2320,29 +2353,41 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
   );
 }
 
-function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function ShipmentTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const [form, setForm] = useState({
     status: deal.status,
-    dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+    dueDate: dateInputValue(deal.dueDate),
     shipmentOrigin: deal.shipmentOrigin ?? "",
     shipmentDestination: deal.shipmentDestination ?? "",
+    shippingLine: deal.shippingLine ?? "",
     vesselName: deal.vesselName ?? "",
+    estimatedDeparture: dateInputValue(deal.estimatedDeparture),
+    estimatedArrival: dateInputValue(deal.estimatedArrival),
     bookingNo: deal.bookingNo ?? "",
     billOfLadingNo: deal.billOfLadingNo ?? "",
-    currentLocation: deal.currentLocation ?? "",
     shipmentNote: deal.shipmentNote ?? "",
   });
 
   useEffect(() => {
     setForm({
       status: deal.status,
-      dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+      dueDate: dateInputValue(deal.dueDate),
       shipmentOrigin: deal.shipmentOrigin ?? "",
       shipmentDestination: deal.shipmentDestination ?? "",
+      shippingLine: deal.shippingLine ?? "",
       vesselName: deal.vesselName ?? "",
+      estimatedDeparture: dateInputValue(deal.estimatedDeparture),
+      estimatedArrival: dateInputValue(deal.estimatedArrival),
       bookingNo: deal.bookingNo ?? "",
       billOfLadingNo: deal.billOfLadingNo ?? "",
-      currentLocation: deal.currentLocation ?? "",
       shipmentNote: deal.shipmentNote ?? "",
     });
   }, [deal]);
@@ -2354,10 +2399,16 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         shipmentOrigin: form.shipmentOrigin.trim() || null,
         shipmentDestination: form.shipmentDestination.trim() || null,
+        shippingLine: form.shippingLine.trim() || null,
         vesselName: form.vesselName.trim() || null,
+        estimatedDeparture: form.estimatedDeparture
+          ? new Date(form.estimatedDeparture).toISOString()
+          : null,
+        estimatedArrival: form.estimatedArrival
+          ? new Date(form.estimatedArrival).toISOString()
+          : null,
         bookingNo: form.bookingNo.trim() || null,
         billOfLadingNo: form.billOfLadingNo.trim() || null,
-        currentLocation: form.currentLocation.trim() || null,
         shipmentNote: form.shipmentNote.trim() || null,
       }),
     successToast: "Shipment updated.",
@@ -2373,18 +2424,25 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
     ? format(new Date(form.dueDate), "MMM d, yyyy")
     : "Awaiting schedule";
   const previewVessel = form.vesselName.trim() || "Not added";
-  const previewCurrentLeg = form.currentLocation.trim() || label(form.status);
+  const previewShippingLine = form.shippingLine.trim() || "Not added";
+  const previewEstimatedDeparture = form.estimatedDeparture
+    ? format(new Date(form.estimatedDeparture), "MMM d, yyyy")
+    : "Not added";
+  const previewEstimatedArrival = form.estimatedArrival
+    ? format(new Date(form.estimatedArrival), "MMM d, yyyy")
+    : "Not added";
   const previewNote = form.shipmentNote.trim() || "No shipment note added.";
 
   return (
     <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(460px,0.95fr)_minmax(0,1.05fr)]">
-      <form
-        className="space-y-4 rounded-lg border bg-background p-4 shadow-sm"
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate(undefined);
-        }}
-      >
+      {canUpdate ? (
+        <form
+          className="space-y-4 rounded-lg border bg-background p-4 shadow-sm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            mutation.mutate(undefined);
+          }}
+        >
         <div className="flex items-start gap-3 rounded-lg bg-muted/30 p-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
             <Ship className="size-5" />
@@ -2473,6 +2531,19 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
           <h4 className="text-sm font-semibold">Carrier details</h4>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-line">
+                Shipping line
+              </Label>
+              <Input
+                id="ledger-shipment-line"
+                placeholder="Shipping company or line"
+                value={form.shippingLine}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, shippingLine: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-vessel">
                 Vessel
               </Label>
@@ -2486,15 +2557,28 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-current">
-                Current leg
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-etd">
+                Estimated departure
               </Label>
               <Input
-                id="ledger-shipment-current"
-                placeholder="Loaded on vessel"
-                value={form.currentLocation}
+                id="ledger-shipment-etd"
+                type="date"
+                value={form.estimatedDeparture}
                 onChange={(event) =>
-                  setForm((state) => ({ ...state, currentLocation: event.target.value }))
+                  setForm((state) => ({ ...state, estimatedDeparture: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-eta-detail">
+                Estimated arrival
+              </Label>
+              <Input
+                id="ledger-shipment-eta-detail"
+                type="date"
+                value={form.estimatedArrival}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, estimatedArrival: event.target.value }))
                 }
               />
             </div>
@@ -2549,7 +2633,8 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
             {mutation.isPending ? "Updating..." : "Update shipment"}
           </Button>
         </div>
-      </form>
+        </form>
+      ) : null}
 
       <div className="space-y-4 rounded-lg border bg-background p-4 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -2581,8 +2666,8 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
+          <PreviewMetric label="Shipping line" value={previewShippingLine} />
           <PreviewMetric label="Vessel" value={previewVessel} />
-          <PreviewMetric label="Current leg" value={previewCurrentLeg} />
           <PreviewMetric label="Documents" value={`${deal.documents.length} attached`} />
         </div>
 
@@ -2596,6 +2681,8 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
+          <PreviewDetail label="Estimated departure" value={previewEstimatedDeparture} />
+          <PreviewDetail label="Estimated arrival" value={previewEstimatedArrival} />
           <PreviewDetail label="Booking no" value={form.bookingNo.trim() || "Not added"} />
           <PreviewDetail label="BL no" value={form.billOfLadingNo.trim() || "Not added"} />
         </div>
@@ -2636,7 +2723,15 @@ function RoutePoint({ label: pointLabel, value }: { label: string; value: string
   );
 }
 
-function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function DocumentsTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     title: "",
@@ -2689,13 +2784,14 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
 
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
-      <form
-        className="space-y-3 rounded-lg border p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          uploadMutation.mutate(undefined);
-        }}
-      >
+      {canUpdate ? (
+        <form
+          className="space-y-3 rounded-lg border p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            uploadMutation.mutate(undefined);
+          }}
+        >
         <div>
           <h3 className="font-semibold">Upload car document</h3>
           <p className="text-muted-foreground mt-1 text-xs">
@@ -2748,7 +2844,8 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
         <Button className="w-full" disabled={uploadMutation.isPending}>
           {uploadMutation.isPending ? "Uploading..." : "Upload document"}
         </Button>
-      </form>
+        </form>
+      ) : null}
       <div className="space-y-3">
         <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -2825,7 +2922,15 @@ function DocumentRow({
   );
 }
 
-function NotesTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function NotesTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const [message, setMessage] = useState("");
   const noteEvents = useMemo(
     () => deal.events.filter((event) => event.type === "NOTE_ADDED"),
@@ -2842,24 +2947,26 @@ function NotesTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void
 
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <form
-        className="space-y-3 rounded-lg border p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!message.trim()) return;
-          mutation.mutate(undefined);
-        }}
-      >
-        <h3 className="font-semibold">Add note</h3>
-        <Textarea
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="Internal admin note"
-        />
-        <Button className="w-full" disabled={mutation.isPending || !message.trim()}>
-          {mutation.isPending ? "Adding..." : "Add note"}
-        </Button>
-      </form>
+      {canUpdate ? (
+        <form
+          className="space-y-3 rounded-lg border p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!message.trim()) return;
+            mutation.mutate(undefined);
+          }}
+        >
+          <h3 className="font-semibold">Add note</h3>
+          <Textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="Internal admin note"
+          />
+          <Button className="w-full" disabled={mutation.isPending || !message.trim()}>
+            {mutation.isPending ? "Adding..." : "Add note"}
+          </Button>
+        </form>
+      ) : null}
       <div className="space-y-3">
         {noteEvents.length === 0 ? (
           <div className="text-muted-foreground rounded-lg border p-6 text-sm">
@@ -2882,7 +2989,7 @@ function NotesTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void
 }
 
 export default function LedgerPage() {
-  const isAdmin = useAdminAuthStore((state) => state.isAdmin);
-  if (!isAdmin()) return <ForbiddenPage />;
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
+  if (!hasPermission("ledgerRead")) return <ForbiddenPage />;
   return <LedgerPageContent />;
 }
