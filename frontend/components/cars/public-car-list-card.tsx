@@ -156,6 +156,12 @@ export function PublicCarListCard({ car }: { car: PublicCar }) {
             aria-hidden
           />
 
+          {!car.inStock ? (
+            <span className="bg-destructive pointer-events-none absolute bottom-2.5 left-2.5 z-10 rounded px-2 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm sm:px-2.5 sm:text-sm">
+              Out of stock
+            </span>
+          ) : null}
+
           <div className="pointer-events-auto absolute left-3 top-3 z-10 flex gap-2">
             <button
               type="button"

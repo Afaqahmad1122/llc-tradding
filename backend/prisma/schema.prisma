@@ -130,6 +130,7 @@ model Car {
   specifications Json?
   features       Json?
   isPublished    Boolean          @default(true)
+  inStock        Boolean          @default(true)
   createdByAdmin Boolean          @default(true)
   images         CarImage[]
   reviews        Review[]
@@ -141,6 +142,7 @@ model Car {
 
   @@index([modelId, year])
   @@index([isPublished])
+  @@index([inStock])
   @@index([createdById])
   @@index([year, priceUsd])
 }

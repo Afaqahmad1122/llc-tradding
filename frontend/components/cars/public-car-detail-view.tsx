@@ -165,6 +165,11 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
             No photo
           </div>
         )}
+        {!car.inStock ? (
+          <span className="bg-destructive absolute left-2 top-2 rounded px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
+            Out of stock
+          </span>
+        ) : null}
         <span className="absolute bottom-2 left-2 rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white">
           {car.year}
         </span>
@@ -592,6 +597,11 @@ export function PublicCarDetailView({
                   No photos yet
                 </div>
               )}
+              {!car.inStock ? (
+                <span className="bg-destructive absolute left-2.5 top-2.5 z-10 rounded px-2.5 py-1.5 text-sm font-bold uppercase tracking-wide text-white shadow-sm sm:px-3 sm:text-base">
+                  Out of stock
+                </span>
+              ) : null}
               {showPrev ? (
                 <>
                   <button

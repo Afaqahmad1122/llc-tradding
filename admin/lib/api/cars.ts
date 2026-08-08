@@ -45,6 +45,7 @@ export type AdminCar = {
   features: Record<string, unknown> | null;
   createdAt: string;
   isPublished: boolean;
+  inStock: boolean;
   createdById: string | null;
   createdByAdmin: boolean;
   updatedAt: string;
@@ -121,6 +122,7 @@ export type CreateAdminCarBody = {
   specifications?: Record<string, unknown>;
   features?: Record<string, unknown>;
   isPublished?: boolean;
+  inStock?: boolean;
   images?: CarImageInput[];
 };
 

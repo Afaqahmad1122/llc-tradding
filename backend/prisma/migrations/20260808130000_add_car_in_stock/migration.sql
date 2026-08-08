@@ -1,0 +1,4 @@
+ALTER TABLE "Car"
+ADD COLUMN IF NOT EXISTS "inStock" BOOLEAN NOT NULL DEFAULT true;
+
+CREATE INDEX IF NOT EXISTS "Car_inStock_idx" ON "Car" ("inStock");

@@ -54,6 +54,7 @@ type CreateCarBody = {
   specifications?: Record<string, unknown>;
   features?: Record<string, unknown>;
   isPublished?: boolean;
+  inStock?: boolean;
   images?: CarImageInput[];
 };
 
@@ -90,6 +91,7 @@ type OptionalCarData = Partial<
     | "specifications"
     | "features"
     | "isPublished"
+    | "inStock"
   >
 >;
 
@@ -137,6 +139,7 @@ const PUBLIC_CAR_SELECT = {
   city: true,
   specifications: true,
   features: true,
+  inStock: true,
   createdAt: true,
   model: {
     select: { id: true, name: true, brand: true, slug: true, bodyType: true },
@@ -361,6 +364,7 @@ const optionalCarData = (body: UpdateCarBody): OptionalCarData => {
   if (body.features !== undefined)
     data.features = body.features as Prisma.InputJsonValue;
   if (body.isPublished !== undefined) data.isPublished = body.isPublished;
+  if (body.inStock !== undefined) data.inStock = body.inStock;
   return data;
 };
 

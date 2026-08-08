@@ -65,6 +65,7 @@ const baseCarFields = {
   specifications: z.record(z.string(), z.unknown()).optional(),
   features: z.record(z.string(), z.unknown()).optional(),
   isPublished: z.boolean().optional(),
+  inStock: z.boolean().optional(),
   images: z.array(carImageInputSchema).max(30).optional(),
 };
 
@@ -101,6 +102,7 @@ export const updateCarSchema = z
     specifications: baseCarFields.specifications,
     features: baseCarFields.features,
     isPublished: baseCarFields.isPublished,
+    inStock: baseCarFields.inStock,
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "at least one field is required",
