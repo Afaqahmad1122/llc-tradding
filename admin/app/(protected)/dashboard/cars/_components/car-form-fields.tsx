@@ -391,6 +391,16 @@ export function CarFormFields({
             Published on public inventory
           </Label>
         </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={`${idPrefix}-stock`}
+            checked={draft.inStock}
+            onCheckedChange={(c) => onChange({ inStock: c === true })}
+          />
+          <Label htmlFor={`${idPrefix}-stock`} className="font-normal">
+            In stock (uncheck to mark as sold / out of stock)
+          </Label>
+        </div>
         </div>
       </FormSection>
     </div>

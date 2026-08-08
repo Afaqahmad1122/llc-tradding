@@ -42,6 +42,7 @@ export type PublicCar = {
   city: string | null;
   specifications: Record<string, unknown> | null;
   features: Record<string, unknown> | null;
+  inStock: boolean;
   createdAt: string;
   model: PublicCarModel;
   images: PublicCarImage[];

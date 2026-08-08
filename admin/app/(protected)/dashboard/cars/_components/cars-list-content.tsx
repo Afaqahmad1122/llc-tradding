@@ -26,6 +26,7 @@ import type { ListAction, ListState } from "../_lib/list-state";
 import { CarCardThumb } from "./car-card-thumb";
 import { MetaItem } from "./meta-item";
 import { PublishedBadge } from "./published-badge";
+import { StockBadge } from "./stock-badge";
 
 type CarsListContentProps = {
   list: ListState;
@@ -144,6 +145,7 @@ export function CarsListContent({
                           aria-label={`Actions for ${car.referenceNo}`}
                         >
                           <PublishedBadge isPublished={car.isPublished} />
+                          <StockBadge inStock={car.inStock} />
                           <Button
                             type="button"
                             variant="outline"

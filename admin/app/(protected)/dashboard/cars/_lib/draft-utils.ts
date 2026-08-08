@@ -144,6 +144,7 @@ export type CarFormDraft = {
   specsRows: CarKvRow[];
   featuresRows: CarKvRow[];
   isPublished: boolean;
+  inStock: boolean;
 };
 
 export function formatErrorMessage(error: unknown): string {
@@ -215,6 +216,7 @@ export function emptyCarDraft(modelId = ""): CarFormDraft {
     specsRows: [],
     featuresRows: [],
     isPublished: true,
+    inStock: true,
   };
 }
 
@@ -245,6 +247,7 @@ export function carToDraft(car: AdminCar): CarFormDraft {
     specsRows: recordToKvRows(car.specifications ?? undefined),
     featuresRows: recordToKvRows(car.features ?? undefined),
     isPublished: car.isPublished,
+    inStock: car.inStock,
   };
 }
 
@@ -409,6 +412,7 @@ export function buildMutationBodyBase(
     ...(draft.country.trim() ? { country: draft.country.trim() } : {}),
     ...(draft.city.trim() ? { city: draft.city.trim() } : {}),
     isPublished: draft.isPublished,
+    inStock: draft.inStock,
     ...(() => {
       const specifications = kvRowsToRecord(draft.specsRows, "Specifications");
       const features = kvRowsToRecord(draft.featuresRows, "Features");
