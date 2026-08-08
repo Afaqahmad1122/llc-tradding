@@ -514,6 +514,100 @@ export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<
   });
 };
 
+export const getAdminLedgerShipments = async (req: Request, res: Response): Promise<void> => {
+  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+  const requestedPageSize = parsePositiveInt(req.query.pageSize, DEFAULT_PAGE_SIZE);
+  const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const status =
+    typeof req.query.status === "string" &&
+    (Object.values(LedgerDealStatus) as string[]).includes(req.query.status)
+      ? (req.query.status as LedgerDealStatus)
+      : undefined;
+
+  const where: Prisma.LedgerDealWhereInput = {
+    deletedAt: null,
+    ...(status ? { status } : {}),
+    ...(search
+      ? {
+          OR: [
+            { orderNumber: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { user: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            { user: { email: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            { user: { phone: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            { car: { referenceNo: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            { car: { title: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            { car: { chassisNo: { contains: search, mode: Prisma.QueryMode.insensitive } } },
+            { car: { model: { name: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
+            { car: { model: { brand: { contains: search, mode: Prisma.QueryMode.insensitive } } } },
+          ],
+        }
+      : {}),
+  };
+
+  const [total, shipments] = await Promise.all([
+    prisma.ledgerDeal.count({ where }),
+    prisma.ledgerDeal.findMany({
+      where,
+      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        orderNumber: true,
+        dueDate: true,
+        shipmentOrigin: true,
+        shipmentDestination: true,
+        vesselName: true,
+        bookingNo: true,
+        billOfLadingNo: true,
+        currentLocation: true,
+        shipmentNote: true,
+        status: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            country: true,
+            city: true,
+          },
+        },
+        car: {
+          select: {
+            id: true,
+            referenceNo: true,
+            title: true,
+            chassisNo: true,
+            model: {
+              select: {
+                name: true,
+                brand: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            documents: { where: { deletedAt: null } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  res.status(200).json({
+    data: shipments.map((shipment) => ({
+      ...shipment,
+      documentCount: shipment._count.documents,
+      _count: undefined,
+    })),
+    pagination: paginationPayload({ page, pageSize, total }),
+  });
+};
+
 export const getMyLedgerDeals = async (_req: Request, res: Response): Promise<void> => {
   const authUserId = res.locals.authUserId as string | undefined;
   const authUserRole = res.locals.authUserRole as UserRole | undefined;

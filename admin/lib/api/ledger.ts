@@ -155,6 +155,36 @@ export type LedgerDealsQuery = {
   paymentStatus?: "OVERDUE" | "FULLY_PAID" | "BALANCE_PENDING";
 };
 
+export type AdminLedgerShipment = {
+  id: string;
+  orderNumber: string;
+  dueDate: string | null;
+  shipmentOrigin: string | null;
+  shipmentDestination: string | null;
+  vesselName: string | null;
+  bookingNo: string | null;
+  billOfLadingNo: string | null;
+  currentLocation: string | null;
+  shipmentNote: string | null;
+  status: LedgerDealStatus;
+  updatedAt: string;
+  documentCount: number;
+  user: LedgerDealCustomer;
+  car: Pick<LedgerDealCar, "id" | "referenceNo" | "title" | "chassisNo" | "model">;
+};
+
+export type AdminLedgerShipmentsResponse = {
+  data: AdminLedgerShipment[];
+  pagination: LedgerDealsResponse["pagination"];
+};
+
+export type AdminLedgerShipmentsQuery = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: LedgerDealStatus;
+};
+
 export type CreateLedgerDealBody = {
   orderNumber?: string;
   userId: string;
@@ -233,6 +263,18 @@ export function fetchLedgerDeals(params: LedgerDealsQuery = {}) {
   if (params.paymentStatus) search.set("paymentStatus", params.paymentStatus);
   const qs = search.toString();
   return http.get<LedgerDealsResponse>(`/ledger/admin${qs ? `?${qs}` : ""}`);
+}
+
+export function fetchAdminLedgerShipments(params: AdminLedgerShipmentsQuery = {}) {
+  const search = new URLSearchParams();
+  if (params.page != null) search.set("page", String(params.page));
+  if (params.pageSize != null) search.set("pageSize", String(params.pageSize));
+  if (params.search) search.set("search", params.search);
+  if (params.status) search.set("status", params.status);
+  const qs = search.toString();
+  return http.get<AdminLedgerShipmentsResponse>(
+    `/ledger/admin/shipments${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export function createLedgerDeal(body: CreateLedgerDealBody) {

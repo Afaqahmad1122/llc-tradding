@@ -12,9 +12,12 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  CalendarClock,
   ChevronLeftIcon,
   ChevronRightIcon,
+  MapPin,
   MapPinned,
+  PackageCheck,
   Pencil,
   Plus,
   SearchIcon,
@@ -56,13 +59,27 @@ import {
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AdminDataPanel } from "@/components/layout/admin-data-page";
 import { Separator } from "@/components/ui/separator";
 import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ApiError } from "@/lib/api/client";
+import {
+  fetchAdminLedgerShipments,
+  type AdminLedgerShipment,
+  type LedgerDealStatus,
+} from "@/lib/api/ledger";
 import {
   createAdminShippingRegion,
   createAdminShippingSchedule,
@@ -80,9 +97,23 @@ import {
   type AdminShippingRegionsQuery,
   type AdminShippingSchedule,
 } from "@/lib/api/shipping";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
+const CUSTOMER_SHIPMENT_PAGE_SIZE = 12;
+const CUSTOMER_SHIPMENT_SEARCH_DEBOUNCE_MS = 400;
+
+const customerShipmentStatuses: LedgerDealStatus[] = [
+  "PENDING_CONFIRMATION",
+  "CONFIRMED",
+  "IN_TRANSIT",
+  "ARRIVED",
+  "PAYMENT_COMPLETED",
+  "DOCUMENTS_DISPATCHED",
+  "DELIVERED",
+  "CANCELLED",
+];
 
 type VisibilityFilter = "all" | "active" | "inactive";
 
@@ -180,6 +211,256 @@ function ActiveBadge({ isActive }: { isActive: boolean }) {
     >
       {isActive ? "Active" : "Inactive"}
     </Badge>
+  );
+}
+
+function shipmentLabel(value: string) {
+  return value
+    .split("_")
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatShipmentDate(value: string | null | undefined) {
+  if (!value) return "Not scheduled";
+  return format(new Date(value), "MMM d, yyyy");
+}
+
+function shipmentBadgeVariant(status: LedgerDealStatus) {
+  if (status === "CANCELLED") return "destructive";
+  if (status === "DELIVERED") return "default";
+  if (status === "IN_TRANSIT" || status === "ARRIVED") return "secondary";
+  return "outline";
+}
+
+function hasShipmentDetails(shipment: AdminLedgerShipment) {
+  return Boolean(
+    shipment.shipmentOrigin ||
+      shipment.shipmentDestination ||
+      shipment.vesselName ||
+      shipment.bookingNo ||
+      shipment.billOfLadingNo ||
+      shipment.currentLocation ||
+      shipment.shipmentNote ||
+      shipment.dueDate,
+  );
+}
+
+function CustomerShipmentStats({ rows }: { rows: AdminLedgerShipment[] }) {
+  const inTransit = rows.filter((shipment) => shipment.status === "IN_TRANSIT").length;
+  const delivered = rows.filter((shipment) => shipment.status === "DELIVERED").length;
+  const missingTracking = rows.filter((shipment) => !hasShipmentDetails(shipment)).length;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-lg border bg-background px-4 py-3">
+        <p className="text-muted-foreground text-xs uppercase">In transit</p>
+        <p className="mt-1 text-xl font-semibold tabular-nums">{inTransit}</p>
+      </div>
+      <div className="rounded-lg border bg-background px-4 py-3">
+        <p className="text-muted-foreground text-xs uppercase">Delivered</p>
+        <p className="mt-1 text-xl font-semibold tabular-nums">{delivered}</p>
+      </div>
+      <div className="rounded-lg border bg-background px-4 py-3">
+        <p className="text-muted-foreground text-xs uppercase">Missing tracking</p>
+        <p className="mt-1 text-xl font-semibold tabular-nums">{missingTracking}</p>
+      </div>
+    </div>
+  );
+}
+
+function CustomerShipmentsTable({ rows }: { rows: AdminLedgerShipment[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-56 pl-4 sm:pl-5">Customer</TableHead>
+            <TableHead className="min-w-52">Vehicle</TableHead>
+            <TableHead className="min-w-64">Route</TableHead>
+            <TableHead className="min-w-52">Tracking</TableHead>
+            <TableHead className="min-w-36 pr-4 sm:pr-5">ETA</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((shipment) => (
+            <TableRow key={shipment.id} className="align-top hover:bg-muted/30">
+              <TableCell className="pl-4 sm:pl-5">
+                <p className="font-medium">{shipment.user.name}</p>
+                <p className="text-muted-foreground mt-0.5 break-all text-xs">
+                  {shipment.user.email}
+                </p>
+                <Badge variant="secondary" className="mt-2 font-normal">
+                  {shipment.orderNumber}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <p className="font-medium">
+                  {shipment.car.model.brand} {shipment.car.model.name}
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Ref {shipment.car.referenceNo}
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  {shipment.car.chassisNo ?? "No chassis"}
+                </p>
+              </TableCell>
+              <TableCell>
+                <div className="space-y-2 text-sm">
+                  <div className="flex gap-2">
+                    <MapPin className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {shipment.shipmentOrigin || "Origin pending"}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        to {shipment.shipmentDestination || "Destination pending"}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant={shipmentBadgeVariant(shipment.status)}>
+                    {shipmentLabel(shipment.status)}
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="space-y-1 text-sm">
+                  <p className="flex items-center gap-2 font-medium">
+                    <Ship className="text-muted-foreground size-4" />
+                    {shipment.vesselName || "Vessel pending"}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Current: {shipment.currentLocation || shipmentLabel(shipment.status)}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    Booking: {shipment.bookingNo || "-"}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    BL: {shipment.billOfLadingNo || "-"}
+                  </p>
+                </div>
+              </TableCell>
+              <TableCell className="pr-4 sm:pr-5">
+                <p className="flex items-center gap-2 font-medium">
+                  <CalendarClock className="text-muted-foreground size-4" />
+                  {formatShipmentDate(shipment.dueDate)}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {shipment.documentCount} document{shipment.documentCount === 1 ? "" : "s"}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Updated {format(new Date(shipment.updatedAt), "MMM d, yyyy")}
+                </p>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function CustomerShipmentsSection() {
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | LedgerDealStatus>("all");
+  const debouncedSearch = useDebouncedValue(
+    searchInput,
+    CUSTOMER_SHIPMENT_SEARCH_DEBOUNCE_MS,
+  );
+
+  const shipmentsQuery = useQuery({
+    queryKey: ["admin-shipping-customer-shipments", page, debouncedSearch, statusFilter],
+    queryFn: () =>
+      fetchAdminLedgerShipments({
+        page,
+        pageSize: CUSTOMER_SHIPMENT_PAGE_SIZE,
+        ...(debouncedSearch ? { search: debouncedSearch.trim() } : {}),
+        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      }),
+    placeholderData: keepPreviousData,
+  });
+
+  const rows = shipmentsQuery.data?.data ?? [];
+  const totalItems = shipmentsQuery.data?.pagination.total ?? 0;
+  const totalPages = shipmentsQuery.data?.pagination.totalPages ?? 0;
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-lg font-semibold tracking-tight">Customer shipments</h2>
+        <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+          Shipment details for each customer car order from ledger deals.
+        </p>
+      </div>
+      <AdminDataPanel
+        controls={
+          <>
+            <CustomerShipmentStats rows={rows} />
+            <div className="flex flex-col gap-3 md:flex-row md:items-end">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Label htmlFor="customer-shipment-search" className="text-muted-foreground text-xs font-medium">
+                  Search customer shipments
+                </Label>
+                <div className="relative">
+                  <SearchIcon className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                  <Input
+                    id="customer-shipment-search"
+                    className="pl-9"
+                    value={searchInput}
+                    onChange={(event) => {
+                      setSearchInput(event.target.value);
+                      setPage(1);
+                    }}
+                    placeholder="Customer, email, order no, car ref, chassis..."
+                  />
+                </div>
+              </div>
+              <div className="min-w-52 space-y-1.5">
+                <Label htmlFor="customer-shipment-status" className="text-muted-foreground text-xs font-medium">
+                  Shipment status
+                </Label>
+                <NativeSelect
+                  id="customer-shipment-status"
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value as typeof statusFilter);
+                    setPage(1);
+                  }}
+                >
+                  <NativeSelectOption value="all">All statuses</NativeSelectOption>
+                  {customerShipmentStatuses.map((status) => (
+                    <NativeSelectOption key={status} value={status}>
+                      {shipmentLabel(status)}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+            </div>
+          </>
+        }
+        emptyDescription="Create ledger deals or add shipment details to see customer shipments here."
+        emptyIcon={PackageCheck}
+        emptyTitle="No customer shipments"
+        error={shipmentsQuery.error}
+        errorMessage={formatErrorMessage}
+        errorTitle="Could not load customer shipments"
+        isEmpty={rows.length === 0}
+        isError={shipmentsQuery.isError}
+        isFetching={shipmentsQuery.isFetching}
+        isPending={shipmentsQuery.isPending}
+        loadingLabel="Loading customer shipments..."
+        table={<CustomerShipmentsTable rows={rows} />}
+        pagination={{
+          isFetching: shipmentsQuery.isFetching,
+          onPageChange: setPage,
+          page,
+          rowsShown: rows.length,
+          totalItems,
+          totalPages,
+        }}
+      />
+    </section>
   );
 }
 
@@ -922,10 +1203,12 @@ function AdminShippingPageContent() {
             className="shrink-0 gap-2"
           >
             <Plus className="size-4" aria-hidden />
-            Add sailing row
+          Add sailing row
           </Button>
         ) : null}
       </div>
+
+      {nav.screen === "regions" ? <CustomerShipmentsSection /> : null}
 
       {nav.screen !== "regions" ? (
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">

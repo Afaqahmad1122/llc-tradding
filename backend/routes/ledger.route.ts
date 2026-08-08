@@ -12,6 +12,7 @@ import {
   getAdminLedgerCarImageDownload,
   getAdminLedgerDeals,
   getAdminLedgerDocumentDownload,
+  getAdminLedgerShipments,
   getMyLedgerCarImageDownload,
   getMyLedgerDeals,
   getMyLedgerDocumentDownload,
@@ -50,6 +51,7 @@ ledgerRouter.get(
 ledgerRouter.use("/admin", requireAuth);
 
 ledgerRouter.get("/admin", requirePermission("ledgerRead"), getAdminLedgerDeals);
+ledgerRouter.get("/admin/shipments", requirePermission("shippingRead"), getAdminLedgerShipments);
 ledgerRouter.post(
   "/admin",
   requirePermission("ledgerCreate"),
