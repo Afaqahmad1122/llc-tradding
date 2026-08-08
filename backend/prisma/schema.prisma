@@ -12,6 +12,15 @@ model SystemMeta {
   updatedAt DateTime @updatedAt
 }
 
+model SiteSettings {
+  id             Int      @id @default(1)
+  contactEmail   String   @default("icctradingjp@gmail.com")
+  contactPhone   String   @default("+81 70-6436-2003")
+  whatsappNumber String   @default("+81 70-6436-2003")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String

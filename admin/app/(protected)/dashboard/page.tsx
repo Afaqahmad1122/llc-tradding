@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SiteContactSettingsCard } from "./_components/site-contact-settings-card";
 
 type Shortcut = {
   href: string;
@@ -106,6 +107,8 @@ export default function AdminDashboardPage() {
           </Link>
         ))}
       </section>
+
+      <SiteContactSettingsCard />
 
       <section>
         <Card className="border-dashed border-border/90 bg-card/80 shadow-none ring-foreground/5">

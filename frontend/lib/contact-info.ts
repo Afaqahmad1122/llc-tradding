@@ -24,6 +24,45 @@ export const CONTACT_EMAIL_GMAIL_URL =
   `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CONTACT_EMAIL)}`;
 export const CONTACT_PHONE_TEL_URL = `tel:${CONTACT_PHONE_TEL}`;
 
+export type PublicContactSettings = {
+  contactEmail: string;
+  contactPhone: string;
+  whatsappNumber: string;
+};
+
+export const DEFAULT_CONTACT_SETTINGS: PublicContactSettings = {
+  contactEmail: CONTACT_EMAIL,
+  contactPhone: CONTACT_PHONE,
+  whatsappNumber: CONTACT_PHONE,
+};
+
+export function phoneDigits(value: string): string {
+  return value.replace(/[^\d]/g, "");
+}
+
+export function phoneTelValue(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.startsWith("+") ? `+${phoneDigits(trimmed)}` : phoneDigits(trimmed);
+}
+
+export function contactLinks(settings: PublicContactSettings = DEFAULT_CONTACT_SETTINGS) {
+  const email = settings.contactEmail || CONTACT_EMAIL;
+  const phone = settings.contactPhone || CONTACT_PHONE;
+  const whatsappNumber = settings.whatsappNumber || CONTACT_PHONE;
+  const tel = phoneTelValue(phone);
+
+  return {
+    contactEmail: email,
+    contactPhone: phone,
+    whatsappNumber,
+    contactEmailMailto: `mailto:${email}`,
+    contactEmailGmailUrl:
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`,
+    contactPhoneTelUrl: `tel:${tel}`,
+    whatsappUrl: `https://wa.me/${phoneDigits(whatsappNumber)}`,
+  };
+}
+
 export type OfficeContact = {
   title: string;
   lines: string[];

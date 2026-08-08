@@ -1,12 +1,18 @@
+"use client";
+
 import Link from "next/link";
 
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
-import { WHATSAPP_URL } from "@/lib/contact-info";
+import { contactLinks } from "@/lib/contact-info";
+import { useContactSettings } from "@/hooks/use-site-settings-query";
 
 export function WhatsAppFloat() {
+  const { settings } = useContactSettings();
+  const links = contactLinks(settings);
+
   return (
     <Link
-      href={WHATSAPP_URL}
+      href={links.whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"

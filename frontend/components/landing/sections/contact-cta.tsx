@@ -20,15 +20,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useContactMessageMutation } from "@/hooks/use-contact-message-mutation";
 import { ApiError } from "@/lib/api/client";
 import {
-  CONTACT_EMAIL,
-  CONTACT_EMAIL_GMAIL_URL,
-  CONTACT_PHONE,
-  CONTACT_PHONE_TEL_URL,
+  contactLinks,
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
   JAPAN_OFFICE_ADDRESS_LINES,
-  WHATSAPP_URL,
 } from "@/lib/contact-info";
+import { useContactSettings } from "@/hooks/use-site-settings-query";
 
 const NAME_MIN_LENGTH = 2;
 const PHONE_MIN_LENGTH = 6;
@@ -50,43 +47,10 @@ type ContactDetail = {
   useNativeAnchor?: boolean;
 };
 
-const contactDetails: ContactDetail[] = [
-  {
-    label: "WhatsApp",
-    value: CONTACT_PHONE,
-    href: WHATSAPP_URL,
-    icon: WhatsAppIcon,
-  },
-  {
-    label: "Phone",
-    value: CONTACT_PHONE,
-    href: CONTACT_PHONE_TEL_URL,
-    icon: Phone,
-  },
-  {
-    label: "Japan Office",
-    value: JAPAN_OFFICE_ADDRESS_LINES.join(", "),
-    valueLines: JAPAN_OFFICE_ADDRESS_LINES,
-    href: "/contact/global-offices",
-    icon: MapPin,
-  },
-  {
-    label: "Email",
-    value: CONTACT_EMAIL,
-    href: CONTACT_EMAIL_GMAIL_URL,
-    icon: Mail,
-    useNativeAnchor: true,
-  },
-  {
-    label: "Instagram",
-    value: INSTAGRAM_HANDLE,
-    href: INSTAGRAM_URL,
-    icon: InstagramIcon,
-  },
-];
-
 export function ContactCta() {
   const contactMutation = useContactMessageMutation();
+  const { settings } = useContactSettings();
+  const links = contactLinks(settings);
   const [messageLength, setMessageLength] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
@@ -144,6 +108,41 @@ export function ContactCta() {
       );
     }
   };
+
+  const contactDetails: ContactDetail[] = [
+    {
+      label: "WhatsApp",
+      value: links.whatsappNumber,
+      href: links.whatsappUrl,
+      icon: WhatsAppIcon,
+    },
+    {
+      label: "Phone",
+      value: links.contactPhone,
+      href: links.contactPhoneTelUrl,
+      icon: Phone,
+    },
+    {
+      label: "Japan Office",
+      value: JAPAN_OFFICE_ADDRESS_LINES.join(", "),
+      valueLines: JAPAN_OFFICE_ADDRESS_LINES,
+      href: "/contact/global-offices",
+      icon: MapPin,
+    },
+    {
+      label: "Email",
+      value: links.contactEmail,
+      href: links.contactEmailGmailUrl,
+      icon: Mail,
+      useNativeAnchor: true,
+    },
+    {
+      label: "Instagram",
+      value: INSTAGRAM_HANDLE,
+      href: INSTAGRAM_URL,
+      icon: InstagramIcon,
+    },
+  ];
 
   return (
     <section
@@ -391,7 +390,7 @@ export function ContactCta() {
               asChild
               className="border-0 bg-[#25D366] text-white shadow-sm hover:bg-[#1EBE5D] hover:text-white"
             >
-              <Link href={WHATSAPP_URL}>
+              <Link href={links.whatsappUrl}>
                 <WhatsAppIcon className="size-4" />
                 WhatsApp
               </Link>
@@ -402,7 +401,7 @@ export function ContactCta() {
               className="border-[#452E5A]/20 bg-white/90 text-[#2F2142] hover:bg-[#fff5f7] hover:text-[#2F2142] dark:border-white/20 dark:bg-white/8 dark:text-white dark:hover:bg-white/15 dark:hover:text-white"
             >
               <a
-                href={CONTACT_EMAIL_GMAIL_URL}
+                href={links.contactEmailGmailUrl}
                 target="_blank"
                 rel="noreferrer"
               >

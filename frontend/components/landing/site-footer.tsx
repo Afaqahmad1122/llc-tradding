@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -13,15 +15,12 @@ import {
 import { InstagramIcon } from "@/components/icons/instagram-icon";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 import {
-  CONTACT_EMAIL,
-  CONTACT_EMAIL_MAILTO,
-  CONTACT_PHONE,
-  CONTACT_PHONE_TEL_URL,
+  contactLinks,
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
   JAPAN_OFFICE_ADDRESS_DISPLAY_EN,
-  WHATSAPP_URL,
 } from "@/lib/contact-info";
+import { useContactSettings } from "@/hooks/use-site-settings-query";
 
 const quickLinks = [
   { label: "Cars", href: "#inventory" },
@@ -33,6 +32,9 @@ const quickLinks = [
 ];
 
 export function SiteFooter() {
+  const { settings } = useContactSettings();
+  const links = contactLinks(settings);
+
   return (
     <footer className="border-t border-[#FF653F]/35 brand-gradient-main text-white">
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -72,18 +74,18 @@ export function SiteFooter() {
             <p className="mb-3 text-lg font-semibold">Contact Us</p>
             <div className="space-y-2 text-sm">
               <Link
-                href={WHATSAPP_URL}
+                href={links.whatsappUrl}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <WhatsAppIcon className="size-4 text-[#FFC85C]" />
-                {CONTACT_PHONE}
+                {links.whatsappNumber}
               </Link>
               <Link
-                href={CONTACT_PHONE_TEL_URL}
+                href={links.contactPhoneTelUrl}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <Phone className="size-4 text-[#FFC85C]" />
-                {CONTACT_PHONE}
+                {links.contactPhone}
               </Link>
               <Link
                 href="/contact/global-offices"
@@ -93,11 +95,11 @@ export function SiteFooter() {
                 <span>{JAPAN_OFFICE_ADDRESS_DISPLAY_EN}</span>
               </Link>
               <Link
-                href={CONTACT_EMAIL_MAILTO}
+                href={links.contactEmailMailto}
                 className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90 transition-colors hover:bg-white/10"
               >
                 <Mail className="size-4 text-[#FFC85C]" />
-                {CONTACT_EMAIL}
+                {links.contactEmail}
               </Link>
               <Link
                 href={INSTAGRAM_URL}

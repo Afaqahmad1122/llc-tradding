@@ -57,6 +57,7 @@ import {
   useDestinationCountriesQuery,
   useDestinationPortsQuery,
 } from "@/hooks/use-calculator-reference";
+import { useContactSettings } from "@/hooks/use-site-settings-query";
 import { cn } from "@/lib/utils";
 
 const SHIPMENT_MODES = ["Roro", "Container"] as const;
@@ -131,6 +132,7 @@ function calculatorNote(opts: {
 }
 
 function SimilarCarCard({ car }: { car: PublicCar }) {
+  const { settings } = useContactSettings();
   const imageUrl =
     car.images.find((i) => i.isPrimary)?.url ?? car.images[0]?.url ?? null;
   const title = inventoryTitle(car);
@@ -138,8 +140,8 @@ function SimilarCarCard({ car }: { car: PublicCar }) {
   const primaryPrice = primaryPriceLabel(car);
   const pkrLine = formatPkr(car.pricePkr);
   const jpyLine = formatJpy(car.priceJpy);
-  const waHref = buildInquiryWhatsAppUrl(car);
-  const mailHref = buildInquireMailto(car);
+  const waHref = buildInquiryWhatsAppUrl(car, undefined, settings);
+  const mailHref = buildInquireMailto(car, undefined, settings);
   const engineBadge =
     car.engineCc != null && Number.isFinite(car.engineCc)
       ? `${car.engineCc}cc`
@@ -256,6 +258,7 @@ export function PublicCarDetailView({
   car: PublicCar;
   similarCars: PublicCar[];
 }) {
+  const { settings } = useContactSettings();
   const gallery = useMemo(() => sortedGallery(car), [car]);
   const [activeIndex, setActiveIndex] = useState(0);
   const active = gallery[activeIndex] ?? null;
@@ -411,8 +414,8 @@ export function PublicCarDetailView({
     priceLabels: "USD / PKR / JPY",
   });
 
-  const askWa = buildInquiryWhatsAppUrl(car, calcLines);
-  const askMail = buildInquireMailto(car, calcLines);
+  const askWa = buildInquiryWhatsAppUrl(car, calcLines, settings);
+  const askMail = buildInquireMailto(car, calcLines, settings);
 
   const showPrev = gallery.length > 1;
   const goPrev = () =>
