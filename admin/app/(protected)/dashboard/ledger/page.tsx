@@ -18,7 +18,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ForbiddenPage } from "@/components/auth/permission-guard";
@@ -194,6 +194,47 @@ function formatMoney(amount: number | null | undefined, currency: string) {
 
 function dateInputValue(value: string | null | undefined) {
   return value ? new Date(value).toISOString().slice(0, 10) : "";
+}
+
+function SearchablePickerContent({
+  children,
+  footer,
+  listClassName = "max-h-72",
+  onSearchChange,
+  placeholder,
+  searchValue,
+}: {
+  children: ReactNode;
+  footer?: ReactNode;
+  listClassName?: string;
+  onSearchChange: (value: string) => void;
+  placeholder: string;
+  searchValue: string;
+}) {
+  return (
+    <PopoverContent
+      align="start"
+      className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+    >
+      <div className="border-b p-3">
+        <div className="relative">
+          <SearchIcon
+            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
+            aria-hidden
+          />
+          <Input
+            autoFocus
+            placeholder={placeholder}
+            className="pl-9"
+            value={searchValue}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
+        </div>
+      </div>
+      <div className={cn("overflow-y-auto p-2", listClassName)}>{children}</div>
+      {footer}
+    </PopoverContent>
+  );
 }
 
 function paymentBalanceLabel(deal: LedgerDeal) {
@@ -944,27 +985,33 @@ function CreateDealDialog({
                     <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
-                >
-                  <div className="border-b p-3">
-                    <div className="relative">
-                      <SearchIcon
-                        className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                        aria-hidden
-                      />
-                      <Input
-                        autoFocus
-                        placeholder="Search name or email"
-                        className="pl-9"
-                        value={customerSearch}
-                        onChange={(event) => setCustomerSearch(event.target.value)}
-                      />
+                <SearchablePickerContent
+                  placeholder="Search name or email"
+                  searchValue={customerSearch}
+                  onSearchChange={setCustomerSearch}
+                  listClassName="max-h-60"
+                  footer={
+                    <div className="border-t bg-muted/20 p-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full justify-center"
+                        onClick={() => {
+                          setNewCustomer((state) => ({
+                            ...state,
+                            email: customerSearch.includes("@") ? customerSearch : state.email,
+                            name: !customerSearch.includes("@") ? customerSearch : state.name,
+                          }));
+                          setCustomerPickerOpen(false);
+                          setCustomerCreateOpen(true);
+                        }}
+                      >
+                        <UserPlus className="size-4" />
+                        Add new customer
+                      </Button>
                     </div>
-                  </div>
-
-                  <div className="max-h-60 overflow-y-auto p-2">
+                  }
+                >
                     {customersQuery.isPending ? (
                       <p className="text-muted-foreground px-2 py-6 text-center text-sm">
                         Loading customers...
@@ -996,28 +1043,7 @@ function CreateDealDialog({
                         No customers found.
                       </p>
                     )}
-                  </div>
-
-                  <div className="border-t bg-muted/20 p-3">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="w-full justify-center"
-                      onClick={() => {
-                        setNewCustomer((state) => ({
-                          ...state,
-                          email: customerSearch.includes("@") ? customerSearch : state.email,
-                          name: !customerSearch.includes("@") ? customerSearch : state.name,
-                        }));
-                        setCustomerPickerOpen(false);
-                        setCustomerCreateOpen(true);
-                      }}
-                    >
-                      <UserPlus className="size-4" />
-                      Add new customer
-                    </Button>
-                  </div>
-                </PopoverContent>
+                </SearchablePickerContent>
               </Popover>
             </div>
             <div className="space-y-2">
@@ -1052,26 +1078,24 @@ function CreateDealDialog({
                     <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
-                >
-                  <div className="border-b p-3">
-                    <div className="relative">
-                      <SearchIcon
-                        className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                        aria-hidden
-                      />
-                      <Input
-                        autoFocus
-                        placeholder="Search reference, title, chassis"
-                        className="pl-9"
-                        value={carSearch}
-                        onChange={(event) => setCarSearch(event.target.value)}
-                      />
+                <SearchablePickerContent
+                  placeholder="Search reference, title, chassis"
+                  searchValue={carSearch}
+                  onSearchChange={setCarSearch}
+                  footer={
+                    <div className="border-t bg-muted/20 p-3">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full justify-center"
+                        onClick={openLedgerCarCreate}
+                      >
+                        <Plus className="size-4" />
+                        Add ledger car
+                      </Button>
                     </div>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto p-2">
+                  }
+                >
                     {carsQuery.isPending ? (
                       <p className="text-muted-foreground px-2 py-6 text-center text-sm">
                         Loading cars...
@@ -1105,19 +1129,7 @@ function CreateDealDialog({
                         No cars found.
                       </p>
                     )}
-                  </div>
-                  <div className="border-t bg-muted/20 p-3">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="w-full justify-center"
-                      onClick={openLedgerCarCreate}
-                    >
-                      <Plus className="size-4" />
-                      Add ledger car
-                    </Button>
-                  </div>
-                </PopoverContent>
+                </SearchablePickerContent>
               </Popover>
             </div>
             <div className="space-y-2">
@@ -1473,26 +1485,11 @@ function CreateDealDialog({
                         <ChevronsUpDown className="text-muted-foreground ml-2 size-4 shrink-0" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+                    <SearchablePickerContent
+                      placeholder="Search brand or model"
+                      searchValue={modelSearch}
+                      onSearchChange={setModelSearch}
                     >
-                      <div className="border-b p-3">
-                        <div className="relative">
-                          <SearchIcon
-                            className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2"
-                            aria-hidden
-                          />
-                          <Input
-                            autoFocus
-                            placeholder="Search brand or model"
-                            className="pl-9"
-                            value={modelSearch}
-                            onChange={(event) => setModelSearch(event.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="max-h-72 overflow-y-auto p-2">
                         {modelsQuery.isPending ? (
                           <p className="text-muted-foreground px-2 py-6 text-center text-sm">
                             Loading models...
@@ -1525,8 +1522,7 @@ function CreateDealDialog({
                             No models found.
                           </p>
                         )}
-                      </div>
-                    </PopoverContent>
+                    </SearchablePickerContent>
                   </Popover>
                 </div>
                 <div className="space-y-2">

@@ -6,35 +6,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, type AuthUser, updateProfileApi } from "@/lib/api";
+import { ApiError, updateProfileApi } from "@/lib/api";
+import {
+  buildProfileUpdatePayload,
+  emptyProfileFormState,
+  hasProfileChanges,
+  toProfileFormState,
+  type ProfileFormState,
+} from "@/lib/profile-form";
 import { useAuthStore } from "@/stores/auth-store";
-
-type ProfileFormState = {
-  name: string;
-  phone: string;
-  country: string;
-  city: string;
-  address: string;
-  postalCode: string;
-};
-
-const emptyFormState: ProfileFormState = {
-  name: "",
-  phone: "",
-  country: "",
-  city: "",
-  address: "",
-  postalCode: "",
-};
-
-const toFormState = (user: AuthUser): ProfileFormState => ({
-  name: user.name,
-  phone: user.phone ?? "",
-  country: user.country ?? "",
-  city: user.city ?? "",
-  address: user.address ?? "",
-  postalCode: user.postalCode ?? "",
-});
 
 export function DashboardProfile() {
   const user = useAuthStore((state) => state.user);
@@ -43,22 +23,19 @@ export function DashboardProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [formState, setFormState] = useState<ProfileFormState>(emptyFormState);
+  const [formState, setFormState] = useState<ProfileFormState>(emptyProfileFormState);
 
-  const baseFormState = useMemo(() => (user ? toFormState(user) : emptyFormState), [user]);
+  const baseFormState = useMemo(
+    () => (user ? toProfileFormState(user) : emptyProfileFormState),
+    [user],
+  );
   const visibleFormState = isEditing ? formState : baseFormState;
 
   if (!user) {
     return null;
   }
 
-  const hasPendingChanges =
-    visibleFormState.name.trim() !== baseFormState.name.trim() ||
-    visibleFormState.phone.trim() !== baseFormState.phone.trim() ||
-    visibleFormState.country.trim() !== baseFormState.country.trim() ||
-    visibleFormState.city.trim() !== baseFormState.city.trim() ||
-    visibleFormState.address.trim() !== baseFormState.address.trim() ||
-    visibleFormState.postalCode.trim() !== baseFormState.postalCode.trim();
+  const hasPendingChanges = hasProfileChanges(visibleFormState, baseFormState);
 
   const inputClassName =
     "h-11 rounded-[6px] border-[#452E5A]/15 bg-white px-3 text-sm shadow-sm focus-visible:border-[#452E5A]/35 focus-visible:ring-[#452E5A]/20 dark:border-white/15 dark:bg-white/5";
@@ -82,25 +59,7 @@ export function DashboardProfile() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const payload: Record<string, string> = {};
-    if (formState.name.trim() !== baseFormState.name.trim()) {
-      payload.name = formState.name.trim();
-    }
-    if (formState.phone.trim() !== baseFormState.phone.trim()) {
-      payload.phone = formState.phone.trim();
-    }
-    if (formState.country.trim() !== baseFormState.country.trim()) {
-      payload.country = formState.country.trim();
-    }
-    if (formState.city.trim() !== baseFormState.city.trim()) {
-      payload.city = formState.city.trim();
-    }
-    if (formState.address.trim() !== baseFormState.address.trim()) {
-      payload.address = formState.address.trim();
-    }
-    if (formState.postalCode.trim() !== baseFormState.postalCode.trim()) {
-      payload.postalCode = formState.postalCode.trim();
-    }
+    const payload = buildProfileUpdatePayload(formState, baseFormState);
 
     if (Object.keys(payload).length === 0) {
       setSuccessMessage("No changes to update.");
@@ -112,7 +71,7 @@ export function DashboardProfile() {
       setIsSubmitting(true);
       const response = await updateProfileApi(payload);
       setAuthUser(response.user);
-      setFormState(toFormState(response.user));
+      setFormState(toProfileFormState(response.user));
       setSuccessMessage("Profile updated successfully.");
       toast.success("Profile updated successfully.");
       setIsEditing(false);

@@ -48,12 +48,7 @@ const documentContentTypeEnum = z.enum([
 ]);
 const documentExtEnum = z.enum(["pdf", "jpg", "jpeg", "png", "webp"]);
 
-export const createLedgerDealSchema = z.object({
-  orderNumber: trimmed.min(1).max(64).optional(),
-  userId: trimmed.min(1),
-  carId: trimmed.min(1),
-  totalAmount: positiveAmount,
-  currency: ledgerCurrencyEnum.default("JPY"),
+const ledgerDealDetailsSchema = {
   downPaymentRequired: positiveAmount.nullable().optional(),
   dueDate: trimmed.datetime().nullable().optional(),
   shipmentOrigin: trimmed.max(160).nullable().optional(),
@@ -68,6 +63,15 @@ export const createLedgerDealSchema = z.object({
   shipmentNote: trimmed.max(2000).nullable().optional(),
   status: ledgerDealStatusEnum.optional(),
   note: trimmed.max(2000).nullable().optional(),
+};
+
+export const createLedgerDealSchema = z.object({
+  orderNumber: trimmed.min(1).max(64).optional(),
+  userId: trimmed.min(1),
+  carId: trimmed.min(1),
+  totalAmount: positiveAmount,
+  currency: ledgerCurrencyEnum.default("JPY"),
+  ...ledgerDealDetailsSchema,
 });
 
 export const updateLedgerDealSchema = z
@@ -77,20 +81,7 @@ export const updateLedgerDealSchema = z
     carId: trimmed.min(1).optional(),
     totalAmount: positiveAmount.optional(),
     currency: ledgerCurrencyEnum.optional(),
-    downPaymentRequired: positiveAmount.nullable().optional(),
-    dueDate: trimmed.datetime().nullable().optional(),
-    shipmentOrigin: trimmed.max(160).nullable().optional(),
-    shipmentDestination: trimmed.max(160).nullable().optional(),
-    shippingLine: trimmed.max(160).nullable().optional(),
-    vesselName: trimmed.max(160).nullable().optional(),
-    estimatedDeparture: trimmed.datetime().nullable().optional(),
-    estimatedArrival: trimmed.datetime().nullable().optional(),
-    bookingNo: trimmed.max(120).nullable().optional(),
-    billOfLadingNo: trimmed.max(120).nullable().optional(),
-    currentLocation: trimmed.max(160).nullable().optional(),
-    shipmentNote: trimmed.max(2000).nullable().optional(),
-    status: ledgerDealStatusEnum.optional(),
-    note: trimmed.max(2000).nullable().optional(),
+    ...ledgerDealDetailsSchema,
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "at least one field is required",

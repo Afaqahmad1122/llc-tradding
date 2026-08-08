@@ -10,26 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, type AuthUser, updateProfileApi } from "@/lib/api";
+import { ApiError, updateProfileApi } from "@/lib/api";
+import {
+  buildProfileUpdatePayload,
+  emptyProfileFormState,
+  hasProfileChanges,
+  toProfileFormState,
+  type ProfileFormState,
+} from "@/lib/profile-form";
 import { useAuthStore } from "@/stores/auth-store";
-
-type ProfileFormState = {
-  name: string;
-  phone: string;
-  country: string;
-  city: string;
-  address: string;
-  postalCode: string;
-};
-
-const toFormState = (user: AuthUser): ProfileFormState => ({
-  name: user.name,
-  phone: user.phone ?? "",
-  country: user.country ?? "",
-  city: user.city ?? "",
-  address: user.address ?? "",
-  postalCode: user.postalCode ?? "",
-});
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -40,14 +29,7 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [formState, setFormState] = useState<ProfileFormState>({
-    name: "",
-    phone: "",
-    country: "",
-    city: "",
-    address: "",
-    postalCode: "",
-  });
+  const [formState, setFormState] = useState<ProfileFormState>(emptyProfileFormState);
 
   useEffect(() => {
     if (!hasBootstrapped) {
@@ -63,17 +45,7 @@ export default function ProfilePage() {
   }, [hasBootstrapped, router, user]);
 
   const baseFormState = useMemo(
-    () =>
-      user
-        ? toFormState(user)
-        : {
-            name: "",
-            phone: "",
-            country: "",
-            city: "",
-            address: "",
-            postalCode: "",
-          },
+    () => (user ? toProfileFormState(user) : emptyProfileFormState),
     [user],
   );
 
@@ -89,13 +61,7 @@ export default function ProfilePage() {
     return null;
   }
 
-  const hasPendingChanges =
-    formState.name.trim() !== baseFormState.name.trim() ||
-    formState.phone.trim() !== baseFormState.phone.trim() ||
-    formState.country.trim() !== baseFormState.country.trim() ||
-    formState.city.trim() !== baseFormState.city.trim() ||
-    formState.address.trim() !== baseFormState.address.trim() ||
-    formState.postalCode.trim() !== baseFormState.postalCode.trim();
+  const hasPendingChanges = hasProfileChanges(formState, baseFormState);
   const profileInputClassName =
     "h-11 rounded-xl border-[#452E5A]/15 bg-white/90 px-3 text-sm shadow-sm focus-visible:border-[#452E5A]/35 focus-visible:ring-[#452E5A]/20 md:h-12 md:text-[0.95rem] dark:border-white/15 dark:bg-white/5";
 
@@ -111,25 +77,7 @@ export default function ProfilePage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const payload: Record<string, string> = {};
-    if (formState.name.trim() !== baseFormState.name.trim()) {
-      payload.name = formState.name.trim();
-    }
-    if (formState.phone.trim() !== baseFormState.phone.trim()) {
-      payload.phone = formState.phone.trim();
-    }
-    if (formState.country.trim() !== baseFormState.country.trim()) {
-      payload.country = formState.country.trim();
-    }
-    if (formState.city.trim() !== baseFormState.city.trim()) {
-      payload.city = formState.city.trim();
-    }
-    if (formState.address.trim() !== baseFormState.address.trim()) {
-      payload.address = formState.address.trim();
-    }
-    if (formState.postalCode.trim() !== baseFormState.postalCode.trim()) {
-      payload.postalCode = formState.postalCode.trim();
-    }
+    const payload = buildProfileUpdatePayload(formState, baseFormState);
 
     if (Object.keys(payload).length === 0) {
       setSuccessMessage("No changes to update.");
@@ -141,7 +89,7 @@ export default function ProfilePage() {
       setIsSubmitting(true);
       const response = await updateProfileApi(payload);
       setAuthUser(response.user);
-      setFormState(toFormState(response.user));
+      setFormState(toProfileFormState(response.user));
       setSuccessMessage("Profile updated successfully.");
       toast.success("Profile updated successfully.");
       setIsEditing(false);

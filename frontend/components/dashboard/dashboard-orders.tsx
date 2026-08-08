@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Progress } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/spinner";
+import { DashboardLoadingState } from "@/components/dashboard/dashboard-loading-state";
 import {
   mapLedgerDealsToDashboardOrders,
   orderStatusStyles,
@@ -59,11 +59,11 @@ export function DashboardOrders() {
   }, [activeFilter, orders]);
 
   if (ledgerQuery.isLoading) {
-    return <DashboardOrdersState message="Loading your orders..." />;
+    return <DashboardLoadingState message="Loading your orders..." />;
   }
 
   if (ledgerQuery.isError) {
-    return <DashboardOrdersState message={ledgerQuery.error.message || "Unable to load orders."} />;
+    return <DashboardLoadingState message={ledgerQuery.error.message || "Unable to load orders."} />;
   }
 
   return (
@@ -107,17 +107,6 @@ export function DashboardOrders() {
       ) : (
         filteredOrders.map((order) => <OrderCard key={order.id} order={order} />)
       )}
-    </div>
-  );
-}
-
-function DashboardOrdersState({ message }: { message: string }) {
-  return (
-    <div className="rounded-[8px] border border-[#452E5A]/12 bg-white p-8 text-center text-sm text-[#6a5a84] shadow-sm shadow-[#2e1e56]/5 dark:border-white/10 dark:bg-white/5 dark:text-white/60">
-      <span className="inline-flex items-center gap-2">
-        <Spinner className="size-4" />
-        {message}
-      </span>
     </div>
   );
 }
