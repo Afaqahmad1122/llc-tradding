@@ -237,10 +237,12 @@ function hasShipmentDetails(shipment: AdminLedgerShipment) {
   return Boolean(
     shipment.shipmentOrigin ||
       shipment.shipmentDestination ||
+      shipment.shippingLine ||
       shipment.vesselName ||
+      shipment.estimatedDeparture ||
+      shipment.estimatedArrival ||
       shipment.bookingNo ||
       shipment.billOfLadingNo ||
-      shipment.currentLocation ||
       shipment.shipmentNote ||
       shipment.dueDate,
   );
@@ -327,10 +329,16 @@ function CustomerShipmentsTable({ rows }: { rows: AdminLedgerShipment[] }) {
                 <div className="space-y-1 text-sm">
                   <p className="flex items-center gap-2 font-medium">
                     <Ship className="text-muted-foreground size-4" />
-                    {shipment.vesselName || "Vessel pending"}
+                    {shipment.shippingLine || "Shipping line pending"}
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    Current: {shipment.currentLocation || shipmentLabel(shipment.status)}
+                    Vessel: {shipment.vesselName || "-"}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    ETD: {formatShipmentDate(shipment.estimatedDeparture)}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    ETA: {formatShipmentDate(shipment.estimatedArrival)}
                   </p>
                   <p className="text-muted-foreground text-xs">
                     Booking: {shipment.bookingNo || "-"}

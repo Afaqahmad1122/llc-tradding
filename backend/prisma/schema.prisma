@@ -344,7 +344,10 @@ model LedgerDeal {
   dueDate             DateTime?
   shipmentOrigin      String?
   shipmentDestination String?
+  shippingLine        String?
   vesselName          String?
+  estimatedDeparture  DateTime?
+  estimatedArrival    DateTime?
   bookingNo           String?
   billOfLadingNo      String?
   currentLocation     String?

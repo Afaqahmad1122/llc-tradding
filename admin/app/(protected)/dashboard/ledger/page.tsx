@@ -192,6 +192,10 @@ function formatMoney(amount: number | null | undefined, currency: string) {
   })}`;
 }
 
+function dateInputValue(value: string | null | undefined) {
+  return value ? new Date(value).toISOString().slice(0, 10) : "";
+}
+
 function paymentBalanceLabel(deal: LedgerDeal) {
   if (deal.paymentSummary.isOverdue) return "Overdue";
   if (deal.paymentSummary.remainingBalance <= 0) return "Fully Paid";
@@ -2364,26 +2368,30 @@ function ShipmentTab({
 }) {
   const [form, setForm] = useState({
     status: deal.status,
-    dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+    dueDate: dateInputValue(deal.dueDate),
     shipmentOrigin: deal.shipmentOrigin ?? "",
     shipmentDestination: deal.shipmentDestination ?? "",
+    shippingLine: deal.shippingLine ?? "",
     vesselName: deal.vesselName ?? "",
+    estimatedDeparture: dateInputValue(deal.estimatedDeparture),
+    estimatedArrival: dateInputValue(deal.estimatedArrival),
     bookingNo: deal.bookingNo ?? "",
     billOfLadingNo: deal.billOfLadingNo ?? "",
-    currentLocation: deal.currentLocation ?? "",
     shipmentNote: deal.shipmentNote ?? "",
   });
 
   useEffect(() => {
     setForm({
       status: deal.status,
-      dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
+      dueDate: dateInputValue(deal.dueDate),
       shipmentOrigin: deal.shipmentOrigin ?? "",
       shipmentDestination: deal.shipmentDestination ?? "",
+      shippingLine: deal.shippingLine ?? "",
       vesselName: deal.vesselName ?? "",
+      estimatedDeparture: dateInputValue(deal.estimatedDeparture),
+      estimatedArrival: dateInputValue(deal.estimatedArrival),
       bookingNo: deal.bookingNo ?? "",
       billOfLadingNo: deal.billOfLadingNo ?? "",
-      currentLocation: deal.currentLocation ?? "",
       shipmentNote: deal.shipmentNote ?? "",
     });
   }, [deal]);
@@ -2395,10 +2403,16 @@ function ShipmentTab({
         dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         shipmentOrigin: form.shipmentOrigin.trim() || null,
         shipmentDestination: form.shipmentDestination.trim() || null,
+        shippingLine: form.shippingLine.trim() || null,
         vesselName: form.vesselName.trim() || null,
+        estimatedDeparture: form.estimatedDeparture
+          ? new Date(form.estimatedDeparture).toISOString()
+          : null,
+        estimatedArrival: form.estimatedArrival
+          ? new Date(form.estimatedArrival).toISOString()
+          : null,
         bookingNo: form.bookingNo.trim() || null,
         billOfLadingNo: form.billOfLadingNo.trim() || null,
-        currentLocation: form.currentLocation.trim() || null,
         shipmentNote: form.shipmentNote.trim() || null,
       }),
     successToast: "Shipment updated.",
@@ -2414,7 +2428,13 @@ function ShipmentTab({
     ? format(new Date(form.dueDate), "MMM d, yyyy")
     : "Awaiting schedule";
   const previewVessel = form.vesselName.trim() || "Not added";
-  const previewCurrentLeg = form.currentLocation.trim() || label(form.status);
+  const previewShippingLine = form.shippingLine.trim() || "Not added";
+  const previewEstimatedDeparture = form.estimatedDeparture
+    ? format(new Date(form.estimatedDeparture), "MMM d, yyyy")
+    : "Not added";
+  const previewEstimatedArrival = form.estimatedArrival
+    ? format(new Date(form.estimatedArrival), "MMM d, yyyy")
+    : "Not added";
   const previewNote = form.shipmentNote.trim() || "No shipment note added.";
 
   return (
@@ -2515,6 +2535,19 @@ function ShipmentTab({
           <h4 className="text-sm font-semibold">Carrier details</h4>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-line">
+                Shipping line
+              </Label>
+              <Input
+                id="ledger-shipment-line"
+                placeholder="Shipping company or line"
+                value={form.shippingLine}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, shippingLine: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-vessel">
                 Vessel
               </Label>
@@ -2528,15 +2561,28 @@ function ShipmentTab({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-current">
-                Current leg
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-etd">
+                Estimated departure
               </Label>
               <Input
-                id="ledger-shipment-current"
-                placeholder="Loaded on vessel"
-                value={form.currentLocation}
+                id="ledger-shipment-etd"
+                type="date"
+                value={form.estimatedDeparture}
                 onChange={(event) =>
-                  setForm((state) => ({ ...state, currentLocation: event.target.value }))
+                  setForm((state) => ({ ...state, estimatedDeparture: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-eta-detail">
+                Estimated arrival
+              </Label>
+              <Input
+                id="ledger-shipment-eta-detail"
+                type="date"
+                value={form.estimatedArrival}
+                onChange={(event) =>
+                  setForm((state) => ({ ...state, estimatedArrival: event.target.value }))
                 }
               />
             </div>
@@ -2624,8 +2670,8 @@ function ShipmentTab({
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
+          <PreviewMetric label="Shipping line" value={previewShippingLine} />
           <PreviewMetric label="Vessel" value={previewVessel} />
-          <PreviewMetric label="Current leg" value={previewCurrentLeg} />
           <PreviewMetric label="Documents" value={`${deal.documents.length} attached`} />
         </div>
 
@@ -2639,6 +2685,8 @@ function ShipmentTab({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
+          <PreviewDetail label="Estimated departure" value={previewEstimatedDeparture} />
+          <PreviewDetail label="Estimated arrival" value={previewEstimatedArrival} />
           <PreviewDetail label="Booking no" value={form.bookingNo.trim() || "Not added"} />
           <PreviewDetail label="BL no" value={form.billOfLadingNo.trim() || "Not added"} />
         </div>

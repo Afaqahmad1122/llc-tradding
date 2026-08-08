@@ -1,0 +1,4 @@
+ALTER TABLE "LedgerDeal"
+ADD COLUMN IF NOT EXISTS "shippingLine" TEXT,
+ADD COLUMN IF NOT EXISTS "estimatedDeparture" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "estimatedArrival" TIMESTAMP(3);

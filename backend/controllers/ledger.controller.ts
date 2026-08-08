@@ -33,7 +33,10 @@ type CreateLedgerDealBody = {
   dueDate?: string | null;
   shipmentOrigin?: string | null;
   shipmentDestination?: string | null;
+  shippingLine?: string | null;
   vesselName?: string | null;
+  estimatedDeparture?: string | null;
+  estimatedArrival?: string | null;
   bookingNo?: string | null;
   billOfLadingNo?: string | null;
   currentLocation?: string | null;
@@ -558,7 +561,10 @@ export const getAdminLedgerShipments = async (req: Request, res: Response): Prom
         dueDate: true,
         shipmentOrigin: true,
         shipmentDestination: true,
+        shippingLine: true,
         vesselName: true,
+        estimatedDeparture: true,
+        estimatedArrival: true,
         bookingNo: true,
         billOfLadingNo: true,
         currentLocation: true,
@@ -805,7 +811,10 @@ export const createAdminLedgerDeal = async (req: Request, res: Response): Promis
       dueDate: body.dueDate ? new Date(body.dueDate) : null,
       shipmentOrigin: body.shipmentOrigin?.trim() || null,
       shipmentDestination: body.shipmentDestination?.trim() || null,
+      shippingLine: body.shippingLine?.trim() || null,
       vesselName: body.vesselName?.trim() || null,
+      estimatedDeparture: body.estimatedDeparture ? new Date(body.estimatedDeparture) : null,
+      estimatedArrival: body.estimatedArrival ? new Date(body.estimatedArrival) : null,
       bookingNo: body.bookingNo?.trim() || null,
       billOfLadingNo: body.billOfLadingNo?.trim() || null,
       currentLocation: body.currentLocation?.trim() || null,
@@ -903,8 +912,23 @@ export const updateAdminLedgerDeal = async (req: Request, res: Response): Promis
       ...(body.shipmentDestination !== undefined
         ? { shipmentDestination: body.shipmentDestination?.trim() || null }
         : {}),
+      ...(body.shippingLine !== undefined
+        ? { shippingLine: body.shippingLine?.trim() || null }
+        : {}),
       ...(body.vesselName !== undefined
         ? { vesselName: body.vesselName?.trim() || null }
+        : {}),
+      ...(body.estimatedDeparture !== undefined
+        ? {
+            estimatedDeparture: body.estimatedDeparture
+              ? new Date(body.estimatedDeparture)
+              : null,
+          }
+        : {}),
+      ...(body.estimatedArrival !== undefined
+        ? {
+            estimatedArrival: body.estimatedArrival ? new Date(body.estimatedArrival) : null,
+          }
         : {}),
       ...(body.bookingNo !== undefined
         ? { bookingNo: body.bookingNo?.trim() || null }

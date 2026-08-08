@@ -119,7 +119,10 @@ export type LedgerDeal = {
   dueDate: string | null;
   shipmentOrigin: string | null;
   shipmentDestination: string | null;
+  shippingLine: string | null;
   vesselName: string | null;
+  estimatedDeparture: string | null;
+  estimatedArrival: string | null;
   bookingNo: string | null;
   billOfLadingNo: string | null;
   currentLocation: string | null;
@@ -161,7 +164,10 @@ export type AdminLedgerShipment = {
   dueDate: string | null;
   shipmentOrigin: string | null;
   shipmentDestination: string | null;
+  shippingLine: string | null;
   vesselName: string | null;
+  estimatedDeparture: string | null;
+  estimatedArrival: string | null;
   bookingNo: string | null;
   billOfLadingNo: string | null;
   currentLocation: string | null;
@@ -195,7 +201,10 @@ export type CreateLedgerDealBody = {
   dueDate?: string | null;
   shipmentOrigin?: string | null;
   shipmentDestination?: string | null;
+  shippingLine?: string | null;
   vesselName?: string | null;
+  estimatedDeparture?: string | null;
+  estimatedArrival?: string | null;
   bookingNo?: string | null;
   billOfLadingNo?: string | null;
   currentLocation?: string | null;

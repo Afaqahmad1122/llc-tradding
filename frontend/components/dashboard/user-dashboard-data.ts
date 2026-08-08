@@ -101,7 +101,10 @@ export type DashboardOrder = {
   paymentProgress: number;
   portFrom: string;
   portTo: string;
+  shippingLine: string;
   vesselName: string;
+  estimatedDeparture: string;
+  estimatedArrival: string;
   bookingNo: string;
   billOfLadingNo: string;
   currentLocation: string;
@@ -314,7 +317,10 @@ export function mapLedgerDealToDashboardOrder(deal: MyLedgerDeal): DashboardOrde
     paymentProgress: deal.paymentSummary.paidPercent,
     portFrom: getOrigin(deal),
     portTo: destination,
+    shippingLine: deal.shippingLine?.trim() || "Not added",
     vesselName: deal.vesselName?.trim() || "Not added",
+    estimatedDeparture: formatDashboardDate(deal.estimatedDeparture),
+    estimatedArrival: formatDashboardDate(deal.estimatedArrival),
     bookingNo: deal.bookingNo?.trim() || "Not added",
     billOfLadingNo: deal.billOfLadingNo?.trim() || "Not added",
     currentLocation: deal.currentLocation?.trim() || status,
