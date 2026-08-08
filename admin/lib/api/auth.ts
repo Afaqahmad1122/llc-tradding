@@ -21,6 +21,10 @@ export type StaffPermissions = {
   careersRead: boolean;
   careersUpdate: boolean;
   careersDelete: boolean;
+  usersCreate: boolean;
+  usersRead: boolean;
+  usersUpdate: boolean;
+  usersDelete: boolean;
 };
 
 export type AuthUser = {

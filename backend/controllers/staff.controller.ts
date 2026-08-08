@@ -9,6 +9,7 @@ const PERMISSION_FIELDS = [
   "reviewsCreate", "reviewsRead", "reviewsUpdate", "reviewsDelete",
   "contactCreate", "contactRead", "contactUpdate", "contactDelete",
   "careersCreate", "careersRead", "careersUpdate", "careersDelete",
+  "usersCreate", "usersRead", "usersUpdate", "usersDelete",
 ] as const;
 
 type PermissionField = (typeof PERMISSION_FIELDS)[number];
@@ -43,6 +44,10 @@ const STAFF_SELECT = {
       careersRead: true,
       careersUpdate: true,
       careersDelete: true,
+      usersCreate: true,
+      usersRead: true,
+      usersUpdate: true,
+      usersDelete: true,
     },
   },
 } as const;
@@ -226,6 +231,10 @@ export const updateStaffPermissions = async (req: Request, res: Response): Promi
       careersRead: true,
       careersUpdate: true,
       careersDelete: true,
+      usersCreate: true,
+      usersRead: true,
+      usersUpdate: true,
+      usersDelete: true,
     },
   });
 

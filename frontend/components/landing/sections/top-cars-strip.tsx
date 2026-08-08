@@ -106,7 +106,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                   key={car.id}
                   className="basis-[88%] pl-3 min-[480px]:basis-[64%] sm:basis-[50%] md:basis-[36%] lg:basis-[32%]"
                 >
-                  <article className="overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white shadow-[0_10px_28px_-20px_rgba(30,16,78,0.6)] dark:border-white/10 dark:bg-[#1c1438]">
+                  <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#452E5A]/10 bg-white shadow-[0_10px_28px_-20px_rgba(30,16,78,0.6)] dark:border-white/10 dark:bg-[#1c1438]">
                     <div className="relative h-28 w-full border-b border-[#452E5A]/10 bg-[#F7F4FF] dark:border-white/10 dark:bg-white/5">
                       {imageUrl ? (
                         <Image
@@ -126,14 +126,14 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                         {car.referenceNo}
                       </span>
                     </div>
-                    <div className="space-y-2 p-3">
+                    <div className="flex flex-1 flex-col space-y-2 p-3">
                       <p className="text-xl leading-none font-bold text-[#1E104E] dark:text-white">
                         {make.toUpperCase()}
                       </p>
                       <p className="text-sm font-semibold tracking-wide text-[#0F8A66] uppercase dark:text-[#3DD598]">
                         {modelName}
                       </p>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-[10px] font-bold tracking-wide text-[#5C4A76] uppercase dark:text-white/55">
                           {hasPrice ? "FOB price" : "Price"}
                         </p>
@@ -156,7 +156,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                         <Button
                           asChild
                           size="sm"
-                          className="h-9 flex-1 border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
+                          className="h-12 flex-1 rounded-[4px] border-0 bg-[#0EA640] px-3 text-xs font-semibold text-white hover:bg-[#0B9238]"
                         >
                           <Link href={waUrl} target="_blank" rel="noreferrer">
                             Inquire Now
@@ -165,7 +165,7 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
                         <Button
                           asChild
                           size="icon-sm"
-                          className="size-9 shrink-0 border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
+                          className="size-12 shrink-0 rounded-[4px] border-0 bg-[#2AD36A] text-white hover:bg-[#23BE5F]"
                         >
                           <Link
                             href={waUrl}
