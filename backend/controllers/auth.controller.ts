@@ -203,6 +203,10 @@ const fetchStaffPermissions = async (userId: string): Promise<StaffPermissionsPa
       careersRead: true,
       careersUpdate: true,
       careersDelete: true,
+      usersCreate: true,
+      usersRead: true,
+      usersUpdate: true,
+      usersDelete: true,
     },
   });
   return record ?? undefined;

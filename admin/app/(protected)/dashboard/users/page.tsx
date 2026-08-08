@@ -99,6 +99,15 @@ const PERMISSION_SECTIONS: PermissionSection[] = [
       delete: "careersDelete",
     },
   },
+  {
+    label: "Users",
+    keys: {
+      create: "usersCreate",
+      read: "usersRead",
+      update: "usersUpdate",
+      delete: "usersDelete",
+    },
+  },
 ];
 
 const emptyPermissions = (): StaffPermissions => ({
@@ -122,6 +131,10 @@ const emptyPermissions = (): StaffPermissions => ({
   careersRead: false,
   careersUpdate: false,
   careersDelete: false,
+  usersCreate: false,
+  usersRead: false,
+  usersUpdate: false,
+  usersDelete: false,
 });
 
 function formatErrorMessage(e: unknown): string {
@@ -545,6 +558,8 @@ function DeleteUserDialog({
   );
 }
 
+const TOTAL_PERMISSIONS = PERMISSION_SECTIONS.length * 4;
+
 function grantedCount(perms: StaffPermissions | null): number {
   if (!perms) return 0;
   return Object.values(perms).filter(Boolean).length;
@@ -654,7 +669,7 @@ export default function AdminUsersPage() {
                     ) : (
                       <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                         <Check className="size-3" />
-                        {grantedCount(user.staffPermission)} of 20 permissions
+                        {grantedCount(user.staffPermission)} of {TOTAL_PERMISSIONS} permissions
                       </span>
                     )}
                     <Separator orientation="vertical" className="h-3" />
