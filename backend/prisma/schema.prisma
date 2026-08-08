@@ -78,6 +78,11 @@ model StaffPermission {
   careersUpdate Boolean @default(false)
   careersDelete Boolean @default(false)
 
+  ledgerCreate Boolean @default(false)
+  ledgerRead   Boolean @default(false)
+  ledgerUpdate Boolean @default(false)
+  ledgerDelete Boolean @default(false)
+
   usersCreate Boolean @default(false)
   usersRead   Boolean @default(false)
   usersUpdate Boolean @default(false)

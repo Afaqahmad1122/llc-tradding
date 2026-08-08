@@ -266,6 +266,10 @@ async function uploadLedgerDocumentDraft(dealId: string, document: CreateDealDoc
 
 function LedgerPageContent() {
   const queryClient = useQueryClient();
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
+  const canCreateLedger = hasPermission("ledgerCreate");
+  const canUpdateLedger = hasPermission("ledgerUpdate");
+  const canDeleteLedger = hasPermission("ledgerDelete");
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | LedgerDealStatus>("all");
@@ -312,10 +316,12 @@ function LedgerPageContent() {
           title="Ledger"
           description="Track every customer car deal, down payment, balance, documents, and admin notes."
         />
-        <Button className="h-10 rounded-md" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          New deal
-        </Button>
+        {canCreateLedger ? (
+          <Button className="h-10 rounded-md" onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            New deal
+          </Button>
+        ) : null}
       </div>
 
       <AdminDataPanel
@@ -400,6 +406,8 @@ function LedgerPageContent() {
         table={
           <LedgerTable
             deletingId={deleteMutation.isPending ? deleteMutation.variables : null}
+            canDelete={canDeleteLedger}
+            canUpdate={canUpdateLedger}
             rows={rows}
             onDelete={(id) => deleteMutation.mutate(id)}
             onEdit={(id) => {
@@ -433,6 +441,7 @@ function LedgerPageContent() {
       <DealDetailDialog
         dealId={selectedDealId}
         mode={selectedDealMode}
+        canUpdate={canUpdateLedger}
         onOpenChange={(open) => {
           if (!open) setSelectedDealId(null);
         }}
@@ -443,12 +452,16 @@ function LedgerPageContent() {
 }
 
 function LedgerTable({
+  canDelete,
+  canUpdate,
   deletingId,
   onDelete,
   onEdit,
   rows,
   onSelect,
 }: {
+  canDelete: boolean;
+  canUpdate: boolean;
   deletingId: string | null | undefined;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
@@ -522,44 +535,48 @@ function LedgerTable({
                 <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
                   Open
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={`Edit ${deal.orderNumber}`}
-                  onClick={() => onEdit(deal.id)}
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="icon-sm"
-                      aria-label={`Delete ${deal.orderNumber}`}
-                      disabled={deletingId === deal.id}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete ledger deal?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will remove {deal.orderNumber} from the ledger list. Existing
-                        customer and car records will stay unchanged.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
+                {canUpdate ? (
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Edit ${deal.orderNumber}`}
+                    onClick={() => onEdit(deal.id)}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                ) : null}
+                {canDelete ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
                         variant="destructive"
-                        onClick={() => onDelete(deal.id)}
+                        size="icon-sm"
+                        aria-label={`Delete ${deal.orderNumber}`}
+                        disabled={deletingId === deal.id}
                       >
-                        {deletingId === deal.id ? "Deleting..." : "Delete deal"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete ledger deal?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will remove {deal.orderNumber} from the ledger list. Existing
+                          customer and car records will stay unchanged.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => onDelete(deal.id)}
+                        >
+                          {deletingId === deal.id ? "Deleting..." : "Delete deal"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : null}
               </div>
             </TableCell>
           </TableRow>
@@ -1758,11 +1775,13 @@ function CreateDealDialog({
 }
 
 function DealDetailDialog({
+  canUpdate,
   dealId,
   mode,
   onOpenChange,
   onChanged,
 }: {
+  canUpdate: boolean;
   dealId: string | null;
   mode: "view" | "edit";
   onOpenChange: (open: boolean) => void;
@@ -1778,8 +1797,8 @@ function DealDetailDialog({
   const deal = detailQuery.data?.deal;
 
   useEffect(() => {
-    if (dealId) setActiveTab(mode === "edit" ? "edit" : "payments");
-  }, [dealId, mode]);
+    if (dealId) setActiveTab(mode === "edit" && canUpdate ? "edit" : "payments");
+  }, [canUpdate, dealId, mode]);
 
   const refresh = () => {
     if (dealId) {
@@ -1806,10 +1825,12 @@ function DealDetailDialog({
             <DealSummary deal={deal} />
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full justify-start overflow-x-auto">
-                <TabsTrigger value="edit">
-                  <Pencil className="size-4" />
-                  Edit
-                </TabsTrigger>
+                {canUpdate ? (
+                  <TabsTrigger value="edit">
+                    <Pencil className="size-4" />
+                    Edit
+                  </TabsTrigger>
+                ) : null}
                 <TabsTrigger value="payments">
                   <Banknote className="size-4" />
                   Payments
@@ -1828,23 +1849,25 @@ function DealDetailDialog({
                 </TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
               </TabsList>
-              <TabsContent value="edit">
-                <EditDealTab deal={deal} onChanged={refresh} />
-              </TabsContent>
+              {canUpdate ? (
+                <TabsContent value="edit">
+                  <EditDealTab deal={deal} onChanged={refresh} />
+                </TabsContent>
+              ) : null}
               <TabsContent value="payments">
-                <PaymentsTab deal={deal} onChanged={refresh} />
+                <PaymentsTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="shipment">
-                <ShipmentTab deal={deal} onChanged={refresh} />
+                <ShipmentTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="documents">
-                <DocumentsTab deal={deal} onChanged={refresh} />
+                <DocumentsTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="images">
                 <CarImagesTab deal={deal} />
               </TabsContent>
               <TabsContent value="notes">
-                <NotesTab deal={deal} onChanged={refresh} />
+                <NotesTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
             </Tabs>
           </div>
@@ -2198,7 +2221,15 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
   );
 }
 
-function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function PaymentsTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const hasInitialDownPayment =
     deal.downPaymentRequired != null && deal.downPaymentRequired > 0;
   const [form, setForm] = useState({
@@ -2229,17 +2260,18 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
 
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <form
-        className="space-y-3 rounded-lg border p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!form.amount) {
-            toast.error("Amount is required.");
-            return;
-          }
-          mutation.mutate(undefined);
-        }}
-      >
+      {canUpdate ? (
+        <form
+          className="space-y-3 rounded-lg border p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!form.amount) {
+              toast.error("Amount is required.");
+              return;
+            }
+            mutation.mutate(undefined);
+          }}
+        >
         <h3 className="font-semibold">Add payment</h3>
         <Input
           type="number"
@@ -2283,7 +2315,8 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         <Button className="w-full" disabled={mutation.isPending}>
           {mutation.isPending ? "Adding..." : "Add payment"}
         </Button>
-      </form>
+        </form>
+      ) : null}
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
@@ -2320,7 +2353,15 @@ function PaymentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
   );
 }
 
-function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function ShipmentTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const [form, setForm] = useState({
     status: deal.status,
     dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
@@ -2378,13 +2419,14 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
 
   return (
     <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(460px,0.95fr)_minmax(0,1.05fr)]">
-      <form
-        className="space-y-4 rounded-lg border bg-background p-4 shadow-sm"
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate(undefined);
-        }}
-      >
+      {canUpdate ? (
+        <form
+          className="space-y-4 rounded-lg border bg-background p-4 shadow-sm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            mutation.mutate(undefined);
+          }}
+        >
         <div className="flex items-start gap-3 rounded-lg bg-muted/30 p-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
             <Ship className="size-5" />
@@ -2549,7 +2591,8 @@ function ShipmentTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
             {mutation.isPending ? "Updating..." : "Update shipment"}
           </Button>
         </div>
-      </form>
+        </form>
+      ) : null}
 
       <div className="space-y-4 rounded-lg border bg-background p-4 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -2636,7 +2679,15 @@ function RoutePoint({ label: pointLabel, value }: { label: string; value: string
   );
 }
 
-function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function DocumentsTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     title: "",
@@ -2689,13 +2740,14 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
 
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
-      <form
-        className="space-y-3 rounded-lg border p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          uploadMutation.mutate(undefined);
-        }}
-      >
+      {canUpdate ? (
+        <form
+          className="space-y-3 rounded-lg border p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            uploadMutation.mutate(undefined);
+          }}
+        >
         <div>
           <h3 className="font-semibold">Upload car document</h3>
           <p className="text-muted-foreground mt-1 text-xs">
@@ -2748,7 +2800,8 @@ function DocumentsTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => 
         <Button className="w-full" disabled={uploadMutation.isPending}>
           {uploadMutation.isPending ? "Uploading..." : "Upload document"}
         </Button>
-      </form>
+        </form>
+      ) : null}
       <div className="space-y-3">
         <div className="flex flex-col gap-2 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -2825,7 +2878,15 @@ function DocumentRow({
   );
 }
 
-function NotesTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void }) {
+function NotesTab({
+  canUpdate,
+  deal,
+  onChanged,
+}: {
+  canUpdate: boolean;
+  deal: LedgerDeal;
+  onChanged: () => void;
+}) {
   const [message, setMessage] = useState("");
   const noteEvents = useMemo(
     () => deal.events.filter((event) => event.type === "NOTE_ADDED"),
@@ -2842,24 +2903,26 @@ function NotesTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void
 
   return (
     <div className="mt-4 grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <form
-        className="space-y-3 rounded-lg border p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!message.trim()) return;
-          mutation.mutate(undefined);
-        }}
-      >
-        <h3 className="font-semibold">Add note</h3>
-        <Textarea
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="Internal admin note"
-        />
-        <Button className="w-full" disabled={mutation.isPending || !message.trim()}>
-          {mutation.isPending ? "Adding..." : "Add note"}
-        </Button>
-      </form>
+      {canUpdate ? (
+        <form
+          className="space-y-3 rounded-lg border p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!message.trim()) return;
+            mutation.mutate(undefined);
+          }}
+        >
+          <h3 className="font-semibold">Add note</h3>
+          <Textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="Internal admin note"
+          />
+          <Button className="w-full" disabled={mutation.isPending || !message.trim()}>
+            {mutation.isPending ? "Adding..." : "Add note"}
+          </Button>
+        </form>
+      ) : null}
       <div className="space-y-3">
         {noteEvents.length === 0 ? (
           <div className="text-muted-foreground rounded-lg border p-6 text-sm">
@@ -2882,7 +2945,7 @@ function NotesTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => void
 }
 
 export default function LedgerPage() {
-  const isAdmin = useAdminAuthStore((state) => state.isAdmin);
-  if (!isAdmin()) return <ForbiddenPage />;
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
+  if (!hasPermission("ledgerRead")) return <ForbiddenPage />;
   return <LedgerPageContent />;
 }
