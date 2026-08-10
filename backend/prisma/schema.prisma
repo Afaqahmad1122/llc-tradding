@@ -16,7 +16,7 @@ model SiteSettings {
   id             Int      @id @default(1)
   contactEmail   String   @default("icctradingjp@gmail.com")
   contactPhone   String   @default("+81 70-6436-2003")
-  whatsappNumber String   @default("+81 70-6436-2003")
+  whatsappNumber String   @default("+44 7827 893230")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

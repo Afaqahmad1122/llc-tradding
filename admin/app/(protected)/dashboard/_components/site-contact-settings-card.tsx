@@ -141,7 +141,7 @@ export function SiteContactSettingsCard() {
                     whatsappNumber: event.target.value,
                   }))
                 }
-                placeholder="+81 70-6436-2003"
+                placeholder="+44 7827 893230"
               />
             </div>
           </div>

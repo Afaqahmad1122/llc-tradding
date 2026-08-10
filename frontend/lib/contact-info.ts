@@ -1,7 +1,8 @@
 export const CONTACT_EMAIL = "icctradingjp@gmail.com";
 export const CONTACT_PHONE = "+81 70-6436-2003";
 export const CONTACT_PHONE_TEL = "+817064362003";
-export const WHATSAPP_URL = "https://wa.me/817064362003";
+export const WHATSAPP_NUMBER = "+44 7827 893230";
+export const WHATSAPP_URL = "https://wa.me/447827893230";
 export const JAPAN_OFFICE_ADDRESS_LINES = [
   "3231102",
   "栃木県栃木市藤岡町赤麻字西原868番3",
@@ -33,7 +34,7 @@ export type PublicContactSettings = {
 export const DEFAULT_CONTACT_SETTINGS: PublicContactSettings = {
   contactEmail: CONTACT_EMAIL,
   contactPhone: CONTACT_PHONE,
-  whatsappNumber: CONTACT_PHONE,
+  whatsappNumber: WHATSAPP_NUMBER,
 };
 
 export function phoneDigits(value: string): string {
@@ -48,7 +49,7 @@ export function phoneTelValue(value: string): string {
 export function contactLinks(settings: PublicContactSettings = DEFAULT_CONTACT_SETTINGS) {
   const email = settings.contactEmail || CONTACT_EMAIL;
   const phone = settings.contactPhone || CONTACT_PHONE;
-  const whatsappNumber = settings.whatsappNumber || CONTACT_PHONE;
+  const whatsappNumber = settings.whatsappNumber || WHATSAPP_NUMBER;
   const tel = phoneTelValue(phone);
 
   return {

@@ -5,7 +5,7 @@ const SITE_SETTINGS_ID = 1;
 const DEFAULT_SITE_SETTINGS = {
   contactEmail: "icctradingjp@gmail.com",
   contactPhone: "+81 70-6436-2003",
-  whatsappNumber: "+81 70-6436-2003",
+  whatsappNumber: "+44 7827 893230",
 };
 
 type UpdateSiteSettingsBody = {
