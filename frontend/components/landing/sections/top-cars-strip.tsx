@@ -183,8 +183,8 @@ export function TopCarsStrip({ cars, isLoading = false }: TopCarsStripProps) {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="left-2 size-9 border-[#452E5A]/20 bg-white/95 text-[#452E5A] hover:bg-white dark:border-white/15 dark:bg-[#150e2e]/95 dark:text-white dark:hover:bg-[#1c1438]" />
-          <CarouselNext className="right-2 size-9 border-[#452E5A]/20 bg-white/95 text-[#452E5A] hover:bg-white dark:border-white/15 dark:bg-[#150e2e]/95 dark:text-white dark:hover:bg-[#1c1438]" />
+          <CarouselPrevious className="top-1/2 left-2 flex size-9 -translate-y-1/2 items-center justify-center border-[#452E5A]/20 bg-white/95 text-[#452E5A] hover:bg-white active:not-aria-[haspopup]:-translate-y-1/2 [&_svg]:size-5 dark:border-white/15 dark:bg-[#150e2e]/95 dark:text-white dark:hover:bg-[#1c1438]" />
+          <CarouselNext className="top-1/2 right-2 flex size-9 -translate-y-1/2 items-center justify-center border-[#452E5A]/20 bg-white/95 text-[#452E5A] hover:bg-white active:not-aria-[haspopup]:-translate-y-1/2 [&_svg]:size-5 dark:border-white/15 dark:bg-[#150e2e]/95 dark:text-white dark:hover:bg-[#1c1438]" />
         </Carousel>
       </div>
     </section>
