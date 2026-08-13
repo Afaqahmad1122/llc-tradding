@@ -58,19 +58,59 @@ export const rightSidebarFilters = [
 
 export const promoBanners: PromoBannerItem[] = [
   {
-    title: "Honda",
-    image: "/bernardsie-honda-1596081_1920.png",
-    href: "/cars?brand=honda",
+    title: "Audi",
+    image: "/Audi.png",
+    href: "/cars?brand=audi",
   },
   {
-    title: "Toyota",
-    image: "/bernardsie-toyota-1596082_1920.png",
-    href: "/cars?brand=toyota",
+    title: "BMW",
+    image: "/BMW.png",
+    href: "/cars?brand=bmw",
   },
   {
-    title: "WordPress",
-    image: "/doki7-wordpress-581849_1920.jpg",
-    href: "/help/faqs",
+    title: "Daihatsu",
+    image: "/Daihatsu.png",
+    href: "/cars?brand=daihatsu",
+  },
+  {
+    title: "Land Rover",
+    image: "/Land-Rover.png",
+    href: "/cars?brand=land%20rover",
+  },
+  {
+    title: "Mazda",
+    image: "/Mazda.png",
+    href: "/cars?brand=mazda",
+  },
+  {
+    title: "Mercedes-Benz",
+    image: "/Mercedes-Benz.png",
+    href: "/cars?brand=mercedes-benz",
+  },
+  {
+    title: "Mitsubishi",
+    image: "/Mitsubishi.png",
+    href: "/cars?brand=mitsubishi",
+  },
+  {
+    title: "Nissan",
+    image: "/Nissan.png",
+    href: "/cars?brand=nissan",
+  },
+  {
+    title: "Porsche",
+    image: "/Porsche.png",
+    href: "/cars?brand=porsche",
+  },
+  {
+    title: "Subaru",
+    image: "/Subaru.png",
+    href: "/cars?brand=subaru",
+  },
+  {
+    title: "Suzuki",
+    image: "/Suzuki.png",
+    href: "/cars?brand=suzuki",
   },
 ];
 
@@ -90,31 +130,31 @@ export const brandLogoNavItems: LogoNavItem[] = [
   {
     name: "Nissan",
     count: 24515,
-    image: "/body-types/download.png",
+    image: "/Nissan.png",
     href: "/cars?brand=nissan",
   },
   {
     name: "Mazda",
     count: 9276,
-    image: "/body-types/download.jpeg",
+    image: "/Mazda.png",
     href: "/cars?brand=mazda",
   },
   {
     name: "Suzuki",
     count: 21289,
-    image: "/body-types/download (1).png",
+    image: "/Suzuki.png",
     href: "/cars?brand=suzuki",
   },
   {
     name: "Mitsubishi",
     count: 6548,
-    image: "/body-types/download (2).png",
+    image: "/Mitsubishi.png",
     href: "/cars?brand=mitsubishi",
   },
   {
     name: "Subaru",
     count: 9499,
-    image: "/body-types/download (2).jpeg",
+    image: "/Subaru.png",
     href: "/cars?brand=subaru",
   },
   {
@@ -126,13 +166,13 @@ export const brandLogoNavItems: LogoNavItem[] = [
   {
     name: "BMW",
     count: 9648,
-    image: "/body-types/download (3).png",
+    image: "/BMW.png",
     href: "/cars?brand=bmw",
   },
   {
     name: "Audi",
     count: 4379,
-    image: "/body-types/download (5).png",
+    image: "/Audi.png",
     href: "/cars?brand=audi",
   },
   {

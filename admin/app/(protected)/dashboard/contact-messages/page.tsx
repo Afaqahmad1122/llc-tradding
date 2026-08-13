@@ -1,11 +1,12 @@
 "use client";
 
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import { format } from "date-fns";
 import {
   Building2,
   Car,
+  CheckCircle2,
   ChevronLeftIcon,
   ChevronRightIcon,
   InboxIcon,
@@ -35,13 +36,16 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { ApiError } from "@/lib/api/client";
 import {
   fetchAdminContactMessages,
+  updateAdminContactMessage,
   type AdminContactMessage,
   type ContactMessageStatus,
 } from "@/lib/api/contact-messages";
 import { cn } from "@/lib/utils";
+import { useAdminAuthStore } from "@/stores/auth-store";
 
 function phoneHref(phone: string) {
   // Strip formatting characters then remove leading 00 (international dial prefix)
@@ -137,9 +141,21 @@ function statusLabel(status: ContactMessageStatus) {
   }
 }
 
-function MessageCard({ item }: { item: AdminContactMessage }) {
+function MessageCard({
+  item,
+  canUpdate,
+  isUpdating,
+  onMarkReplied,
+}: {
+  item: AdminContactMessage;
+  canUpdate: boolean;
+  isUpdating: boolean;
+  onMarkReplied: (id: string) => void;
+}) {
   const created = new Date(item.createdAt);
   const isNew = item.status === "NEW";
+  const canMarkReplied =
+    canUpdate && (item.status === "NEW" || item.status === "IN_REVIEW");
 
   return (
     <article
@@ -200,6 +216,23 @@ function MessageCard({ item }: { item: AdminContactMessage }) {
               >
                 {format(created, "MMM d, yyyy · HH:mm")}
               </time>
+              {canMarkReplied ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-1"
+                  disabled={isUpdating}
+                  onClick={() => onMarkReplied(item.id)}
+                >
+                  {isUpdating ? (
+                    <Spinner className="size-3.5" />
+                  ) : (
+                    <CheckCircle2 data-icon="inline-start" />
+                  )}
+                  Mark replied
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -301,7 +334,10 @@ function MessageCard({ item }: { item: AdminContactMessage }) {
 }
 
 function AdminContactMessagesPageContent() {
+  const queryClient = useQueryClient();
+  const hasPermission = useAdminAuthStore((state) => state.hasPermission);
   const [list, dispatch] = useReducer(listReducer, initialListState);
+  const canUpdateMessages = hasPermission("contactUpdate");
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -331,10 +367,22 @@ function AdminContactMessagesPageContent() {
     placeholderData: keepPreviousData,
   });
 
+  const markRepliedMutation = useApiMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      updateAdminContactMessage(id, { status: "RESOLVED" }),
+    successToast: "Message marked as replied.",
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-contact-messages"] });
+    },
+  });
+
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages ?? 0;
   const canPrev = list.page > 1;
   const canNext = totalPages > 0 && list.page < totalPages;
+  const updatingMessageId = markRepliedMutation.isPending
+    ? (markRepliedMutation.variables?.id ?? null)
+    : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -479,7 +527,12 @@ function AdminContactMessagesPageContent() {
             <ul className="divide-border/40 list-none space-y-3 p-3 sm:p-4">
               {data?.data.map((row) => (
                 <li key={row.id}>
-                  <MessageCard item={row} />
+                  <MessageCard
+                    item={row}
+                    canUpdate={canUpdateMessages}
+                    isUpdating={updatingMessageId === row.id}
+                    onMarkReplied={(id) => markRepliedMutation.mutate({ id })}
+                  />
                 </li>
               ))}
             </ul>
