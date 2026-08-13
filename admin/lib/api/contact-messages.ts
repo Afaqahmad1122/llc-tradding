@@ -38,12 +38,21 @@ export type AdminContactMessagesResponse = {
   pagination: AdminContactMessagesPagination;
 };
 
+export type AdminContactMessageResponse = {
+  contactMessage: AdminContactMessage;
+};
+
 export type AdminContactMessagesQuery = {
   page?: number;
   pageSize?: number;
   status?: ContactMessageStatus;
   search?: string;
   sort?: "newest" | "oldest";
+};
+
+export type UpdateAdminContactMessageInput = {
+  status?: ContactMessageStatus;
+  adminNote?: string;
 };
 
 export function fetchAdminContactMessages(params: AdminContactMessagesQuery = {}) {
@@ -56,5 +65,15 @@ export function fetchAdminContactMessages(params: AdminContactMessagesQuery = {}
   const qs = searchParams.toString();
   return http.get<AdminContactMessagesResponse>(
     `/contact-messages/admin${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export function updateAdminContactMessage(
+  id: string,
+  payload: UpdateAdminContactMessageInput,
+) {
+  return http.patch<AdminContactMessageResponse, UpdateAdminContactMessageInput>(
+    `/contact-messages/admin/${id}`,
+    payload,
   );
 }
