@@ -34,9 +34,15 @@ export default function LoginPage() {
       footerLinkLabel="Create one"
       footerLinkHref="/signup"
       extraFooter={
-        <Link href="/contact/connect-with-us" className="inline-block hover:underline">
-          Need help signing in?
-        </Link>
+        <>
+          <Link href="/forgot-password" className="inline-block hover:underline">
+            Forgot password?
+          </Link>
+          <br />
+          <Link href="/contact/connect-with-us" className="inline-block hover:underline">
+            Need help signing in?
+          </Link>
+        </>
       }
     />
   );

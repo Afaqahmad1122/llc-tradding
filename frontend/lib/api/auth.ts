@@ -29,6 +29,17 @@ export type VerifyOtpRequest = {
   otp: string;
 };
 
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ResetPasswordRequest = {
+  email: string;
+  otp: string;
+  newPassword: string;
+  confirmNewPassword?: string;
+};
+
 export type UpdateProfileRequest = {
   name?: string;
   phone?: string;
@@ -51,6 +62,14 @@ type RegisterResponse = {
 };
 
 type VerifyOtpResponse = {
+  message: string;
+};
+
+type ForgotPasswordResponse = {
+  message: string;
+};
+
+type ResetPasswordResponse = {
   message: string;
 };
 
@@ -80,6 +99,20 @@ export const registerApi = (payload: RegisterRequest) => {
 
 export const verifyOtpApi = (payload: VerifyOtpRequest) => {
   return http.post<VerifyOtpResponse, VerifyOtpRequest>("/auth/verify-otp", payload);
+};
+
+export const forgotPasswordApi = (payload: ForgotPasswordRequest) => {
+  return http.post<ForgotPasswordResponse, ForgotPasswordRequest>(
+    "/auth/forgot-password",
+    payload,
+  );
+};
+
+export const resetPasswordApi = (payload: ResetPasswordRequest) => {
+  return http.post<ResetPasswordResponse, ResetPasswordRequest>(
+    "/auth/reset-password",
+    payload,
+  );
 };
 
 export const refreshSessionApi = () => {
