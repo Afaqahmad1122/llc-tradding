@@ -75,7 +75,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/all-users",
     label: "All Users",
     icon: UsersRound,
-    adminOnly: true,
+    permissionKey: "usersRead",
   },
 ];
 

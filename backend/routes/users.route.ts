@@ -18,7 +18,7 @@ export const usersRouter = Router();
 
 usersRouter.get("/admin/customers", requireAuth, listAdminCustomers);
 usersRouter.post("/admin/customers", requireAuth, requireAdminRole, createAdminCustomer);
-usersRouter.get("/admin/all", requireAuth, listAllUsers);
+usersRouter.get("/admin/all", requireAuth, requirePermission("usersRead"), listAllUsers);
 
 usersRouter.get("/admin/staff", requireAuth, requirePermission("usersRead"), listStaffUsers);
 usersRouter.post("/admin/staff", requireAuth, requirePermission("usersCreate"), createStaffUser);

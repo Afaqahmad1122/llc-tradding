@@ -167,10 +167,6 @@ export const listAllUsers = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  if (!requireAdmin(res)) {
-    return;
-  }
-
   const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
   const requestedPageSize = parsePositiveInt(
     req.query.pageSize,
