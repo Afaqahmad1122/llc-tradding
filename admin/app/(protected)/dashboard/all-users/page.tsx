@@ -5,12 +5,11 @@ import { format } from "date-fns";
 import { SearchIcon, UsersRound } from "lucide-react";
 import { useState } from "react";
 
-import { ForbiddenPage } from "@/components/auth/permission-guard";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import {
   AdminDataPageHeader,
   AdminDataPanel,
 } from "@/components/layout/admin-data-page";
-import { useAdminAuthStore } from "@/stores/auth-store";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { Badge } from "@/components/ui/badge";
@@ -269,7 +268,9 @@ function UserRow({ user }: { user: AdminUser }) {
 }
 
 export default function AllUsersPage() {
-  const isAdmin = useAdminAuthStore((state) => state.isAdmin);
-  if (!isAdmin()) return <ForbiddenPage />;
-  return <AllUsersPageContent />;
+  return (
+    <PermissionGuard permissionKey="usersRead">
+      <AllUsersPageContent />
+    </PermissionGuard>
+  );
 }

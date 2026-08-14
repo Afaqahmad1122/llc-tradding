@@ -49,6 +49,17 @@ export type AdminLoginRequest = {
   password: string;
 };
 
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ResetPasswordRequest = {
+  email: string;
+  otp: string;
+  newPassword: string;
+  confirmNewPassword?: string;
+};
+
 type AuthSuccessResponse = {
   accessToken: string;
   user: AuthUser;
@@ -63,9 +74,27 @@ type LogoutResponse = {
   success: boolean;
 };
 
+type PasswordResetResponse = {
+  message: string;
+};
+
 export const adminLoginApi = (payload: AdminLoginRequest) => {
   return http.post<AuthSuccessResponse, AdminLoginRequest>(
     "/auth/admin/login",
+    payload,
+  );
+};
+
+export const forgotPasswordApi = (payload: ForgotPasswordRequest) => {
+  return http.post<PasswordResetResponse, ForgotPasswordRequest>(
+    "/auth/forgot-password",
+    payload,
+  );
+};
+
+export const resetPasswordApi = (payload: ResetPasswordRequest) => {
+  return http.post<PasswordResetResponse, ResetPasswordRequest>(
+    "/auth/reset-password",
     payload,
   );
 };
