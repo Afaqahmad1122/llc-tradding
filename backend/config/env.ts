@@ -40,6 +40,10 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
   MAIL_FROM: z.string().min(1),
+  /** Optional bounce/envelope sender. Should be on the same authenticated domain as MAIL_FROM. */
+  MAIL_ENVELOPE_FROM: z.string().email().optional(),
+  /** Optional reply-to address for transactional auth emails. */
+  MAIL_REPLY_TO: z.string().email().optional(),
   /** Inbox that receives a copy of each storefront contact-form submission. */
   CONTACT_NOTIFICATION_EMAIL: z
     .string()

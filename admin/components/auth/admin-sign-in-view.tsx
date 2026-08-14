@@ -47,7 +47,8 @@ export function AdminSignInView() {
   const loginMutation = useAdminLoginMutation();
   const forgotPasswordMutation = useApiMutation({
     mutationFn: (payload: ForgotPasswordRequest) => forgotPasswordApi(payload),
-    successToast: "If the account exists, a reset code has been sent.",
+    successToast:
+      "If the account exists, a reset code has been sent. Please check your inbox and spam folder.",
     errorToast: () => null,
   });
   const resetPasswordMutation = useApiMutation({
