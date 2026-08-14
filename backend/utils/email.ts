@@ -14,6 +14,21 @@ const mailTransporter = nodemailer.createTransport({
     : {}),
 });
 
+const normalizeHeaderValue = (value: string): string =>
+  value.replace(/[\r\n]+/g, " ").trim();
+
+const transactionalMailDefaults = {
+  from: normalizeHeaderValue(env.MAIL_FROM),
+  ...(env.MAIL_ENVELOPE_FROM
+    ? { envelope: { from: env.MAIL_ENVELOPE_FROM } }
+    : {}),
+  ...(env.MAIL_REPLY_TO ? { replyTo: env.MAIL_REPLY_TO } : {}),
+  headers: {
+    "X-Auto-Response-Suppress": "All",
+    "X-Entity-Ref-ID": "icc-trading-transactional",
+  },
+} as const;
+
 export type ContactMessageNotification = {
   id: string;
   name: string;
@@ -122,7 +137,7 @@ const sendOtpEmail = async (
   purposeText: string,
 ): Promise<void> => {
   await mailTransporter.sendMail({
-    from: env.MAIL_FROM,
+    ...transactionalMailDefaults,
     to: email,
     subject,
     html: otpTemplate(name, code, title, purposeText),
@@ -166,7 +181,7 @@ export const sendContactMessageNotification = async (
   const senderName = contact.name.replace(/[\r\n]+/g, " ").trim();
 
   await mailTransporter.sendMail({
-    from: env.MAIL_FROM,
+    ...transactionalMailDefaults,
     to: env.CONTACT_NOTIFICATION_EMAIL,
     replyTo: contact.email,
     subject: `New website contact message from ${senderName}`,
