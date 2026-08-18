@@ -30,14 +30,14 @@ import {
 import { ApiError } from "@/lib/api/client";
 import {
   fetchAdminAllUsers,
+  type AdminAllUsersRole,
   type AdminUser,
-  type AdminUserRole,
 } from "@/lib/api/users";
 
 const PAGE_SIZE = 15;
 const SEARCH_DEBOUNCE_MS = 400;
 
-type RoleFilter = "all" | AdminUserRole;
+type RoleFilter = "all" | AdminAllUsersRole;
 type StatusFilter = "all" | "active" | "inactive";
 
 function formatErrorMessage(error: unknown): string {
@@ -100,8 +100,7 @@ function AllUsersPageContent() {
         title="All Users"
         description={
           <>
-            Every registered account — customers, staff, and admins — in one
-            searchable list.
+            Every registered customer and admin account in one searchable list.
           </>
         }
       />
@@ -150,7 +149,6 @@ function AllUsersPageContent() {
                     All roles
                   </NativeSelectOption>
                   <NativeSelectOption value="ADMIN">Admin</NativeSelectOption>
-                  <NativeSelectOption value="STAFF">Staff</NativeSelectOption>
                   <NativeSelectOption value="USER">
                     Customer
                   </NativeSelectOption>

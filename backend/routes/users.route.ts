@@ -24,4 +24,4 @@ usersRouter.get("/admin/staff", requireAuth, requirePermission("usersRead"), lis
 usersRouter.post("/admin/staff", requireAuth, requirePermission("usersCreate"), createStaffUser);
 usersRouter.patch("/admin/staff/:id", requireAuth, requirePermission("usersUpdate"), updateStaffUser);
 usersRouter.patch("/admin/staff/:id/permissions", requireAuth, requireAdminRole, updateStaffPermissions);
-usersRouter.delete("/admin/staff/:id", requireAuth, requirePermission("usersDelete"), deleteStaffUser);
+usersRouter.delete("/admin/staff/:id", requireAuth, requireAdminRole, deleteStaffUser);

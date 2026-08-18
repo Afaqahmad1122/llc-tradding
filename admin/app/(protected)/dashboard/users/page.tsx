@@ -735,18 +735,21 @@ export default function AdminUsersPage() {
       />
 
       <EditUserDialog
+        key={editUser?.id ?? "edit-user"}
         user={editUser}
         onOpenChange={(open) => { if (!open) setEditUser(null); }}
         onSuccess={invalidate}
       />
 
       <PermissionsDialog
+        key={permissionsUser?.id ?? "permissions-user"}
         user={permissionsUser}
         onOpenChange={(open) => { if (!open) setPermissionsUser(null); }}
         onSuccess={invalidate}
       />
 
       <DeleteUserDialog
+        key={deleteUser?.id ?? "delete-user"}
         user={deleteUser}
         onOpenChange={(open) => { if (!open) setDeleteUser(null); }}
         onSuccess={invalidate}
