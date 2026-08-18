@@ -23,7 +23,10 @@ import {
   requireAuth,
   requireAuthForEventStream,
 } from "../middlewares/auth.middleware.js";
-import { requirePermission } from "../middlewares/permission.middleware.js";
+import {
+  requireAnyPermission,
+  requirePermission,
+} from "../middlewares/permission.middleware.js";
 import { validateRequestBody } from "../middlewares/validate-request.middleware.js";
 import {
   carInquirySchema,
@@ -40,7 +43,12 @@ export const carsRouter = Router();
 carsRouter.get("/", getCars);
 carsRouter.get("/meta", getCarsMeta);
 
-carsRouter.get("/admin", requireAuth, requirePermission("carsRead"), getAdminCars);
+carsRouter.get(
+  "/admin",
+  requireAuth,
+  requireAnyPermission("carsRead", "ledgerCreate", "reviewsCreate"),
+  getAdminCars,
+);
 carsRouter.get(
   "/admin/analytics/engagement",
   requireAuth,
@@ -56,28 +64,33 @@ carsRouter.get(
 carsRouter.post(
   "/admin",
   requireAuth,
-  requirePermission("carsCreate"),
+  requireAnyPermission("carsCreate", "ledgerCreate"),
   validateRequestBody(createCarSchema),
   createAdminCar,
 );
 carsRouter.post(
   "/admin/images/presign",
   requireAuth,
-  requirePermission("carsCreate"),
+  requireAnyPermission("carsCreate", "ledgerCreate"),
   validateRequestBody(presignCarImageSchema),
   presignCarImageUpload,
 );
 carsRouter.post(
   "/admin/images/upload",
   requireAuth,
-  requirePermission("carsCreate"),
+  requireAnyPermission("carsCreate", "ledgerCreate"),
   express.raw({
     type: ["image/jpeg", "image/png", "image/webp"],
     limit: "10mb",
   }),
   uploadAdminCarImage,
 );
-carsRouter.get("/admin/models", requireAuth, requirePermission("carsRead"), getAdminModels);
+carsRouter.get(
+  "/admin/models",
+  requireAuth,
+  requireAnyPermission("carsRead", "carsCreate", "ledgerCreate"),
+  getAdminModels,
+);
 carsRouter.post(
   "/admin/models",
   requireAuth,

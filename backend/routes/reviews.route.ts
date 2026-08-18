@@ -46,6 +46,7 @@ reviewsRouter.patch(
 reviewsRouter.post(
   "/eligibility/buyer",
   requireAuth,
+  requirePermission("reviewsCreate"),
   validateRequestBody(createBuyerReviewEligibilitySchema),
   createBuyerReviewEligibility,
 );
