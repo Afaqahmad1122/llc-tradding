@@ -12,12 +12,25 @@ import {
   updateStaffUser,
 } from "../controllers/staff.controller.js";
 import { requireAuth, requireAdminRole } from "../middlewares/auth.middleware.js";
-import { requirePermission } from "../middlewares/permission.middleware.js";
+import {
+  requireAnyPermission,
+  requirePermission,
+} from "../middlewares/permission.middleware.js";
 
 export const usersRouter = Router();
 
-usersRouter.get("/admin/customers", requireAuth, listAdminCustomers);
-usersRouter.post("/admin/customers", requireAuth, requireAdminRole, createAdminCustomer);
+usersRouter.get(
+  "/admin/customers",
+  requireAuth,
+  requireAnyPermission("usersRead", "ledgerCreate", "reviewsCreate"),
+  listAdminCustomers,
+);
+usersRouter.post(
+  "/admin/customers",
+  requireAuth,
+  requireAnyPermission("usersCreate", "ledgerCreate"),
+  createAdminCustomer,
+);
 usersRouter.get("/admin/all", requireAuth, requirePermission("usersRead"), listAllUsers);
 
 usersRouter.get("/admin/staff", requireAuth, requirePermission("usersRead"), listStaffUsers);

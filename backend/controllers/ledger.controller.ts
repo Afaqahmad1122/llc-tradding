@@ -6,11 +6,11 @@ import {
   LedgerDealStatus,
   LedgerDocumentType,
   LedgerEventType,
-  LedgerPaymentMethod,
   LedgerPaymentType,
   Prisma,
   UserRole,
 } from "@prisma/client";
+import type { LedgerPaymentMethod } from "@prisma/client";
 import type { Request, Response } from "express";
 import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
