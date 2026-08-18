@@ -27,15 +27,6 @@ const parsePositiveInt = (value: unknown, fallback: number): number => {
   return Math.floor(parsed);
 };
 
-const requireAdmin = (res: Response): boolean => {
-  const authUserRole = res.locals.authUserRole as UserRole | undefined;
-  if (authUserRole !== UserRole.ADMIN) {
-    res.status(403).json({ message: "admin access required" });
-    return false;
-  }
-  return true;
-};
-
 const buildNameEmailSearch = (q: string): Prisma.UserWhereInput => {
   if (!q) return {};
   return {
@@ -63,10 +54,6 @@ export const listAdminCustomers = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  if (!requireAdmin(res)) {
-    return;
-  }
-
   const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
   const requestedPageSize = parsePositiveInt(
     req.query.pageSize,
@@ -102,10 +89,6 @@ export const createAdminCustomer = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  if (!requireAdmin(res)) {
-    return;
-  }
-
   const body = req.body as {
     name?: string;
     email?: string;
