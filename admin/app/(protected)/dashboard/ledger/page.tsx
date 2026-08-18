@@ -214,7 +214,7 @@ function SearchablePickerContent({
   return (
     <PopoverContent
       align="start"
-      className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 p-0"
+      className="max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0"
     >
       <div className="border-b p-3">
         <div className="relative">
@@ -231,7 +231,9 @@ function SearchablePickerContent({
           />
         </div>
       </div>
-      <div className={cn("overflow-y-auto p-2", listClassName)}>{children}</div>
+      <div className={cn("overflow-y-auto overscroll-contain p-2", listClassName)}>
+        {children}
+      </div>
       {footer}
     </PopoverContent>
   );
