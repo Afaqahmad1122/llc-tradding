@@ -56,6 +56,7 @@ export function createAdminCustomer(body: CreateAdminCustomerBody) {
 }
 
 export type AdminUserRole = "ADMIN" | "STAFF" | "USER";
+export type AdminAllUsersRole = Exclude<AdminUserRole, "STAFF">;
 
 export type AdminUser = {
   id: string;
@@ -76,7 +77,7 @@ export type AdminAllUsersQuery = {
   q?: string;
   page?: number;
   pageSize?: number;
-  role?: AdminUserRole;
+  role?: AdminAllUsersRole;
   isActive?: boolean;
 };
 

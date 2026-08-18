@@ -177,7 +177,11 @@ export const listAllUsers = async (
 
   const roleParam =
     typeof req.query.role === "string" ? req.query.role.toUpperCase() : "";
-  if (roleParam && !(roleParam in UserRole)) {
+  if (
+    roleParam &&
+    roleParam !== UserRole.ADMIN &&
+    roleParam !== UserRole.USER
+  ) {
     res.status(400).json({ message: "invalid role filter" });
     return;
   }
@@ -193,7 +197,7 @@ export const listAllUsers = async (
   }
 
   const where: Prisma.UserWhereInput = {
-    ...(roleParam ? { role: roleParam as UserRole } : {}),
+    role: roleParam ? (roleParam as UserRole) : { not: UserRole.STAFF },
     ...(isActive !== undefined ? { isActive } : {}),
     ...buildNameEmailSearch(q),
   };
