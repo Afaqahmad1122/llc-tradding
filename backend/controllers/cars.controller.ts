@@ -18,7 +18,7 @@ import {
   addAdminCarEventStreamClient,
   broadcastAdminCarDetailView,
 } from "../lib/admin-car-event-stream.js";
-import { verifyAccessToken } from "../utils/jwt.js";
+import { verifyAccessToken, type StaffPermissionsPayload } from "../utils/jwt.js";
 
 type CarImageInput = {
   url: string;
@@ -459,6 +459,20 @@ const buildCreateData = (
   };
   if (createdById) data.createdBy = { connect: { id: createdById } };
   return { ...data, ...optionalCarData(body) };
+};
+
+const canPublishAdminCars = (res: Response): boolean => {
+  if (res.locals.authUserRole === UserRole.ADMIN) return true;
+  const permissions = res.locals.authPermissions as StaffPermissionsPayload | undefined;
+  return Boolean(permissions?.carsCreate);
+};
+
+const getScopedCreateCarBody = (
+  body: CreateCarBody,
+  res: Response,
+): CreateCarBody => {
+  if (canPublishAdminCars(res)) return body;
+  return { ...body, isPublished: false };
 };
 
 const buildUpdateData = (body: UpdateCarBody): Prisma.CarUpdateInput => {
@@ -1075,7 +1089,7 @@ export const createAdminCar = async (
   if (!requireAdmin(res)) return;
 
   const authUserId = res.locals.authUserId as string | undefined;
-  const body = req.body as CreateCarBody;
+  const body = getScopedCreateCarBody(req.body as CreateCarBody, res);
   const images = ensureSinglePrimary(body.images ?? []);
 
   try {
