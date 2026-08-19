@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createAdminCustomer,
+  getAdminUserDetail,
   listAdminCustomers,
   listAllUsers,
 } from "../controllers/users.controller.js";
@@ -32,6 +33,7 @@ usersRouter.post(
   createAdminCustomer,
 );
 usersRouter.get("/admin/all", requireAuth, requirePermission("usersRead"), listAllUsers);
+usersRouter.get("/admin/all/:id", requireAuth, requirePermission("usersRead"), getAdminUserDetail);
 
 usersRouter.get("/admin/staff", requireAuth, requirePermission("usersRead"), listStaffUsers);
 usersRouter.post("/admin/staff", requireAuth, requirePermission("usersCreate"), createStaffUser);

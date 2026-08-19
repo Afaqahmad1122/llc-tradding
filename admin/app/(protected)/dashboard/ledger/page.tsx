@@ -2,6 +2,8 @@
 
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Banknote,
   CalendarIcon,
@@ -18,7 +20,15 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import { ForbiddenPage } from "@/components/auth/permission-guard";
@@ -107,6 +117,7 @@ import {
   type LedgerDocumentType,
   type LedgerPaymentMethod,
   type LedgerPaymentType,
+  type LedgerSummary,
   updateLedgerDeal,
   uploadLedgerDocumentFile,
 } from "@/lib/api/ledger";
@@ -311,8 +322,87 @@ async function uploadLedgerDocumentDraft(dealId: string, document: CreateDealDoc
   });
 }
 
+function LedgerSummaryCards({
+  isLoading,
+  summary,
+}: {
+  isLoading: boolean;
+  summary: LedgerSummary | undefined;
+}) {
+  const buckets = (summary?.byCurrency ?? []).slice().sort((a, b) => {
+    const aIndex = currencies.indexOf(a.currency);
+    const bIndex = currencies.indexOf(b.currency);
+    return aIndex - bIndex;
+  });
+
+  return (
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <article className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-muted-foreground text-xs font-medium uppercase">
+              Overall ledger
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {isLoading && !summary ? "..." : (summary?.customerCount ?? 0)}
+            </p>
+          </div>
+          <div className="bg-primary/10 text-primary rounded-md p-2">
+            <ReceiptText className="size-5" />
+          </div>
+        </div>
+        <div className="text-muted-foreground mt-3 flex items-center justify-between gap-3 text-sm">
+          <span>Users</span>
+          <span className="tabular-nums">{summary?.dealCount ?? 0} deals</span>
+        </div>
+      </article>
+
+      {buckets.length > 0 ? (
+        buckets.map((bucket) => (
+          <article key={bucket.currency} className="rounded-lg border bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-muted-foreground text-xs font-medium uppercase">
+                  {bucket.currency} total ledger
+                </p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">
+                  {formatMoney(bucket.totalAmount, bucket.currency)}
+                </p>
+              </div>
+              <div className="bg-primary/10 text-primary rounded-md p-2">
+                <Banknote className="size-5" />
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-muted-foreground">Paid</p>
+                <p className="font-medium tabular-nums">
+                  {formatMoney(bucket.paidAmount, bucket.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Balance</p>
+                <p className="font-medium tabular-nums">
+                  {formatMoney(bucket.remainingBalance, bucket.currency)}
+                </p>
+              </div>
+            </div>
+          </article>
+        ))
+      ) : (
+        <article className="rounded-lg border bg-card p-4 shadow-sm md:col-span-1 xl:col-span-3">
+          <p className="text-muted-foreground text-sm">
+            {isLoading ? "Loading ledger totals..." : "No ledger totals for the selected filters."}
+          </p>
+        </article>
+      )}
+    </section>
+  );
+}
+
 function LedgerPageContent() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const hasPermission = useAdminAuthStore((state) => state.hasPermission);
   const canCreateLedger = hasPermission("ledgerCreate");
   const canUpdateLedger = hasPermission("ledgerUpdate");
@@ -327,13 +417,23 @@ function LedgerPageContent() {
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [selectedDealMode, setSelectedDealMode] = useState<"view" | "edit">("view");
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
+  const selectedUserId = searchParams.get("userId")?.trim() ?? "";
+  const selectedUserName = searchParams.get("userName")?.trim() ?? "";
 
   const dealsQuery = useQuery({
-    queryKey: ["admin-ledger-deals", page, debouncedSearch, statusFilter, paymentFilter],
+    queryKey: [
+      "admin-ledger-deals",
+      page,
+      debouncedSearch,
+      statusFilter,
+      paymentFilter,
+      selectedUserId,
+    ],
     queryFn: () =>
       fetchLedgerDeals({
         page,
         pageSize: PAGE_SIZE,
+        ...(selectedUserId ? { userId: selectedUserId } : {}),
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
         ...(statusFilter !== "all" ? { status: statusFilter } : {}),
         ...(paymentFilter !== "all" ? { paymentStatus: paymentFilter } : {}),
@@ -344,6 +444,7 @@ function LedgerPageContent() {
   const rows = dealsQuery.data?.data ?? [];
   const totalItems = dealsQuery.data?.pagination.total ?? 0;
   const totalPages = dealsQuery.data?.pagination.totalPages ?? 0;
+  const ledgerSummary = dealsQuery.data?.summary;
 
   const refreshDeals = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-ledger-deals"] });
@@ -370,6 +471,27 @@ function LedgerPageContent() {
           </Button>
         ) : null}
       </div>
+
+      <LedgerSummaryCards
+        isLoading={dealsQuery.isPending}
+        summary={ledgerSummary}
+      />
+
+      {selectedUserId ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 shadow-sm">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              Showing ledger for {selectedUserName || "selected user"}
+            </p>
+            <p className="text-muted-foreground break-all text-xs">
+              User ID: {selectedUserId}
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/ledger">Show all users</Link>
+          </Button>
+        </div>
+      ) : null}
 
       <AdminDataPanel
         controls={
@@ -1176,7 +1298,7 @@ function CreateDealDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ledger-due">Due date</Label>
+              <Label htmlFor="ledger-due">Down payment due date</Label>
               <Input
                 id="ledger-due"
                 type="date"
@@ -2172,7 +2294,7 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="ledger-edit-due">Due date</Label>
+        <Label htmlFor="ledger-edit-due">Down payment due date</Label>
         <Input
           id="ledger-edit-due"
           type="date"
@@ -2366,7 +2488,6 @@ function ShipmentTab({
 }) {
   const [form, setForm] = useState({
     status: deal.status,
-    dueDate: dateInputValue(deal.dueDate),
     shipmentOrigin: deal.shipmentOrigin ?? "",
     shipmentDestination: deal.shipmentDestination ?? "",
     shippingLine: deal.shippingLine ?? "",
@@ -2381,7 +2502,6 @@ function ShipmentTab({
   useEffect(() => {
     setForm({
       status: deal.status,
-      dueDate: dateInputValue(deal.dueDate),
       shipmentOrigin: deal.shipmentOrigin ?? "",
       shipmentDestination: deal.shipmentDestination ?? "",
       shippingLine: deal.shippingLine ?? "",
@@ -2398,7 +2518,6 @@ function ShipmentTab({
     mutationFn: () =>
       updateLedgerDeal(deal.id, {
         status: form.status,
-        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         shipmentOrigin: form.shipmentOrigin.trim() || null,
         shipmentDestination: form.shipmentDestination.trim() || null,
         shippingLine: form.shippingLine.trim() || null,
@@ -2422,8 +2541,8 @@ function ShipmentTab({
     form.shipmentDestination.trim() ||
     [deal.user.city, deal.user.country].filter(Boolean).join(", ") ||
     "Destination pending";
-  const previewEta = form.dueDate
-    ? format(new Date(form.dueDate), "MMM d, yyyy")
+  const previewEta = form.estimatedArrival
+    ? format(new Date(form.estimatedArrival), "MMM d, yyyy")
     : "Awaiting schedule";
   const previewVessel = form.vesselName.trim() || "Not added";
   const previewShippingLine = form.shippingLine.trim() || "Not added";
@@ -2459,7 +2578,7 @@ function ShipmentTab({
 
         <div className="rounded-lg border p-3">
           <h4 className="text-sm font-semibold">Tracking status</h4>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3">
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-status">
                 Status
@@ -2480,19 +2599,6 @@ function ShipmentTab({
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-eta">
-                ETA
-              </Label>
-              <Input
-                id="ledger-shipment-eta"
-                type="date"
-                value={form.dueDate}
-                onChange={(event) =>
-                  setForm((state) => ({ ...state, dueDate: event.target.value }))
-                }
-              />
             </div>
           </div>
         </div>
@@ -2993,5 +3099,9 @@ function NotesTab({
 export default function LedgerPage() {
   const hasPermission = useAdminAuthStore((state) => state.hasPermission);
   if (!hasPermission("ledgerRead")) return <ForbiddenPage />;
-  return <LedgerPageContent />;
+  return (
+    <Suspense fallback={null}>
+      <LedgerPageContent />
+    </Suspense>
+  );
 }

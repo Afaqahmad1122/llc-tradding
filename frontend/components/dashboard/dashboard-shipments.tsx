@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Clock3, MapPin, Navigation, Ship } from "lucide-react";
+import { CalendarClock, MapPin, Navigation, Ship } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo } from "react";
 
@@ -75,7 +75,7 @@ export function DashboardShipments() {
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <ShipmentMetric icon={Ship} label="Shipping line" value={activeOrder.shippingLine} />
             <ShipmentMetric icon={Ship} label="Vessel" value={activeOrder.vesselName} />
-            <ShipmentMetric icon={Clock3} label="ETA" value={activeOrder.eta} />
+            <ShipmentMetric icon={Navigation} label="Current location" value={activeOrder.currentLocation} />
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <ShipmentMetric
@@ -197,7 +197,6 @@ function buildShipmentMeta(order: DashboardOrder): Array<[string, string]> {
     ["Payment", order.paymentStatus],
     ["Paid", order.paidAmount],
     ["Balance", order.balance],
-    ["ETA", order.eta],
   ];
 }
 

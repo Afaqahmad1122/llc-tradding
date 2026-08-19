@@ -96,6 +96,7 @@ export type DashboardOrder = {
   balance: string;
   remainingBalanceAmount: number;
   orderedAt: string;
+  paymentDueDate: string;
   eta: string;
   progress: number;
   paymentProgress: number;
@@ -216,6 +217,11 @@ export function formatDashboardShortDate(value: string | null | undefined) {
   return date ? shortDateFormatter.format(date) : "Awaiting";
 }
 
+function formatPaymentDueDate(value: string | null | undefined) {
+  const date = parseDate(value);
+  return date ? dateFormatter.format(date) : "No due date";
+}
+
 function formatMoney(amount: number | null | undefined, currency: string) {
   const numericAmount = Number(amount ?? 0);
   return `${currency} ${numericAmount.toLocaleString("en-US", {
@@ -278,11 +284,11 @@ function buildTimeline(deal: MyLedgerDeal): DashboardShipmentEvent[] {
     });
   }
 
-  if (deal.dueDate && deal.status !== "DELIVERED" && deal.status !== "CANCELLED") {
+  if (deal.estimatedArrival && deal.status !== "DELIVERED" && deal.status !== "CANCELLED") {
     events.push({
       title: "Estimated arrival",
       description: "ETA will be updated as shipment movement changes.",
-      date: formatDashboardDate(deal.dueDate),
+      date: formatDashboardDate(deal.estimatedArrival),
       state: "upcoming",
     });
   }
@@ -312,7 +318,8 @@ export function mapLedgerDealToDashboardOrder(deal: MyLedgerDeal): DashboardOrde
     balance: formatMoney(deal.paymentSummary.remainingBalance, deal.currency),
     remainingBalanceAmount: deal.paymentSummary.remainingBalance,
     orderedAt: formatDashboardDate(deal.createdAt),
-    eta: formatDashboardDate(deal.dueDate),
+    paymentDueDate: formatPaymentDueDate(deal.dueDate),
+    eta: formatDashboardDate(deal.estimatedArrival),
     progress: statusProgress[deal.status],
     paymentProgress: deal.paymentSummary.paidPercent,
     portFrom: getOrigin(deal),

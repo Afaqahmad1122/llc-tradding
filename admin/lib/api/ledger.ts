@@ -108,6 +108,21 @@ export type LedgerPaymentSummary = {
   paidPercent: number;
 };
 
+export type LedgerSummaryCurrency = {
+  currency: LedgerCurrency;
+  totalAmount: number;
+  paidAmount: number;
+  remainingBalance: number;
+  dealCount: number;
+  customerCount: number;
+};
+
+export type LedgerSummary = {
+  dealCount: number;
+  customerCount: number;
+  byCurrency: LedgerSummaryCurrency[];
+};
+
 export type LedgerDeal = {
   id: string;
   orderNumber: string;
@@ -147,11 +162,13 @@ export type LedgerDealsResponse = {
     total: number;
     totalPages: number;
   };
+  summary: LedgerSummary;
 };
 
 export type LedgerDealsQuery = {
   page?: number;
   pageSize?: number;
+  userId?: string;
   search?: string;
   status?: LedgerDealStatus;
   currency?: LedgerCurrency;
@@ -161,7 +178,6 @@ export type LedgerDealsQuery = {
 export type AdminLedgerShipment = {
   id: string;
   orderNumber: string;
-  dueDate: string | null;
   shipmentOrigin: string | null;
   shipmentDestination: string | null;
   shippingLine: string | null;
@@ -266,6 +282,7 @@ export function fetchLedgerDeals(params: LedgerDealsQuery = {}) {
   const search = new URLSearchParams();
   if (params.page != null) search.set("page", String(params.page));
   if (params.pageSize != null) search.set("pageSize", String(params.pageSize));
+  if (params.userId) search.set("userId", params.userId);
   if (params.search) search.set("search", params.search);
   if (params.status) search.set("status", params.status);
   if (params.currency) search.set("currency", params.currency);

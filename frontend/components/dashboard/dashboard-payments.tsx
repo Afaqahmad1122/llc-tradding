@@ -84,7 +84,7 @@ function OrderPaymentsCard({ order }: { order: DashboardOrder }) {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <PaymentSummaryBox label="Total amount" value={order.totalAmount} />
         <PaymentSummaryBox label="Paid so far" value={order.paidAmount} tone="success" />
         <PaymentSummaryBox
@@ -92,6 +92,7 @@ function OrderPaymentsCard({ order }: { order: DashboardOrder }) {
           value={order.balance}
           tone={order.remainingBalanceAmount > 0 ? "warning" : "success"}
         />
+        <PaymentSummaryBox label="Payment due date" value={order.paymentDueDate} />
       </div>
 
       <div className="mt-4">

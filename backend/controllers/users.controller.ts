@@ -18,6 +18,15 @@ const ALL_USERS_SELECT = {
   role: true,
   isActive: true,
 } satisfies Prisma.UserSelect;
+const USER_DETAIL_SELECT = {
+  ...ALL_USERS_SELECT,
+  country: true,
+  city: true,
+  address: true,
+  postalCode: true,
+  emailVerifiedAt: true,
+  updatedAt: true,
+} satisfies Prisma.UserSelect;
 
 const parsePositiveInt = (value: unknown, fallback: number): number => {
   const parsed = Number(value);
@@ -38,6 +47,11 @@ const buildNameEmailSearch = (q: string): Prisma.UserWhereInput => {
 };
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const decimalToNumber = (value: Prisma.Decimal | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  return Number(value.toString());
+};
 
 const paginationPayload = (input: {
   page: number;
@@ -199,5 +213,124 @@ export const listAllUsers = async (
   res.status(200).json({
     data,
     pagination: paginationPayload({ page, pageSize, total }),
+  });
+};
+
+export const getAdminUserDetail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const userId = req.params.id;
+  if (!userId) {
+    res.status(400).json({ message: "user id is required" });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: USER_DETAIL_SELECT,
+  });
+  if (!user || user.role === UserRole.STAFF) {
+    res.status(404).json({ message: "user not found" });
+    return;
+  }
+
+  const deals = await prisma.ledgerDeal.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      orderNumber: true,
+      totalAmount: true,
+      currency: true,
+      downPaymentRequired: true,
+      status: true,
+      createdAt: true,
+      car: {
+        select: {
+          id: true,
+          referenceNo: true,
+          title: true,
+          year: true,
+          model: {
+            select: {
+              brand: true,
+              name: true,
+            },
+          },
+        },
+      },
+      payments: {
+        where: { deletedAt: null },
+        select: {
+          amount: true,
+          type: true,
+        },
+      },
+    },
+  });
+
+  const currencyBuckets = new Map<
+    string,
+    {
+      currency: string;
+      totalAmount: number;
+      paidAmount: number;
+      remainingBalance: number;
+      dealCount: number;
+    }
+  >();
+  const statusCounts = new Map<string, number>();
+
+  for (const deal of deals) {
+    const totalAmount = decimalToNumber(deal.totalAmount);
+    const downPaymentRequired = decimalToNumber(deal.downPaymentRequired);
+    const paymentEntriesAmount = deal.payments.reduce((sum, payment) => {
+      const amount = decimalToNumber(payment.amount);
+      return payment.type === "REFUND" ? sum - amount : sum + amount;
+    }, 0);
+    const paidAmount = Math.max(paymentEntriesAmount + downPaymentRequired, 0);
+    const remainingBalance = Math.max(totalAmount - paidAmount, 0);
+    const bucket =
+      currencyBuckets.get(deal.currency) ??
+      {
+        currency: deal.currency,
+        totalAmount: 0,
+        paidAmount: 0,
+        remainingBalance: 0,
+        dealCount: 0,
+      };
+
+    bucket.totalAmount += totalAmount;
+    bucket.paidAmount += paidAmount;
+    bucket.remainingBalance += remainingBalance;
+    bucket.dealCount += 1;
+    currencyBuckets.set(deal.currency, bucket);
+    statusCounts.set(deal.status, (statusCounts.get(deal.status) ?? 0) + 1);
+  }
+
+  res.status(200).json({
+    user,
+    stats: {
+      carCount: deals.length,
+      dealCount: deals.length,
+      statusCounts: Array.from(statusCounts.entries()).map(([status, count]) => ({
+        status,
+        count,
+      })),
+      byCurrency: Array.from(currencyBuckets.values()),
+    },
+    recentDeals: deals.slice(0, 5).map((deal) => ({
+      id: deal.id,
+      orderNumber: deal.orderNumber,
+      status: deal.status,
+      totalAmount: decimalToNumber(deal.totalAmount),
+      currency: deal.currency,
+      createdAt: deal.createdAt,
+      car: deal.car,
+    })),
   });
 };
