@@ -8,7 +8,7 @@ export const JAPAN_OFFICE_ADDRESS_LINES = [
   "栃木県栃木市藤岡町赤麻字西原868番3",
   "株式会社ICC TRADING 御中",
   "323-1102",
-  "Tochigi Ken, Tochigi Shi, Fujioka-cho, Akamaza, Nishihara 867-3, Japan",
+  "Tochigi Ken, Tochigi Shi, Fujioka-cho, Akamaza, Nishihara 868-3, Japan",
   "ICC TRADING CO, LTD",
 ];
 

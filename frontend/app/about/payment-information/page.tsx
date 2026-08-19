@@ -9,6 +9,27 @@ export const metadata: Metadata = buildPageMetadata({
   path: "/about/payment-information",
 });
 
+const beneficiaryBankDetails = [
+  ["Beneficiary Bank Name", "RAKUTEN BANK, LTD"],
+  ["Beneficiary Account Name", "ICC TRADING"],
+  ["Account Number", "7776537"],
+  ["Branch Code", "254"],
+  ["Swift Code", "RAKTJPJT"],
+  ["11-digit Swift Code", "RAKTJPJTXXX"],
+  ["Account Type", "FUTSU"],
+  ["Branch", "HEAD OFFICE"],
+  ["Bank Address", "2-16-5 Konan, Minato-ku, Tokyo, Japan."],
+];
+
+const intermediaryBankDetails = [
+  [
+    "Intermediary Bank Name",
+    "SUMITOMO MITSUI BANKING CORPORATION (SMBC) TOKYO, JAPAN",
+  ],
+  ["Swift / BIC Code", "SMBCJPJT"],
+  ["Bank Address", "Tokyo, Japan"],
+];
+
 export default function PaymentInformationPage() {
   return (
     <AboutPageShell
@@ -51,6 +72,41 @@ export default function PaymentInformationPage() {
           </ul>
         </article>
       </div>
+
+      <section className="mt-8 overflow-hidden rounded-2xl border border-[#452E5A]/15 bg-white/90 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
+        <h2 className="bg-[#111B49] px-5 py-4 text-sm font-bold uppercase tracking-wide text-white">
+          Banking Details
+        </h2>
+        <div className="grid gap-8 p-5 md:grid-cols-[1fr_0.95fr] md:p-8">
+          <dl className="space-y-3">
+            {beneficiaryBankDetails.map(([label, value]) => (
+              <div
+                key={label}
+                className="grid gap-1 text-sm sm:grid-cols-[190px_1fr] sm:gap-5"
+              >
+                <dt className="font-bold uppercase text-[#6B7280] dark:text-white/55">
+                  {label}
+                </dt>
+                <dd className="text-[#1E104E] dark:text-white/85">{value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <dl className="space-y-3">
+            {intermediaryBankDetails.map(([label, value]) => (
+              <div
+                key={label}
+                className="grid gap-1 text-sm sm:grid-cols-[190px_1fr] sm:gap-5"
+              >
+                <dt className="font-bold uppercase text-[#6B7280] dark:text-white/55">
+                  {label}
+                </dt>
+                <dd className="text-[#1E104E] dark:text-white/85">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
     </AboutPageShell>
   );
 }
