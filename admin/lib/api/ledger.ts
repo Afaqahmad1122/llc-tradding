@@ -178,7 +178,6 @@ export type LedgerDealsQuery = {
 export type AdminLedgerShipment = {
   id: string;
   orderNumber: string;
-  dueDate: string | null;
   shipmentOrigin: string | null;
   shipmentDestination: string | null;
   shippingLine: string | null;

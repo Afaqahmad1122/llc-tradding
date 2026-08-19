@@ -686,13 +686,12 @@ export const getAdminLedgerShipments = async (req: Request, res: Response): Prom
     prisma.ledgerDeal.count({ where }),
     prisma.ledgerDeal.findMany({
       where,
-      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ estimatedArrival: "asc" }, { createdAt: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
       select: {
         id: true,
         orderNumber: true,
-        dueDate: true,
         shipmentOrigin: true,
         shipmentDestination: true,
         shippingLine: true,

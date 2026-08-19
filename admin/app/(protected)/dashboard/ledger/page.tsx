@@ -1298,7 +1298,7 @@ function CreateDealDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ledger-due">Due date</Label>
+              <Label htmlFor="ledger-due">Down payment due date</Label>
               <Input
                 id="ledger-due"
                 type="date"
@@ -2294,7 +2294,7 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="ledger-edit-due">Due date</Label>
+        <Label htmlFor="ledger-edit-due">Down payment due date</Label>
         <Input
           id="ledger-edit-due"
           type="date"
@@ -2488,7 +2488,6 @@ function ShipmentTab({
 }) {
   const [form, setForm] = useState({
     status: deal.status,
-    dueDate: dateInputValue(deal.dueDate),
     shipmentOrigin: deal.shipmentOrigin ?? "",
     shipmentDestination: deal.shipmentDestination ?? "",
     shippingLine: deal.shippingLine ?? "",
@@ -2503,7 +2502,6 @@ function ShipmentTab({
   useEffect(() => {
     setForm({
       status: deal.status,
-      dueDate: dateInputValue(deal.dueDate),
       shipmentOrigin: deal.shipmentOrigin ?? "",
       shipmentDestination: deal.shipmentDestination ?? "",
       shippingLine: deal.shippingLine ?? "",
@@ -2520,7 +2518,6 @@ function ShipmentTab({
     mutationFn: () =>
       updateLedgerDeal(deal.id, {
         status: form.status,
-        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
         shipmentOrigin: form.shipmentOrigin.trim() || null,
         shipmentDestination: form.shipmentDestination.trim() || null,
         shippingLine: form.shippingLine.trim() || null,
@@ -2544,8 +2541,8 @@ function ShipmentTab({
     form.shipmentDestination.trim() ||
     [deal.user.city, deal.user.country].filter(Boolean).join(", ") ||
     "Destination pending";
-  const previewEta = form.dueDate
-    ? format(new Date(form.dueDate), "MMM d, yyyy")
+  const previewEta = form.estimatedArrival
+    ? format(new Date(form.estimatedArrival), "MMM d, yyyy")
     : "Awaiting schedule";
   const previewVessel = form.vesselName.trim() || "Not added";
   const previewShippingLine = form.shippingLine.trim() || "Not added";
@@ -2581,7 +2578,7 @@ function ShipmentTab({
 
         <div className="rounded-lg border p-3">
           <h4 className="text-sm font-semibold">Tracking status</h4>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-3">
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-status">
                 Status
@@ -2602,19 +2599,6 @@ function ShipmentTab({
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground" htmlFor="ledger-shipment-eta">
-                ETA
-              </Label>
-              <Input
-                id="ledger-shipment-eta"
-                type="date"
-                value={form.dueDate}
-                onChange={(event) =>
-                  setForm((state) => ({ ...state, dueDate: event.target.value }))
-                }
-              />
             </div>
           </div>
         </div>

@@ -243,8 +243,7 @@ function hasShipmentDetails(shipment: AdminLedgerShipment) {
       shipment.estimatedArrival ||
       shipment.bookingNo ||
       shipment.billOfLadingNo ||
-      shipment.shipmentNote ||
-      shipment.dueDate,
+      shipment.shipmentNote,
   );
 }
 
@@ -351,7 +350,7 @@ function CustomerShipmentsTable({ rows }: { rows: AdminLedgerShipment[] }) {
               <TableCell className="pr-4 sm:pr-5">
                 <p className="flex items-center gap-2 font-medium">
                   <CalendarClock className="text-muted-foreground size-4" />
-                  {formatShipmentDate(shipment.dueDate)}
+                  {formatShipmentDate(shipment.estimatedArrival)}
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs">
                   {shipment.documentCount} document{shipment.documentCount === 1 ? "" : "s"}
