@@ -91,6 +91,7 @@ export type DashboardOrder = {
   statusCode: LedgerDealStatus;
   paymentStatus: string;
   totalAmount: string;
+  dealType: string;
   downPayment: string;
   paidAmount: string;
   balance: string;
@@ -222,6 +223,10 @@ function formatPaymentDueDate(value: string | null | undefined) {
   return date ? dateFormatter.format(date) : "No due date";
 }
 
+function formatDealType(value: string | null | undefined) {
+  return value === "CNF" ? "C&F" : value || "FOB";
+}
+
 function formatMoney(amount: number | null | undefined, currency: string) {
   const numericAmount = Number(amount ?? 0);
   return `${currency} ${numericAmount.toLocaleString("en-US", {
@@ -313,6 +318,7 @@ export function mapLedgerDealToDashboardOrder(deal: MyLedgerDeal): DashboardOrde
     statusCode: deal.status,
     paymentStatus: getCustomerPaymentLabel(deal),
     totalAmount: formatMoney(deal.paymentSummary.totalAmount, deal.currency),
+    dealType: formatDealType(deal.dealType),
     downPayment: formatMoney(deal.downPaymentRequired ?? 0, deal.currency),
     paidAmount: formatMoney(deal.paymentSummary.paidAmount, deal.currency),
     balance: formatMoney(deal.paymentSummary.remainingBalance, deal.currency),

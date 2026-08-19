@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, CreditCard, Download, FileText, ImageIcon, MapPin, ReceiptText, Ship } from "lucide-react";
+import { CalendarDays, CreditCard, Download, FileText, ImageIcon, MapPin, ReceiptText, Ship, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -151,8 +151,9 @@ function OrderCard({ order }: { order: DashboardOrder }) {
             </Badge>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <OrderMeta icon={ReceiptText} label="Order date" value={order.orderedAt} />
+            <OrderMeta icon={Tag} label="Deal type" value={order.dealType} />
             <OrderMeta icon={CreditCard} label="Payment" value={order.paymentStatus} />
             <OrderMeta icon={CalendarDays} label="ETA" value={order.eta} />
             <OrderMeta icon={MapPin} label="Destination" value={order.portTo} />

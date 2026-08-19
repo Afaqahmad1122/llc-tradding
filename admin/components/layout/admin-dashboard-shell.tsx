@@ -181,7 +181,7 @@ export function AdminDashboardShell({
       </Sidebar>
       <SidebarInset
         className={cn(
-          "min-h-svh bg-[linear-gradient(160deg,color-mix(in_oklch,var(--muted)_56%,transparent)_0%,transparent_42%),linear-gradient(to_bottom,var(--background),color-mix(in_oklch,var(--muted)_22%,var(--background)))]",
+          "min-h-svh min-w-0 bg-[linear-gradient(160deg,color-mix(in_oklch,var(--muted)_56%,transparent)_0%,transparent_42%),linear-gradient(to_bottom,var(--background),color-mix(in_oklch,var(--muted)_22%,var(--background)))]",
           className,
         )}
       >
@@ -192,7 +192,7 @@ export function AdminDashboardShell({
             <AdminNavbarSignOut />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
+        <div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

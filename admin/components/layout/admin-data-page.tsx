@@ -89,7 +89,7 @@ export function AdminDataPanel({
   table,
 }: AdminDataPanelProps) {
   return (
-    <div className="bg-card overflow-hidden rounded-2xl border shadow-sm ring-1 ring-border/60">
+    <div className="bg-card min-w-0 overflow-hidden rounded-2xl border shadow-sm ring-1 ring-border/60">
       {controls ? (
         <div className="bg-muted/25">
           <div className="flex flex-col gap-4 p-4 sm:p-5">{controls}</div>
