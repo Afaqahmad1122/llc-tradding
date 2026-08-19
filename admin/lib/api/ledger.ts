@@ -108,6 +108,21 @@ export type LedgerPaymentSummary = {
   paidPercent: number;
 };
 
+export type LedgerSummaryCurrency = {
+  currency: LedgerCurrency;
+  totalAmount: number;
+  paidAmount: number;
+  remainingBalance: number;
+  dealCount: number;
+  customerCount: number;
+};
+
+export type LedgerSummary = {
+  dealCount: number;
+  customerCount: number;
+  byCurrency: LedgerSummaryCurrency[];
+};
+
 export type LedgerDeal = {
   id: string;
   orderNumber: string;
@@ -147,6 +162,7 @@ export type LedgerDealsResponse = {
     total: number;
     totalPages: number;
   };
+  summary: LedgerSummary;
 };
 
 export type LedgerDealsQuery = {

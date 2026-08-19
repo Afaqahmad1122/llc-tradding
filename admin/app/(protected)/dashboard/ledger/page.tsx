@@ -107,6 +107,7 @@ import {
   type LedgerDocumentType,
   type LedgerPaymentMethod,
   type LedgerPaymentType,
+  type LedgerSummary,
   updateLedgerDeal,
   uploadLedgerDocumentFile,
 } from "@/lib/api/ledger";
@@ -311,6 +312,84 @@ async function uploadLedgerDocumentDraft(dealId: string, document: CreateDealDoc
   });
 }
 
+function LedgerSummaryCards({
+  isLoading,
+  summary,
+}: {
+  isLoading: boolean;
+  summary: LedgerSummary | undefined;
+}) {
+  const buckets = (summary?.byCurrency ?? []).slice().sort((a, b) => {
+    const aIndex = currencies.indexOf(a.currency);
+    const bIndex = currencies.indexOf(b.currency);
+    return aIndex - bIndex;
+  });
+
+  return (
+    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <article className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-muted-foreground text-xs font-medium uppercase">
+              Overall ledger
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {isLoading && !summary ? "..." : (summary?.customerCount ?? 0)}
+            </p>
+          </div>
+          <div className="bg-primary/10 text-primary rounded-md p-2">
+            <ReceiptText className="size-5" />
+          </div>
+        </div>
+        <div className="text-muted-foreground mt-3 flex items-center justify-between gap-3 text-sm">
+          <span>Users</span>
+          <span className="tabular-nums">{summary?.dealCount ?? 0} deals</span>
+        </div>
+      </article>
+
+      {buckets.length > 0 ? (
+        buckets.map((bucket) => (
+          <article key={bucket.currency} className="rounded-lg border bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-muted-foreground text-xs font-medium uppercase">
+                  {bucket.currency} total ledger
+                </p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">
+                  {formatMoney(bucket.totalAmount, bucket.currency)}
+                </p>
+              </div>
+              <div className="bg-primary/10 text-primary rounded-md p-2">
+                <Banknote className="size-5" />
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p className="text-muted-foreground">Paid</p>
+                <p className="font-medium tabular-nums">
+                  {formatMoney(bucket.paidAmount, bucket.currency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Balance</p>
+                <p className="font-medium tabular-nums">
+                  {formatMoney(bucket.remainingBalance, bucket.currency)}
+                </p>
+              </div>
+            </div>
+          </article>
+        ))
+      ) : (
+        <article className="rounded-lg border bg-card p-4 shadow-sm md:col-span-1 xl:col-span-3">
+          <p className="text-muted-foreground text-sm">
+            {isLoading ? "Loading ledger totals..." : "No ledger totals for the selected filters."}
+          </p>
+        </article>
+      )}
+    </section>
+  );
+}
+
 function LedgerPageContent() {
   const queryClient = useQueryClient();
   const hasPermission = useAdminAuthStore((state) => state.hasPermission);
@@ -344,6 +423,7 @@ function LedgerPageContent() {
   const rows = dealsQuery.data?.data ?? [];
   const totalItems = dealsQuery.data?.pagination.total ?? 0;
   const totalPages = dealsQuery.data?.pagination.totalPages ?? 0;
+  const ledgerSummary = dealsQuery.data?.summary;
 
   const refreshDeals = () =>
     queryClient.invalidateQueries({ queryKey: ["admin-ledger-deals"] });
@@ -370,6 +450,11 @@ function LedgerPageContent() {
           </Button>
         ) : null}
       </div>
+
+      <LedgerSummaryCards
+        isLoading={dealsQuery.isPending}
+        summary={ledgerSummary}
+      />
 
       <AdminDataPanel
         controls={

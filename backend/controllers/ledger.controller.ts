@@ -91,6 +91,8 @@ type CreateLedgerNoteBody = {
   message: string;
 };
 
+type AdminLedgerPaymentStatusFilter = "OVERDUE" | "FULLY_PAID" | "BALANCE_PENDING";
+
 const LEDGER_DEAL_INCLUDE = {
   user: {
     select: {
@@ -290,6 +292,82 @@ const buildPaymentSummary = (
   };
 };
 
+const matchesAdminPaymentStatusFilter = (
+  summary: ReturnType<typeof buildPaymentSummary>,
+  paymentStatus: AdminLedgerPaymentStatusFilter | undefined,
+): boolean => {
+  if (!paymentStatus) return true;
+  if (paymentStatus === "OVERDUE") return summary.isOverdue;
+  if (paymentStatus === "FULLY_PAID") {
+    return summary.paymentStatus === "FULLY_PAID";
+  }
+  return summary.remainingBalance > 0;
+};
+
+const buildLedgerSummaryPayload = (
+  deals: Array<{
+    userId: string;
+    totalAmount: Prisma.Decimal;
+    currency: LedgerCurrency;
+    downPaymentRequired: Prisma.Decimal | null;
+    dueDate: Date | null;
+    payments: Array<{ amount: Prisma.Decimal; type: LedgerPaymentType }>;
+  }>,
+) => {
+  const buckets = new Map<
+    LedgerCurrency,
+    {
+      currency: LedgerCurrency;
+      totalAmount: number;
+      paidAmount: number;
+      remainingBalance: number;
+      dealCount: number;
+      customerIds: Set<string>;
+    }
+  >();
+  const allCustomerIds = new Set<string>();
+
+  for (const deal of deals) {
+    const paymentSummary = buildPaymentSummary(
+      deal.totalAmount,
+      deal.payments,
+      deal.downPaymentRequired,
+      deal.dueDate,
+    );
+    const bucket =
+      buckets.get(deal.currency) ??
+      {
+        currency: deal.currency,
+        totalAmount: 0,
+        paidAmount: 0,
+        remainingBalance: 0,
+        dealCount: 0,
+        customerIds: new Set<string>(),
+      };
+
+    bucket.totalAmount += paymentSummary.totalAmount;
+    bucket.paidAmount += paymentSummary.paidAmount;
+    bucket.remainingBalance += paymentSummary.remainingBalance;
+    bucket.dealCount += 1;
+    bucket.customerIds.add(deal.userId);
+    allCustomerIds.add(deal.userId);
+    buckets.set(deal.currency, bucket);
+  }
+
+  return {
+    dealCount: deals.length,
+    customerCount: allCustomerIds.size,
+    byCurrency: Array.from(buckets.values()).map((bucket) => ({
+      currency: bucket.currency,
+      totalAmount: bucket.totalAmount,
+      paidAmount: bucket.paidAmount,
+      remainingBalance: bucket.remainingBalance,
+      dealCount: bucket.dealCount,
+      customerCount: bucket.customerIds.size,
+    })),
+  };
+};
+
 const toLedgerDealPayload = (
   deal: Prisma.LedgerDealGetPayload<{ include: typeof LEDGER_DEAL_INCLUDE }>,
 ) => {
@@ -477,8 +555,13 @@ const parseAdminLedgerListQuery = (req: Request) => {
     (Object.values(LedgerCurrency) as string[]).includes(req.query.currency)
       ? (req.query.currency as LedgerCurrency)
       : undefined;
+  const paymentStatus =
+    typeof req.query.paymentStatus === "string" &&
+    ["OVERDUE", "FULLY_PAID", "BALANCE_PENDING"].includes(req.query.paymentStatus)
+      ? (req.query.paymentStatus as AdminLedgerPaymentStatusFilter)
+      : undefined;
 
-  return { currency, page, pageSize, search, status };
+  return { currency, page, pageSize, paymentStatus, search, status };
 };
 
 const assertCustomerAndCar = async (userId: string, carId: string) => {
@@ -523,7 +606,8 @@ const createLedgerEvent = async ({
 };
 
 export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<void> => {
-  const { currency, page, pageSize, search, status } = parseAdminLedgerListQuery(req);
+  const { currency, page, pageSize, paymentStatus, search, status } =
+    parseAdminLedgerListQuery(req);
 
   const where: Prisma.LedgerDealWhereInput = {
     deletedAt: null,
@@ -532,30 +616,58 @@ export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<
     ...ledgerDealSearchWhere(search),
   };
 
-  const [total, deals] = await Promise.all([
-    prisma.ledgerDeal.count({ where }),
-    prisma.ledgerDeal.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: LEDGER_DEAL_INCLUDE,
-    }),
-  ]);
+  const summaryDeals = await prisma.ledgerDeal.findMany({
+    where,
+    select: {
+      id: true,
+      userId: true,
+      totalAmount: true,
+      currency: true,
+      downPaymentRequired: true,
+      dueDate: true,
+      payments: {
+        where: { deletedAt: null },
+        select: {
+          amount: true,
+          type: true,
+        },
+      },
+    },
+  });
 
-  const data = deals.map(toLedgerDealPayload);
-  const filteredData =
-    req.query.paymentStatus === "OVERDUE"
-      ? data.filter((deal) => deal.paymentSummary.isOverdue)
-      : req.query.paymentStatus === "FULLY_PAID"
-        ? data.filter((deal) => deal.paymentSummary.paymentStatus === "FULLY_PAID")
-        : req.query.paymentStatus === "BALANCE_PENDING"
-          ? data.filter((deal) => deal.paymentSummary.remainingBalance > 0)
-          : data;
+  const filteredSummaryDeals = summaryDeals.filter((deal) =>
+    matchesAdminPaymentStatusFilter(
+      buildPaymentSummary(
+        deal.totalAmount,
+        deal.payments,
+        deal.downPaymentRequired,
+        deal.dueDate,
+      ),
+      paymentStatus,
+    ),
+  );
+  const filteredIds = filteredSummaryDeals.map((deal) => deal.id);
+  const total = filteredIds.length;
+  const pagedWhere: Prisma.LedgerDealWhereInput = {
+    ...where,
+    ...(paymentStatus ? { id: { in: filteredIds } } : {}),
+  };
+
+  const deals =
+    total > 0
+      ? await prisma.ledgerDeal.findMany({
+          where: pagedWhere,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: LEDGER_DEAL_INCLUDE,
+        })
+      : [];
 
   res.status(200).json({
-    data: filteredData,
+    data: deals.map(toLedgerDealPayload),
     pagination: paginationPayload({ page, pageSize, total }),
+    summary: buildLedgerSummaryPayload(filteredSummaryDeals),
   });
 };
 
