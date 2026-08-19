@@ -464,7 +464,7 @@ function LedgerPageContent() {
   });
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 pb-12 pt-8 sm:px-7 sm:pt-10">
+    <div className="mx-auto flex min-w-0 w-full max-w-7xl flex-col gap-8 px-5 pb-12 pt-8 sm:px-7 sm:pt-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <AdminDataPageHeader
           icon={ReceiptText}
@@ -645,23 +645,23 @@ function LedgerTable({
   onSelect: (id: string) => void;
 }) {
   return (
-    <Table>
+    <Table className="table-fixed">
       <TableHeader>
         <TableRow>
-          <TableHead className="pl-4 sm:pl-5">Customer</TableHead>
-          <TableHead>Car</TableHead>
-          <TableHead className="hidden lg:table-cell">Total</TableHead>
-          <TableHead>Down payment</TableHead>
-          <TableHead>Balance</TableHead>
-          <TableHead className="hidden md:table-cell">Status</TableHead>
-          <TableHead className="pr-4 text-right sm:pr-5">Actions</TableHead>
+          <TableHead className="w-[22%] pl-4 sm:pl-5">Customer</TableHead>
+          <TableHead className="w-[20%]">Car</TableHead>
+          <TableHead className="hidden w-[13%] lg:table-cell">Total</TableHead>
+          <TableHead className="w-[13%]">Down payment</TableHead>
+          <TableHead className="w-[15%]">Balance</TableHead>
+          <TableHead className="hidden w-[12%] md:table-cell">Status</TableHead>
+          <TableHead className="w-36 pr-4 text-right sm:pr-5">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((deal) => (
           <TableRow key={deal.id} className="align-top hover:bg-muted/30">
-            <TableCell className="pl-4 sm:pl-5">
-              <p className="font-medium">{deal.user.name}</p>
+            <TableCell className="min-w-0 whitespace-normal pl-4 sm:pl-5">
+              <p className="truncate font-medium">{deal.user.name}</p>
               <p className="text-muted-foreground mt-0.5 break-all text-xs">{deal.user.email}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Badge variant="secondary" className="font-normal">
@@ -672,24 +672,26 @@ function LedgerTable({
                 </Badge>
               </div>
             </TableCell>
-            <TableCell>
-              <p className="font-medium">{deal.car.model.brand} {deal.car.model.name}</p>
+            <TableCell className="min-w-0 whitespace-normal">
+              <p className="truncate font-medium">{deal.car.model.brand} {deal.car.model.name}</p>
               <p className="text-muted-foreground mt-0.5 text-xs">{deal.car.referenceNo}</p>
-              <p className="text-muted-foreground mt-0.5 text-xs">{deal.car.chassisNo ?? "No chassis"}</p>
+              <p className="text-muted-foreground mt-0.5 break-all text-xs">
+                {deal.car.chassisNo ?? "No chassis"}
+              </p>
             </TableCell>
-            <TableCell className="hidden tabular-nums lg:table-cell">
+            <TableCell className="hidden whitespace-normal tabular-nums lg:table-cell">
               {formatMoney(deal.totalAmount, deal.currency)}
               <p className="text-muted-foreground mt-1 text-xs">
                 Paid {formatMoney(deal.paymentSummary.paidAmount, deal.currency)}
               </p>
             </TableCell>
-            <TableCell className="min-w-32 tabular-nums">
+            <TableCell className="whitespace-normal tabular-nums">
               <p className="font-semibold">
                 {formatMoney(deal.downPaymentRequired, deal.currency)}
               </p>
               <p className="text-muted-foreground mt-1 text-xs">Required</p>
             </TableCell>
-            <TableCell className="min-w-36">
+            <TableCell className="whitespace-normal">
               <p className="font-semibold tabular-nums">
                 {formatMoney(deal.paymentSummary.remainingBalance, deal.currency)}
               </p>
@@ -701,7 +703,7 @@ function LedgerTable({
                 {deal.paymentSummary.paidPercent}% paid
               </p>
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="hidden whitespace-normal md:table-cell">
               <div className="flex flex-col items-start gap-1.5">
                 <Badge variant={deal.status === "CANCELLED" ? "destructive" : "outline"}>
                   {label(deal.status)}
@@ -711,7 +713,7 @@ function LedgerTable({
                 </Badge>
               </div>
             </TableCell>
-            <TableCell className="pr-4 text-right sm:pr-5">
+            <TableCell className="whitespace-normal pr-4 text-right sm:pr-5">
               <div className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
                   Open
