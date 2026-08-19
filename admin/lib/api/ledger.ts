@@ -168,6 +168,7 @@ export type LedgerDealsResponse = {
 export type LedgerDealsQuery = {
   page?: number;
   pageSize?: number;
+  userId?: string;
   search?: string;
   status?: LedgerDealStatus;
   currency?: LedgerCurrency;
@@ -282,6 +283,7 @@ export function fetchLedgerDeals(params: LedgerDealsQuery = {}) {
   const search = new URLSearchParams();
   if (params.page != null) search.set("page", String(params.page));
   if (params.pageSize != null) search.set("pageSize", String(params.pageSize));
+  if (params.userId) search.set("userId", params.userId);
   if (params.search) search.set("search", params.search);
   if (params.status) search.set("status", params.status);
   if (params.currency) search.set("currency", params.currency);

@@ -545,6 +545,7 @@ const parseAdminLedgerListQuery = (req: Request) => {
   const requestedPageSize = parsePositiveInt(req.query.pageSize, DEFAULT_PAGE_SIZE);
   const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
   const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const userId = typeof req.query.userId === "string" ? req.query.userId.trim() : "";
   const status =
     typeof req.query.status === "string" &&
     (Object.values(LedgerDealStatus) as string[]).includes(req.query.status)
@@ -561,7 +562,7 @@ const parseAdminLedgerListQuery = (req: Request) => {
       ? (req.query.paymentStatus as AdminLedgerPaymentStatusFilter)
       : undefined;
 
-  return { currency, page, pageSize, paymentStatus, search, status };
+  return { currency, page, pageSize, paymentStatus, search, status, userId };
 };
 
 const assertCustomerAndCar = async (userId: string, carId: string) => {
@@ -606,11 +607,12 @@ const createLedgerEvent = async ({
 };
 
 export const getAdminLedgerDeals = async (req: Request, res: Response): Promise<void> => {
-  const { currency, page, pageSize, paymentStatus, search, status } =
+  const { currency, page, pageSize, paymentStatus, search, status, userId } =
     parseAdminLedgerListQuery(req);
 
   const where: Prisma.LedgerDealWhereInput = {
     deletedAt: null,
+    ...(userId ? { userId } : {}),
     ...(status ? { status } : {}),
     ...(currency ? { currency } : {}),
     ...ledgerDealSearchWhere(search),

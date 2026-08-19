@@ -2,6 +2,8 @@
 
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Banknote,
   CalendarIcon,
@@ -18,7 +20,15 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import { ForbiddenPage } from "@/components/auth/permission-guard";
@@ -392,6 +402,7 @@ function LedgerSummaryCards({
 
 function LedgerPageContent() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const hasPermission = useAdminAuthStore((state) => state.hasPermission);
   const canCreateLedger = hasPermission("ledgerCreate");
   const canUpdateLedger = hasPermission("ledgerUpdate");
@@ -406,13 +417,23 @@ function LedgerPageContent() {
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [selectedDealMode, setSelectedDealMode] = useState<"view" | "edit">("view");
   const debouncedSearch = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
+  const selectedUserId = searchParams.get("userId")?.trim() ?? "";
+  const selectedUserName = searchParams.get("userName")?.trim() ?? "";
 
   const dealsQuery = useQuery({
-    queryKey: ["admin-ledger-deals", page, debouncedSearch, statusFilter, paymentFilter],
+    queryKey: [
+      "admin-ledger-deals",
+      page,
+      debouncedSearch,
+      statusFilter,
+      paymentFilter,
+      selectedUserId,
+    ],
     queryFn: () =>
       fetchLedgerDeals({
         page,
         pageSize: PAGE_SIZE,
+        ...(selectedUserId ? { userId: selectedUserId } : {}),
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
         ...(statusFilter !== "all" ? { status: statusFilter } : {}),
         ...(paymentFilter !== "all" ? { paymentStatus: paymentFilter } : {}),
@@ -455,6 +476,22 @@ function LedgerPageContent() {
         isLoading={dealsQuery.isPending}
         summary={ledgerSummary}
       />
+
+      {selectedUserId ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3 shadow-sm">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">
+              Showing ledger for {selectedUserName || "selected user"}
+            </p>
+            <p className="text-muted-foreground break-all text-xs">
+              User ID: {selectedUserId}
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/ledger">Show all users</Link>
+          </Button>
+        </div>
+      ) : null}
 
       <AdminDataPanel
         controls={
@@ -3078,5 +3115,9 @@ function NotesTab({
 export default function LedgerPage() {
   const hasPermission = useAdminAuthStore((state) => state.hasPermission);
   if (!hasPermission("ledgerRead")) return <ForbiddenPage />;
-  return <LedgerPageContent />;
+  return (
+    <Suspense fallback={null}>
+      <LedgerPageContent />
+    </Suspense>
+  );
 }

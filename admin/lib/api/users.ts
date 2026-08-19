@@ -68,6 +68,58 @@ export type AdminUser = {
   createdAt: string;
 };
 
+export type AdminUserDetail = AdminUser & {
+  country: string | null;
+  city: string | null;
+  address: string | null;
+  postalCode: string | null;
+  emailVerifiedAt: string | null;
+  updatedAt: string;
+};
+
+export type AdminUserLedgerCurrencySummary = {
+  currency: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingBalance: number;
+  dealCount: number;
+};
+
+export type AdminUserLedgerStatusCount = {
+  status: string;
+  count: number;
+};
+
+export type AdminUserRecentLedgerDeal = {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  currency: string;
+  createdAt: string;
+  car: {
+    id: string;
+    referenceNo: string;
+    title: string | null;
+    year: number;
+    model: {
+      brand: string;
+      name: string;
+    };
+  };
+};
+
+export type AdminUserDetailResponse = {
+  user: AdminUserDetail;
+  stats: {
+    carCount: number;
+    dealCount: number;
+    statusCounts: AdminUserLedgerStatusCount[];
+    byCurrency: AdminUserLedgerCurrencySummary[];
+  };
+  recentDeals: AdminUserRecentLedgerDeal[];
+};
+
 export type AdminAllUsersResponse = {
   data: AdminUser[];
   pagination: AdminCustomersPagination;
@@ -91,5 +143,11 @@ export function fetchAdminAllUsers(params: AdminAllUsersQuery = {}) {
   const qs = search.toString();
   return http.get<AdminAllUsersResponse>(
     `/users/admin/all${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export function fetchAdminUserDetail(id: string) {
+  return http.get<AdminUserDetailResponse>(
+    `/users/admin/all/${encodeURIComponent(id)}`,
   );
 }
