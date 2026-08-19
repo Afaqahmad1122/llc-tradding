@@ -645,16 +645,16 @@ function LedgerTable({
   onSelect: (id: string) => void;
 }) {
   return (
-    <Table className="table-fixed">
+    <Table className="min-w-[78rem]">
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[22%] pl-4 sm:pl-5">Customer</TableHead>
-          <TableHead className="w-[20%]">Car</TableHead>
-          <TableHead className="hidden w-[13%] lg:table-cell">Total</TableHead>
-          <TableHead className="w-[13%]">Down payment</TableHead>
-          <TableHead className="w-[15%]">Balance</TableHead>
-          <TableHead className="hidden w-[12%] md:table-cell">Status</TableHead>
-          <TableHead className="w-36 pr-4 text-right sm:pr-5">Actions</TableHead>
+          <TableHead className="min-w-60 pl-4 sm:pl-5">Customer</TableHead>
+          <TableHead className="min-w-64">Car</TableHead>
+          <TableHead className="hidden min-w-44 lg:table-cell">Total</TableHead>
+          <TableHead className="min-w-44">Down payment</TableHead>
+          <TableHead className="min-w-52">Balance</TableHead>
+          <TableHead className="hidden min-w-56 md:table-cell">Status</TableHead>
+          <TableHead className="min-w-48 pr-4 text-right sm:pr-5">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -713,8 +713,8 @@ function LedgerTable({
                 </Badge>
               </div>
             </TableCell>
-            <TableCell className="whitespace-normal pr-4 text-right sm:pr-5">
-              <div className="flex justify-end gap-2">
+            <TableCell className="pr-4 text-right sm:pr-5">
+              <div className="flex justify-end gap-2 whitespace-nowrap">
                 <Button variant="outline" size="sm" onClick={() => onSelect(deal.id)}>
                   Open
                 </Button>
