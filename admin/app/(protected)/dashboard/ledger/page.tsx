@@ -24,7 +24,6 @@ import {
   Suspense,
   type FormEvent,
   type ReactNode,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -113,6 +112,7 @@ import {
   type LedgerCurrency,
   type LedgerDeal,
   type LedgerDealStatus,
+  type LedgerDealType,
   type LedgerDocument,
   type LedgerDocumentType,
   type LedgerPaymentMethod,
@@ -126,6 +126,9 @@ const PAGE_SIZE = 15;
 const SEARCH_DEBOUNCE_MS = 400;
 
 const currencies: LedgerCurrency[] = ["JPY", "USD", "PKR", "AED"];
+const dealTypes: LedgerDealType[] = ["FOB", "CNF", "CIF"];
+const DEAL_TYPE_BADGE_CLASS =
+  "border-amber-300 bg-amber-100 text-amber-900 shadow-none dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-200";
 const dealStatuses: LedgerDealStatus[] = [
   "PENDING_CONFIRMATION",
   "CONFIRMED",
@@ -194,6 +197,10 @@ function label(value: string) {
     .split("_")
     .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+function dealTypeLabel(value: LedgerDealType) {
+  return value === "CNF" ? "C&F" : value;
 }
 
 function formatMoney(amount: number | null | undefined, currency: string) {
@@ -656,9 +663,14 @@ function LedgerTable({
             <TableCell className="pl-4 sm:pl-5">
               <p className="font-medium">{deal.user.name}</p>
               <p className="text-muted-foreground mt-0.5 break-all text-xs">{deal.user.email}</p>
-              <Badge variant="secondary" className="mt-2 font-normal">
-                {deal.orderNumber}
-              </Badge>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge variant="secondary" className="font-normal">
+                  {deal.orderNumber}
+                </Badge>
+                <Badge variant="outline" className={cn("font-normal", DEAL_TYPE_BADGE_CLASS)}>
+                  {dealTypeLabel(deal.dealType)}
+                </Badge>
+              </div>
             </TableCell>
             <TableCell>
               <p className="font-medium">{deal.car.model.brand} {deal.car.model.name}</p>
@@ -803,6 +815,7 @@ function CreateDealDialog({
     carId: "",
     totalAmount: "",
     currency: "JPY" as LedgerCurrency,
+    dealType: "FOB" as LedgerDealType,
     downPaymentRequired: "",
     dueDate: "",
     status: "CONFIRMED" as LedgerDealStatus,
@@ -1018,7 +1031,8 @@ function CreateDealDialog({
   const selectedCar =
     carsQuery.data?.data.find((car) => car.id === form.carId) ??
     (createdCar?.id === form.carId ? createdCar : undefined);
-  const modelRows = modelsQuery.data?.models ?? [];
+  const modelsData = modelsQuery.data?.models;
+  const modelRows = useMemo(() => modelsData ?? [], [modelsData]);
   const selectedNewCarModel = modelRows.find((model) => model.id === newCar.modelId);
   const filteredModelRows = useMemo(() => {
     const query = modelSearch.trim().toLowerCase();
@@ -1058,6 +1072,7 @@ function CreateDealDialog({
       carId: form.carId,
       totalAmount: Number(form.totalAmount),
       currency: form.currency,
+      dealType: form.dealType,
       downPaymentRequired: form.downPaymentRequired
         ? Number(form.downPaymentRequired)
         : null,
@@ -1282,6 +1297,25 @@ function CreateDealDialog({
                 {currencies.map((currency) => (
                   <NativeSelectOption key={currency} value={currency}>
                     {currency}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ledger-deal-type">Deal Type</Label>
+              <NativeSelect
+                id="ledger-deal-type"
+                value={form.dealType}
+                onChange={(event) =>
+                  setForm((s) => ({
+                    ...s,
+                    dealType: event.target.value as LedgerDealType,
+                  }))
+                }
+              >
+                {dealTypes.map((dealType) => (
+                  <NativeSelectOption key={dealType} value={dealType}>
+                    {dealTypeLabel(dealType)}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
@@ -1912,17 +1946,20 @@ function DealDetailDialog({
   onChanged: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("payments");
+  const tabStateKey = `${dealId ?? "closed"}:${mode}:${canUpdate ? "update" : "view"}`;
+  const defaultActiveTab = mode === "edit" && canUpdate ? "edit" : "payments";
+  const [activeTabState, setActiveTabState] = useState({
+    key: tabStateKey,
+    value: defaultActiveTab,
+  });
+  const activeTab =
+    activeTabState.key === tabStateKey ? activeTabState.value : defaultActiveTab;
   const detailQuery = useQuery({
     queryKey: ["admin-ledger-deal", dealId],
     queryFn: () => fetchLedgerDeal(dealId as string),
     enabled: Boolean(dealId),
   });
   const deal = detailQuery.data?.deal;
-
-  useEffect(() => {
-    if (dealId) setActiveTab(mode === "edit" && canUpdate ? "edit" : "payments");
-  }, [canUpdate, dealId, mode]);
 
   const refresh = () => {
     if (dealId) {
@@ -1947,7 +1984,10 @@ function DealDetailDialog({
         ) : (
           <div className="space-y-5">
             <DealSummary deal={deal} />
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTabState({ key: tabStateKey, value })}
+            >
               <TabsList className="w-full justify-start overflow-x-auto">
                 {canUpdate ? (
                   <TabsTrigger value="edit">
@@ -1975,14 +2015,19 @@ function DealDetailDialog({
               </TabsList>
               {canUpdate ? (
                 <TabsContent value="edit">
-                  <EditDealTab deal={deal} onChanged={refresh} />
+                  <EditDealTab key={`edit-${deal.id}`} deal={deal} onChanged={refresh} />
                 </TabsContent>
               ) : null}
               <TabsContent value="payments">
                 <PaymentsTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
               </TabsContent>
               <TabsContent value="shipment">
-                <ShipmentTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
+                <ShipmentTab
+                  key={`shipment-${deal.id}`}
+                  canUpdate={canUpdate}
+                  deal={deal}
+                  onChanged={refresh}
+                />
               </TabsContent>
               <TabsContent value="documents">
                 <DocumentsTab canUpdate={canUpdate} deal={deal} onChanged={refresh} />
@@ -2005,7 +2050,7 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
   const primaryImage = deal.car.images[0];
 
   return (
-    <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 md:grid-cols-5">
+    <div className="grid gap-3 rounded-lg border bg-muted/20 p-4 md:grid-cols-3 xl:grid-cols-6">
       <div>
         <p className="text-muted-foreground text-xs uppercase">Customer</p>
         <p className="mt-1 font-semibold">{deal.user.name}</p>
@@ -2032,6 +2077,10 @@ function DealSummary({ deal }: { deal: LedgerDeal }) {
             </p>
           </div>
         </div>
+      </div>
+      <div>
+        <p className="text-muted-foreground text-xs uppercase">Deal type</p>
+        <p className="mt-1 font-semibold">{dealTypeLabel(deal.dealType)}</p>
       </div>
       <div>
         <p className="text-muted-foreground text-xs uppercase">Down payment</p>
@@ -2170,6 +2219,7 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
     orderNumber: deal.orderNumber,
     totalAmount: String(deal.totalAmount),
     currency: deal.currency,
+    dealType: deal.dealType,
     downPaymentRequired:
       deal.downPaymentRequired == null ? "" : String(deal.downPaymentRequired),
     dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
@@ -2177,20 +2227,6 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
     note: deal.note ?? "",
     chassisNo: deal.car.chassisNo ?? "",
   });
-
-  useEffect(() => {
-    setForm({
-      orderNumber: deal.orderNumber,
-      totalAmount: String(deal.totalAmount),
-      currency: deal.currency,
-      downPaymentRequired:
-        deal.downPaymentRequired == null ? "" : String(deal.downPaymentRequired),
-      dueDate: deal.dueDate ? new Date(deal.dueDate).toISOString().slice(0, 10) : "",
-      status: deal.status,
-      note: deal.note ?? "",
-      chassisNo: deal.car.chassisNo ?? "",
-    });
-  }, [deal]);
 
   const mutation = useApiMutation({
     mutationFn: async () => {
@@ -2204,6 +2240,7 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
         orderNumber: form.orderNumber.trim(),
         totalAmount: Number(form.totalAmount),
         currency: form.currency,
+        dealType: form.dealType,
         downPaymentRequired: form.downPaymentRequired
           ? Number(form.downPaymentRequired)
           : null,
@@ -2273,6 +2310,25 @@ function EditDealTab({ deal, onChanged }: { deal: LedgerDeal; onChanged: () => v
           {currencies.map((currency) => (
             <NativeSelectOption key={currency} value={currency}>
               {currency}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="ledger-edit-deal-type">Deal Type</Label>
+        <NativeSelect
+          id="ledger-edit-deal-type"
+          value={form.dealType}
+          onChange={(event) =>
+            setForm((state) => ({
+              ...state,
+              dealType: event.target.value as LedgerDealType,
+            }))
+          }
+        >
+          {dealTypes.map((dealType) => (
+            <NativeSelectOption key={dealType} value={dealType}>
+              {dealTypeLabel(dealType)}
             </NativeSelectOption>
           ))}
         </NativeSelect>
@@ -2498,21 +2554,6 @@ function ShipmentTab({
     billOfLadingNo: deal.billOfLadingNo ?? "",
     shipmentNote: deal.shipmentNote ?? "",
   });
-
-  useEffect(() => {
-    setForm({
-      status: deal.status,
-      shipmentOrigin: deal.shipmentOrigin ?? "",
-      shipmentDestination: deal.shipmentDestination ?? "",
-      shippingLine: deal.shippingLine ?? "",
-      vesselName: deal.vesselName ?? "",
-      estimatedDeparture: dateInputValue(deal.estimatedDeparture),
-      estimatedArrival: dateInputValue(deal.estimatedArrival),
-      bookingNo: deal.bookingNo ?? "",
-      billOfLadingNo: deal.billOfLadingNo ?? "",
-      shipmentNote: deal.shipmentNote ?? "",
-    });
-  }, [deal]);
 
   const mutation = useApiMutation({
     mutationFn: () =>

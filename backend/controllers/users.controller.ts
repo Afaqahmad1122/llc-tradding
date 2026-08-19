@@ -248,6 +248,7 @@ export const getAdminUserDetail = async (
       currency: true,
       downPaymentRequired: true,
       status: true,
+      dealType: true,
       createdAt: true,
       car: {
         select: {
@@ -327,6 +328,7 @@ export const getAdminUserDetail = async (
       id: deal.id,
       orderNumber: deal.orderNumber,
       status: deal.status,
+      dealType: deal.dealType,
       totalAmount: decimalToNumber(deal.totalAmount),
       currency: deal.currency,
       createdAt: deal.createdAt,

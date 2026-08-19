@@ -2,6 +2,7 @@ import { http } from "@/lib/api/http";
 import { apiClient } from "@/lib/api/client";
 
 export type LedgerCurrency = "JPY" | "USD" | "PKR" | "AED";
+export type LedgerDealType = "FOB" | "CNF" | "CIF";
 export type LedgerDealStatus =
   | "PENDING_CONFIRMATION"
   | "CONFIRMED"
@@ -130,6 +131,7 @@ export type LedgerDeal = {
   carId: string;
   totalAmount: number;
   currency: LedgerCurrency;
+  dealType: LedgerDealType;
   downPaymentRequired: number | null;
   dueDate: string | null;
   shipmentOrigin: string | null;
@@ -213,6 +215,7 @@ export type CreateLedgerDealBody = {
   carId: string;
   totalAmount: number;
   currency: LedgerCurrency;
+  dealType?: LedgerDealType;
   downPaymentRequired?: number | null;
   dueDate?: string | null;
   shipmentOrigin?: string | null;

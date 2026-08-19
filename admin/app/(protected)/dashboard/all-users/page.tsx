@@ -64,6 +64,13 @@ function label(value: string) {
     .join(" ");
 }
 
+function dealTypeLabel(value: string) {
+  return value === "CNF" ? "C&F" : value;
+}
+
+const DEAL_TYPE_BADGE_CLASS =
+  "border-amber-300 bg-amber-100 text-amber-900 shadow-none dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-200";
+
 function formatMoney(amount: number | null | undefined, currency: string) {
   if (amount == null || Number.isNaN(amount)) return "-";
   return `${currency} ${amount.toLocaleString(undefined, {
@@ -511,6 +518,9 @@ function UserDetailSheet({
                             {deal.car.referenceNo} - {deal.car.year} - {deal.orderNumber}
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className={DEAL_TYPE_BADGE_CLASS}>
+                              {dealTypeLabel(deal.dealType)}
+                            </Badge>
                             <Badge variant="outline">{label(deal.status)}</Badge>
                             <span className="text-sm font-medium tabular-nums">
                               {formatMoney(deal.totalAmount, deal.currency)}

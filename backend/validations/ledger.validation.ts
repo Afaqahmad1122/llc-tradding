@@ -5,6 +5,7 @@ const optionalTrimmed = trimmed.optional();
 const positiveAmount = z.number().positive().max(1_000_000_000_000);
 
 const ledgerCurrencyEnum = z.enum(["JPY", "USD", "PKR", "AED"]);
+const ledgerDealTypeEnum = z.enum(["FOB", "CNF", "CIF"]);
 const ledgerDealStatusEnum = z.enum([
   "PENDING_CONFIRMATION",
   "CONFIRMED",
@@ -71,6 +72,7 @@ export const createLedgerDealSchema = z.object({
   carId: trimmed.min(1),
   totalAmount: positiveAmount,
   currency: ledgerCurrencyEnum.default("JPY"),
+  dealType: ledgerDealTypeEnum.default("FOB"),
   ...ledgerDealDetailsSchema,
 });
 
@@ -81,6 +83,7 @@ export const updateLedgerDealSchema = z
     carId: trimmed.min(1).optional(),
     totalAmount: positiveAmount.optional(),
     currency: ledgerCurrencyEnum.optional(),
+    dealType: ledgerDealTypeEnum.optional(),
     ...ledgerDealDetailsSchema,
   })
   .refine((value) => Object.keys(value).length > 0, {

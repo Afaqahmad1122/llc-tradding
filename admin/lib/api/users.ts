@@ -94,6 +94,7 @@ export type AdminUserRecentLedgerDeal = {
   id: string;
   orderNumber: string;
   status: string;
+  dealType: "FOB" | "CNF" | "CIF";
   totalAmount: number;
   currency: string;
   createdAt: string;

@@ -4,6 +4,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
   LedgerCurrency,
   LedgerDealStatus,
+  LedgerDealType,
   LedgerDocumentType,
   LedgerEventType,
   LedgerPaymentType,
@@ -29,6 +30,7 @@ type CreateLedgerDealBody = {
   carId: string;
   totalAmount: number;
   currency: LedgerCurrency;
+  dealType?: LedgerDealType;
   downPaymentRequired?: number | null;
   dueDate?: string | null;
   shipmentOrigin?: string | null;
@@ -909,6 +911,7 @@ export const createAdminLedgerDeal = async (req: Request, res: Response): Promis
       createdById: adminId,
       totalAmount: money(body.totalAmount),
       currency: body.currency,
+      dealType: body.dealType ?? LedgerDealType.FOB,
       downPaymentRequired:
         body.downPaymentRequired === null || body.downPaymentRequired === undefined
           ? null
@@ -998,6 +1001,7 @@ export const updateAdminLedgerDeal = async (req: Request, res: Response): Promis
       ...(body.carId ? { carId: body.carId } : {}),
       ...(body.totalAmount !== undefined ? { totalAmount: money(body.totalAmount) } : {}),
       ...(body.currency ? { currency: body.currency } : {}),
+      ...(body.dealType ? { dealType: body.dealType } : {}),
       ...(body.downPaymentRequired !== undefined
         ? {
             downPaymentRequired:
